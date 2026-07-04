@@ -30,7 +30,7 @@ export interface TideConfig {
 
 export interface ReefConfig {
   frontend?: {
-    framework?: 'angular' | 'none'
+    framework?: 'angular' | 'react' | 'none'
     /** TypeScript 配置模式 */
     tsConfig?: 'strict' | 'standard' | 'none'
     /** CSS 方案 */

@@ -25,7 +25,7 @@
           "properties": {
             "framework": {
               "type": "string",
-              "enum": ["angular", "none"],
+              "enum": ["angular", "react", "none"],
               "description": "前端框架"
             },
             "tsConfig": {

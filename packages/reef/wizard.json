@@ -59,6 +59,42 @@
               ]
             },
             {
+              "value": "react",
+              "label": "React",
+              "template": {
+                "label": "React 19 + TypeScript + Ant Design + Tailwind CSS 4",
+                "buildTool": "npx:*",
+                "formatCmd": "npx",
+                "fileExt": "*.tsx / *.ts",
+                "sourcePath": "src/",
+                "styleRef": "→ 参考 [React 前端速查](quick-reference.md)"
+              },
+              "affectedTemplates": [
+                "skills/reef-style-frontend/SKILL.md.tmpl",
+                "agents/reef-review-frontend.md.tmpl",
+                "skills/reef-review/SKILL.md.tmpl",
+                "skills/reef-gen-frontend/SKILL.md.tmpl"
+              ]
+            },
+            {
+              "value": "vue",
+              "label": "Vue",
+              "template": {
+                "label": "Vue 3 + TypeScript + Ant Design Vue + Tailwind CSS 4",
+                "buildTool": "npx:*",
+                "formatCmd": "npx",
+                "fileExt": "*.vue / *.ts",
+                "sourcePath": "src/",
+                "styleRef": "→ 参考 [Vue 前端速查](quick-reference.md)"
+              },
+              "affectedTemplates": [
+                "skills/reef-style-frontend/SKILL.md.tmpl",
+                "agents/reef-review-frontend.md.tmpl",
+                "skills/reef-review/SKILL.md.tmpl",
+                "skills/reef-gen-frontend/SKILL.md.tmpl"
+              ]
+            },
+            {
               "value": "none",
               "label": "不选择",
               "template": {
@@ -82,7 +118,6 @@
           "key": "reef.frontend.uiLibrary",
           "label": "UI 组件库",
           "type": "select",
-          "dependsOn": { "key": "reef.frontend.framework", "value": "angular" },
           "options": [
             {
               "value": "primeng",
@@ -94,6 +129,28 @@
                 "skills/reef-style-frontend/SKILL.md.tmpl"
               ],
               "fragments": ["ui-lib/primeng"]
+            },
+            {
+              "value": "antd",
+              "label": "Ant Design (React)",
+              "template": {
+                "styleRef": "→ 参考 [Ant Design 规范](antd.md)"
+              },
+              "affectedTemplates": [
+                "skills/reef-style-frontend/SKILL.md.tmpl"
+              ],
+              "fragments": ["ui-lib/antd"]
+            },
+            {
+              "value": "antd-vue",
+              "label": "Ant Design Vue",
+              "template": {
+                "styleRef": "→ 参考 [Ant Design Vue 规范](antd-vue.md)"
+              },
+              "affectedTemplates": [
+                "skills/reef-style-frontend/SKILL.md.tmpl"
+              ],
+              "fragments": ["ui-lib/antd-vue"]
             },
             {
               "value": "none",
@@ -179,7 +236,7 @@
               "affectedTemplates": [
                 "skills/reef-style-frontend/SKILL.md.tmpl"
               ],
-              "fragments": ["test/vitest"]
+              "fragments": ["test/vitest", "test/vitest-react", "test/vitest-vue"]
             },
             {
               "value": "none",
