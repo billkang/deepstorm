@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.2.3] - 2026-07-05
+
+### Features
+
+- 简化 `deepstorm update` 为无选项全量更新，自动检查 CLI 版本、同步已安装 skill + hooks + agents (5ac1a83)
+
+### Code Refactoring
+
+- 移除 `--check`/`--cli`/`--skills` 子选项，update 变为纯 action (5ac1a83)
+- 新增用户修改保护机制（SHA256 校验 + 时间戳备份）(5ac1a83)
+
 ## [0.2.2] - 2026-07-05
 
 ### Bug Fixes
