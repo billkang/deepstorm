@@ -1,6 +1,6 @@
 {
   "name": "@deepstorm/atoll",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "private": true,
   "type": "module",
   "description": "DeepStorm 运维侧套件 — 部署辅助、监控查询、故障排查",

@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.2.2] - 2026-07-05
+
+### Bug Fixes
+
+- 修复 `deepstormm` → `deepstorm` 拼写错误，确保 registry 注册流程正确 (4ad3457)
+- `deepstorm update` 无选项时自动安装最新 CLI 版本，提升升级体验 (4ad3457)
+
+### Maintenance
+
+- 添加 `-v, --version` 选项描述，提升 CLI 一致性 (4ad3457)
+- CLAUDE.md 新增需求讨论优先约定，保证需求讨论环节不被跳过 (4ad3457)
+
 ## [0.2.1] - 2026-07-05
 
 ### Bug Fixes
