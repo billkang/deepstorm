@@ -1,4 +1,5 @@
 import { Command } from 'commander'
+import { execSync } from 'node:child_process'
 import { getCliVersion } from '../utils/version'
 import { upgradeTemplates } from './template-upgrade'
 import type { Registry } from '../types/registry'
@@ -88,9 +89,14 @@ export async function updateCLI(fetchFn?: typeof fetch): Promise<void> {
   console.log(`✔ 最新版本: v${result.latest}`)
 
   if (result.hasUpdate) {
-    console.log('')
-    console.log('→ 运行以下命令更新：')
-    console.log('  npm install -g @deepstorm/cli@latest')
+    console.log('→ 正在自动更新...')
+    try {
+      execSync('npm install -g @deepstorm/cli@latest', { stdio: 'inherit' })
+      console.log(`\n✔ 已更新至 v${result.latest}`)
+    } catch {
+      console.log('\n⚠ 自动更新失败，请手动执行：')
+      console.log('  npm install -g @deepstorm/cli@latest')
+    }
   } else {
     console.log('✓ 已是最新版本')
   }
@@ -128,17 +134,11 @@ export function registerUpdateCommand(program: Command, registry: Registry): voi
     .action(async (options: { check?: boolean; cli?: boolean; skills?: boolean }) => {
       const { check, cli, skills } = options
 
-      // 无选项：全量更新
+      // 无选项：全量更新（CLI 自动升级 + skill 同步）
       if (!check && !cli && !skills) {
-        const result = await checkNpmVersion()
-        printVersionInfo(result)
-        if (result.latest) {
-          console.log('')
-          upgradeTemplates(cliDir, process.cwd(), Object.keys(registry.skills))
-        } else {
-          console.log('')
-          console.log('跳过 skill 同步（版本检查失败时保留现有模板）')
-        }
+        await updateCLI()
+        console.log('')
+        upgradeTemplates(cliDir, process.cwd(), Object.keys(registry.skills))
         return
       }
 

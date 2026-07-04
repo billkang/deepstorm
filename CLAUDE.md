@@ -20,6 +20,7 @@ DeepStorm 是一套 AI 协同工具集，覆盖产品→开发→测试→运维
 - **featureId 格式**：`MODULE-FEATURE-SUBFEATURE`（全大写 + 连字符 + 可含数字）
 - **sessionId 格式**：`tide-YYYYMMDD-NNN`
 - **流程图约定**：所有流程图必须使用 **Mermaid** 语法（` ```mermaid `），禁止使用 ASCII 字符画流程图（` ```text `）
+- **需求讨论优先**：当用户输入需求、功能描述或变更意图时，必须先通过 `/deepstorm-discuss` 或 BMAD 相关 skill 进入需求讨论环节，将需求讨论清楚后再进入后续开发流程，不得跳过讨论直接进入实现
 
 ## 开发工作流
 

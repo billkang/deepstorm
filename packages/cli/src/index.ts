@@ -16,7 +16,7 @@ const program = new Command()
 program
   .name('deepstorm')
   .description('DeepStorm CLI — 一键配置项目开发环境')
-  .version(getCliVersion())
+  .version(getCliVersion(), '-v, --version', '输出版本号')
 
 // 运行时读取 dist/registry.json（由 build 命令生成，随 npm 包一同发布）
 function loadRegistry(): Registry {

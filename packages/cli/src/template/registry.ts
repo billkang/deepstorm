@@ -66,11 +66,11 @@ export function buildMcpCapabilities(
  * @returns 注入 tide_capabilities 后的模板变量映射
  */
 /**
- * 从 frontmatter 的 deepstormm.tool 字段推导模板变量名。
+ * 从 frontmatter 的 deepstorm.tool 字段推导模板变量名。
  * Tide → tide_capabilities, Reef → reef_capabilities, 未定义 → tide_capabilities（向后兼容）。
  */
 function deriveVariableName(frontmatter: Record<string, unknown>): string {
-  const deepstorm = frontmatter.deepstormm as Record<string, unknown> | undefined
+  const deepstorm = frontmatter.deepstorm as Record<string, unknown> | undefined
   const tool = deepstorm?.tool as string | undefined
   if (tool && /^[a-z_]+$/.test(tool)) {
     return `${tool}_capabilities`

@@ -4,7 +4,7 @@
  * DeepStorm CLI 构建工具 — 聚合 registry.json + 复制运行时数据到 dist/。
  * 被两个入口使用：
  *   1. npm run build（通过 node dist/build-registry.js 调用）
- *   2. deepstormm release build（直接 import 调用）
+ *   2. deepstorm release build（直接 import 调用）
  */
 
 import * as fs from 'node:fs'
@@ -175,12 +175,12 @@ export function buildRegistry(cliDir: string): void {
         continue
       }
 
-      if (!fm.deepstormm) {
-        console.log(`  - ${pkg}/${skillName}: 无 deepstormm 字段，跳过注册`)
+      if (!fm.deepstorm) {
+        console.log(`  - ${pkg}/${skillName}: 无 deepstorm 字段，跳过注册`)
         continue
       }
 
-      const df = fm.deepstormm as Record<string, unknown>
+      const df = fm.deepstorm as Record<string, unknown>
       const entry: SkillEntry = {
         tool: df.tool as string | undefined,
         configKey: df.configKey as string | undefined,
