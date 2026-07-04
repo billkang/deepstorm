@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.2.1] - 2026-07-05
+
+### Bug Fixes
+
+- 在 release skill 中添加构建时效性检查，防止发版漏执行 pnpm build (e8bf752)
+
+### Code Refactoring
+
+- 基于 v0.2.0 发版实践优化 deepstorm-release skill (d63f9b1)
+
 ## [0.2.0] - 2026-07-05
 
 ### Features
