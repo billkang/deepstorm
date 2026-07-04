@@ -190,10 +190,29 @@ git tag v{version}
 ```
 
 流程：
-1. **验证登录：** 先执行 `npm whoami`，如果未登录，提示用户运行 `npm login`
-2. **用户确认：** 输入 y/Y 才继续
-3. **npm publish：** 执行 `npm publish`（pre-release 时加 `--tag next`）
+
+> **先决条件：** 该项目 npm 认证通过 `.env` 中的 `NPM_TOKEN` 环境变量注入 `.npmrc`。沙箱（sandbox）默认无法读取环境变量，
+> 以下步骤需要关闭沙箱（`dangerouslyDisableSandbox: true`）或在命令中显式传递 token。
+
+1. **获取 NPM_TOKEN：** 从 `.env` 读取 token：
+   ```bash
+   grep NPM_TOKEN .env | cut -d'=' -f2-
+   ```
+   如果 .env 不存在或没有 NPM_TOKEN，提示用户先配置。
+
+2. **跳过重复构建：** Step 6 已执行过 `pnpm build`，使用 `--ignore-scripts` 避免 `prepublishOnly`/`prepack` 重复构建：
+   ```bash
+   cd packages/cli && npm publish --ignore-scripts --cache "$TMPDIR/npm-cache" --//registry.npmjs.org/:_authToken="$TOKEN"
+   ```
+   - `--ignore-scripts`：跳过 lifecycle scripts（prepublishOnly / prepack），否则会额外构建两次
+   - `--cache $TMPDIR/npm-cache`：避免 `~/.npm/_cacache` 的 EPERM 权限问题
+   - `--//registry.npmjs.org/:_authToken=...`：内联传递 token，绕过沙箱 env 限制
+
+3. **用户确认：** 输入 y/Y 才继续。发布时如果用户需要先登录，告知用户运行 `npm login`
+
 4. **git push：** 推送 commit 和 tag 到远程
+
+> **Pre-release 版本：** 使用 `--tag next` 替代 `--tag latest`，如 `0.2.0-beta.1`。用户确认发布时应在摘要中体现标签变化。
 
 **跳过私有包：** `"private": true` 的包不会发布。
 
@@ -218,8 +237,9 @@ git tag v{version}
 | 最新 tag | `git describe --tags --abbrev=0` |
 | 提交历史 | `git log --oneline <tag>..HEAD` |
 | 构建 | `pnpm build` |
-| 发布 | `npm publish`（正式）或 `npm publish --tag next`（pre-release） |
-| 验证 npm 登录 | `npm whoami` |
+| 发布 | `cd packages/cli && npm publish --ignore-scripts --cache "\$TMPDIR/npm-cache" --//registry.npmjs.org/:_authToken="\$TOKEN"`（正式）或加 `--tag next`（pre-release） |
+| 获取 NPM_TOKEN | `grep NPM_TOKEN .env \| cut -d'=' -f2-` |
+| 验证 npm 登录 | `npm whoami`（可能因 token 认证方式不工作） |
 | 推送 | `git push origin main --tags` |
 
 ## 常见错误
@@ -228,7 +248,10 @@ git tag v{version}
 |------|---------|
 | **工作区有脏文件** | Step 1 检查并中断。提示用户先 `git stash` 或提交当前工作 |
 | **构建失败** | Step 6 检查退出码。中止流程，不产生 commit，提示用户修复 |
-| **npm 未登录** | Step 8 检查 `npm whoami`。提示用户先执行 `npm login` |
+| **NPM_TOKEN 环境变量未设置** | Step 8 先 `grep NPM_TOKEN .env` 检查 token；若无 `.env` 文件或 token 为空，通知用户配置 |
+| **npm publish 重复构建（prepublishOnly + prepack 触发两次 build）** | Step 6 已构建过，Step 8 必须使用 `--ignore-scripts` 跳过 lifecycle scripts |
+| **缓存 EPERM（~/.npm/_cacache 被 root 占用）** | 使用 `--cache "$TMPDIR/npm-cache"` 指定临时缓存目录，而不是 `npm cache clean --force`（`sudo chown` 在沙箱中不可用） |
+| **沙箱无环境变量（sandbox 隔离）** | Step 8 需要使用 `dangerouslyDisableSandbox: true` 或内联传递 token（`--//registry.npmjs.org/:_authToken=...`） |
 | **git push 失败** | Step 8 提示用户手动 `git push origin main --tags` |
-| **npm publish 失败** | 版本已 commit + tag，提示用户手动重试 `npm publish` |
+| **npm publish 失败（认证错误）** | 版本已 commit + tag，提示用户 `cd packages/cli && NPM_TOKEN=$(grep NPM_TOKEN .env \| cut -d'=' -f2-) npm publish --ignore-scripts` |
 | **用户取消发布** | 版本变更和 CHANGELOG 已写入但未 publish。提示后续手动 publish 或 git push |
