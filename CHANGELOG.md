@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.2.0] - 2026-07-05
+
+### Features
+
+- 新增 React + Vue 前端变体支持，扩展 DeepStorm 前端技术栈覆盖 (55c08f0)
+
 ## [0.1.0] - 2026-07-04
 
 ### Initial Release
