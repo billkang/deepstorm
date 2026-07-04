@@ -166,7 +166,21 @@ pnpm build
 
 > **注意：** 构建在 commit 之前执行。如果构建失败，不会产生任何 git 提交。
 
+**构建后验证：** 确认 `dist/registry.json` 的修改时间不早于 `packages/*/wizard.json`：
+
+```bash
+ls -l packages/cli/dist/registry.json packages/reef/wizard.json
+# dist/registry.json 应比 wizard.json 更新（或同时），否则说明构建未执行
+bash -c '[[ packages/cli/dist/registry.json -nt packages/reef/wizard.json ]] && echo "✅ registry 已更新" || echo "❌ dist/registry.json 比源文件旧，请先执行 pnpm build"'
+```
+
 ### Step 7: Release Commit + Tag
+
+> **⚠️ 前置检查：** 提交前再次确认 `dist/` 已是最新构建产物：
+> ```bash
+> bash -c '[[ packages/cli/dist/registry.json -nt packages/reef/wizard.json ]] && echo "✅ registry 最新" || echo "❌ 构建已过时！运行 pnpm build 后再提交"'
+> ```
+> 如果输出 ❌，回到 Step 6 重新构建。
 
 ```bash
 git add .
