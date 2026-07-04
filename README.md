@@ -160,7 +160,7 @@ npx @deepstorm/cli setup
 | `npx @deepstorm/cli template list` | 模板列表 | 查看所有可用 skill 模板 |
 | `npx @deepstorm/cli template init` | 导出模板 | 导出 skill 默认内容供用户修改 |
 | `npx @deepstorm/cli template apply` | 应用模板 | 将用户修改的模板应用到 `.claude/skills/` |
-| `npx @deepstorm/cli template upgrade` | 同步模板 | 同步官方最新版本（不覆盖用户修改） |
+| `npx @deepstorm/cli update` | 全量更新 | 检查 CLI 版本 + 同步已安装 skill 官方最新模板 |
 | `npx @deepstorm/cli plugin build` | 构建插件 | 交互式构建 DeepStorm Claude Code 插件 |
 | `npx @deepstorm/cli doctor` | 诊断 | 检查 CLI 配置、MCP 完整性等 |
 | `npx @deepstorm/cli uninstall` | 卸载 | 清除所有 DeepStorm 生成的内容 |

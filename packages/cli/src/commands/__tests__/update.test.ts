@@ -14,10 +14,8 @@ vi.mock('../template-upgrade', () => ({
   upgradeTemplates: vi.fn(),
 }))
 
-import { checkNpmVersion, updateCLI, updateSkills, registerUpdateCommand } from '../update'
-import { upgradeTemplates } from '../template-upgrade'
+import { checkNpmVersion, updateCLI, registerUpdateCommand } from '../update'
 import { Command } from 'commander'
-import type { Registry } from '../../types/registry'
 
 describe('checkNpmVersion', () => {
   beforeEach(() => {
@@ -187,73 +185,19 @@ describe('updateCLI', () => {
   })
 })
 
-describe('updateSkills', () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
-  })
-
-  it('应委托 upgradeTemplates', () => {
-    const mockUpgrade = vi.mocked(upgradeTemplates)
-    const skillIds = ['tide-core', 'reef-lint']
-
-    updateSkills('/cli/dir', '/project/dir', skillIds)
-
-    expect(mockUpgrade).toHaveBeenCalledWith('/cli/dir', '/project/dir', skillIds)
-  })
-})
-
 describe('registerUpdateCommand', () => {
   let program: Command
-  const registry: Registry = {
-    version: '1',
-    tools: {},
-    wizards: {},
-    skills: {
-      'tide-core': { tool: 'tide', configKey: 'x', configValue: 'y' },
-      'reef-lint': { tool: 'reef', configKey: 'a', configValue: 'b' },
-    },
-  }
 
   beforeEach(() => {
     vi.clearAllMocks()
     program = new Command()
-    registerUpdateCommand(program, registry)
+    registerUpdateCommand(program)
   })
 
-  it('应注册 update 命令', () => {
+  it('应注册 update 命令且无子选项', () => {
     const cmd = program.commands.find((c) => c.name() === 'update')
     expect(cmd).toBeDefined()
-    expect(cmd!.description()).toBe('检查更新并同步 skill 模板')
-  })
-
-  it('应支持 --check 选项', () => {
-    const cmd = program.commands.find((c) => c.name() === 'update')!
-    const opts = cmd.options.map((o) => o.long)
-    expect(opts).toContain('--check')
-  })
-
-  it('应支持 --cli 选项', () => {
-    const cmd = program.commands.find((c) => c.name() === 'update')!
-    const opts = cmd.options.map((o) => o.long)
-    expect(opts).toContain('--cli')
-  })
-
-  it('应支持 --skills 选项', () => {
-    const cmd = program.commands.find((c) => c.name() === 'update')!
-    const opts = cmd.options.map((o) => o.long)
-    expect(opts).toContain('--skills')
-  })
-
-  it('--skills 无 skill 时应输出提示', async () => {
-    const emptyRegistry: Registry = { version: '1', tools: {}, wizards: {}, skills: {} }
-    const emptyProgram = new Command()
-    registerUpdateCommand(emptyProgram, emptyRegistry)
-
-    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
-    const cmd = emptyProgram.commands.find((c) => c.name() === 'update')!
-    await cmd.parseAsync(['node', 'test', '--skills'])
-    expect(logSpy).toHaveBeenCalledWith('registry 中无已注册 skill')
-    expect(upgradeTemplates).not.toHaveBeenCalled()
-    logSpy.mockRestore()
+    expect(cmd!.description()).toBe('检查 CLI 更新并同步已安装 skill 的官方最新模板')
+    expect(cmd!.options).toHaveLength(0)
   })
 })

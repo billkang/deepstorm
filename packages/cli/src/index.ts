@@ -34,7 +34,7 @@ registerSetupCommand(program, registry)
 registerPluginBuildCommand(program, registry)
 registerConfigCommand(program, registry)
 registerTemplateCommand(program, registry)
-registerUpdateCommand(program, registry)
+registerUpdateCommand(program)
 
 program
   .command('doctor')

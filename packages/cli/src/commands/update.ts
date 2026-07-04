@@ -1,8 +1,9 @@
 import { Command } from 'commander'
+import * as fs from 'node:fs'
+import * as path from 'node:path'
 import { execSync } from 'node:child_process'
 import { getCliVersion } from '../utils/version'
 import { upgradeTemplates } from './template-upgrade'
-import type { Registry } from '../types/registry'
 
 export interface NpmVersionResult {
   /** 本地当前版本号 */
@@ -103,82 +104,38 @@ export async function updateCLI(fetchFn?: typeof fetch): Promise<void> {
 }
 
 /**
- * 同步 skill 模板（委托 upgradeTemplates）。
+ * 从 .claude/settings.json 读取已安装的 skill ID 列表。
+ * 仅在 `deepstorm.setup` 时写入 installedSkills，update 命令以此判断哪些是用户已安装的内容。
  */
-export function updateSkills(
-  cliDir: string,
-  targetDir: string,
-  skillIds: string[],
-): void {
-  upgradeTemplates(cliDir, targetDir, skillIds)
+function getInstalledSkillIds(targetDir: string): string[] {
+  const settingsPath = path.join(targetDir, '.claude', 'settings.json')
+  try {
+    const raw = fs.readFileSync(settingsPath, 'utf-8')
+    const settings = JSON.parse(raw)
+    return settings.deepstorm?.installedSkills ?? []
+  } catch {
+    return []
+  }
 }
 
 /**
- * 注册 update 子命令树。
- *   deepstorm update            全量更新（CLI 检查 + skill 同步）
- *   deepstorm update --check    仅检查版本
- *   deepstorm update --cli      仅更新 CLI
- *   deepstorm update --skills   仅同步 skill 模板
+ * 注册 update 子命令。
+ *  deepstorm update    全量更新：CLI 版本检查 + CLI 自身更新 + 已安装 skill 模板同步
  */
-export function registerUpdateCommand(program: Command, registry: Registry): void {
+export function registerUpdateCommand(program: Command): void {
   const cliDir = __dirname
 
-  const updateCmd = program
+  program
     .command('update')
-    .description('检查更新并同步 skill 模板')
-
-  updateCmd
-    .option('--check', '仅检查 npm 最新版本')
-    .option('--cli', '更新 CLI 自身')
-    .option('--skills', '同步 skill 模板到本地')
-    .action(async (options: { check?: boolean; cli?: boolean; skills?: boolean }) => {
-      const { check, cli, skills } = options
-
-      // 无选项：全量更新（CLI 自动升级 + skill 同步）
-      if (!check && !cli && !skills) {
-        await updateCLI()
-        console.log('')
-        upgradeTemplates(cliDir, process.cwd(), Object.keys(registry.skills))
-        return
-      }
-
-      if (check) {
-        const result = await checkNpmVersion()
-        printVersionInfo(result)
-        if (result.error) process.exit(1)
-        return
-      }
-
-      if (cli) {
-        await updateCLI()
-        return
-      }
-
-      if (skills) {
-        const skillIds = Object.keys(registry.skills)
-        if (skillIds.length === 0) {
-          console.log('registry 中无已注册 skill')
-          return
-        }
-        updateSkills(cliDir, process.cwd(), skillIds)
-        return
+    .description('检查 CLI 更新并同步已安装 skill 的官方最新模板')
+    .action(async () => {
+      await updateCLI()
+      console.log('')
+      const installedIds = getInstalledSkillIds(process.cwd())
+      if (installedIds.length === 0) {
+        console.log('未检测到已安装的 skill，跳过同步')
+      } else {
+        upgradeTemplates(cliDir, process.cwd(), installedIds)
       }
     })
-}
-
-function printVersionInfo(result: NpmVersionResult): void {
-  if (result.error) {
-    console.log(`⚠ 无法检查更新：${result.error}`)
-    return
-  }
-
-  console.log(`✔ 当前版本: v${result.current}`)
-  console.log(`✔ 最新版本: v${result.latest}`)
-
-  if (result.hasUpdate) {
-    console.log('')
-    console.log('→ 有新版本可用！运行 "deepstorm update --cli" 更新')
-  } else {
-    console.log('✓ 已是最新版本')
-  }
 }
