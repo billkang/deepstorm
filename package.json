@@ -1,0 +1,14 @@
+{
+  "name": "deepstorm",
+  "version": "0.1.0",
+  "private": true,
+  "description": "DeepStorm — Spec 驱动的 AI 协同软件工程实践工具集",
+  "scripts": {
+    "build": "pnpm --filter @deepstorm/cli build",
+    "cli": "node packages/cli/dist/cli.js",
+    "build:plugin": "pnpm build && pnpm cli plugin build",
+    "playground:setup": "bash playground/scripts/setup.sh",
+    "test": "pnpm -r test"
+  },
+  "devDependencies": {}
+}

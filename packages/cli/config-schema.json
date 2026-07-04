@@ -1,0 +1,133 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "DeepStorm Configuration Schema",
+  "description": "定义所有合法的 DeepStorm 配置 key 和结构",
+  "type": "object",
+  "properties": {
+    "tide": {
+      "type": "object",
+      "description": "产品侧配置",
+      "properties": {
+        "issueTracker": {
+          "type": "string",
+          "enum": ["jira", "none"],
+          "description": "Issue 跟踪系统"
+        }
+      },
+      "additionalProperties": false
+    },
+    "reef": {
+      "type": "object",
+      "description": "开发侧配置",
+      "properties": {
+        "frontend": {
+          "type": "object",
+          "properties": {
+            "framework": {
+              "type": "string",
+              "enum": ["angular", "none"],
+              "description": "前端框架"
+            },
+            "tsConfig": {
+              "type": "string",
+              "enum": ["strict", "standard", "none"],
+              "description": "TypeScript 配置模式"
+            },
+            "css": {
+              "type": "string",
+              "enum": ["tailwind", "none"],
+              "description": "CSS 方案"
+            },
+            "test": {
+              "type": "string",
+              "enum": ["vitest", "none"],
+              "description": "前端测试框架"
+            }
+          },
+          "additionalProperties": false
+        },
+        "backend": {
+          "type": "object",
+          "properties": {
+            "language": {
+              "type": "string",
+              "enum": ["java", "none"],
+              "description": "后端语言"
+            },
+            "java": {
+              "type": "object",
+              "description": "Java 子维度",
+              "properties": {
+                "framework": {
+                  "type": "string",
+                  "enum": ["spring-boot", "none"],
+                  "description": "Java Web 框架"
+                },
+                "orm": {
+                  "type": "string",
+                  "enum": ["hibernate", "none"],
+                  "description": "ORM 框架"
+                },
+                "dbMigration": {
+                  "type": "string",
+                  "enum": ["liquibase", "none"],
+                  "description": "数据库迁移工具"
+                },
+                "ai": {
+                  "type": "string",
+                  "enum": ["spring-ai", "none"],
+                  "description": "AI 框架"
+                },
+                "test": {
+                  "type": "string",
+                  "enum": ["junit5", "none"],
+                  "description": "单元测试框架"
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "sweep": {
+      "type": "object",
+      "description": "测试侧配置",
+      "properties": {
+        "ciProvider": {
+          "type": "string",
+          "enum": ["github-actions", "gitlab-ci", "jenkins", "none"],
+          "description": "CI 提供商"
+        }
+      },
+      "additionalProperties": false
+    },
+    "atoll": {
+      "type": "object",
+      "description": "运维侧配置",
+      "properties": {
+        "deployTarget": {
+          "type": "string",
+          "enum": ["kubernetes", "docker", "serverless", "none"],
+          "description": "部署目标"
+        }
+      },
+      "additionalProperties": false
+    },
+    "mcp": {
+      "type": "object",
+      "description": "MCP 基础设施配置",
+      "properties": {
+        "installedMcpServers": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "已安装的 MCP 服务名列表"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

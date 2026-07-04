@@ -1,0 +1,13 @@
+{
+  "name": "playwright",
+  "domain": "e2e-testing",
+  "label": "Playwright",
+  "description": "浏览器自动化 E2E 测试 — 通过 Playwright MCP 操作浏览器执行测试步骤",
+  "mcpServers": {
+    "playwright": {
+      "type": "sse",
+      "url": "http://localhost:54321/sse"
+    }
+  },
+  "mcpSkills": ["deepstorm-mcp-playwright-read"]
+}

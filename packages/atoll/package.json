@@ -1,0 +1,24 @@
+{
+  "name": "@deepstorm/atoll",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "DeepStorm 运维侧套件 — 部署辅助、监控查询、故障排查",
+  "license": "MIT",
+  "author": "billkang",
+  "keywords": [
+    "deepstorm",
+    "deployment",
+    "monitoring",
+    "incident-response",
+    "devops"
+  ],
+  "scripts": {},
+  "files": [
+    "skills/",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "restricted"
+  }
+}

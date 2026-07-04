@@ -1,0 +1,593 @@
+{
+  "tool": "reef",
+  "label": "开发侧",
+  "description": "规范生成、代码实现",
+  "mcpSkills": [
+    "deepstorm-mcp-jira-read",
+    "deepstorm-mcp-feishu-wiki-read",
+    "deepstorm-mcp-figma-read"
+  ],
+  "questions": [
+    {
+      "key": "reef.techs",
+      "label": "技术选型",
+      "description": "选择需要配置的技术领域",
+      "type": "multiselect",
+      "options": [
+        {
+          "value": "frontend",
+          "label": "前端技术选型",
+          "template": {},
+          "affectedTemplates": []
+        },
+        {
+          "value": "backend",
+          "label": "后端技术选型",
+          "template": {},
+          "affectedTemplates": []
+        }
+      ]
+    },
+    {
+      "key": "reef.frontend.details",
+      "label": "前端技术选型",
+      "description": "前端技术栈细节配置",
+      "type": "group",
+      "dependsOn": { "key": "reef.techs", "value": "frontend", "contains": true },
+      "questions": [
+        {
+          "key": "reef.frontend.framework",
+          "label": "框架",
+          "type": "select",
+          "options": [
+            {
+              "value": "angular",
+              "label": "Angular",
+              "template": {
+                "label": "Angular 21 + TypeScript + Signal + PrimeNG + Tailwind CSS 4",
+                "buildTool": "pnpm:*",
+                "formatCmd": "pnpm",
+                "fileExt": "*.component.ts / *.service.ts / *.ts",
+                "sourcePath": "src/main/web/",
+                "styleRef": "→ 参考 [Angular 前端速查](quick-reference.md)"
+              },
+              "affectedTemplates": [
+                "skills/reef-style-frontend/SKILL.md.tmpl",
+                "agents/reef-review-frontend.md.tmpl",
+                "skills/reef-review/SKILL.md.tmpl",
+                "skills/reef-gen-frontend/SKILL.md.tmpl"
+              ]
+            },
+            {
+              "value": "none",
+              "label": "不选择",
+              "template": {
+                "label": "",
+                "buildTool": "",
+                "formatCmd": "",
+                "fileExt": "",
+                "sourcePath": "",
+                "styleRef": ""
+              },
+              "affectedTemplates": [
+                "skills/reef-style-frontend/SKILL.md.tmpl",
+                "agents/reef-review-frontend.md.tmpl",
+                "skills/reef-review/SKILL.md.tmpl",
+                "skills/reef-gen-frontend/SKILL.md.tmpl"
+              ]
+            }
+          ]
+        },
+        {
+          "key": "reef.frontend.uiLibrary",
+          "label": "UI 组件库",
+          "type": "select",
+          "dependsOn": { "key": "reef.frontend.framework", "value": "angular" },
+          "options": [
+            {
+              "value": "primeng",
+              "label": "PrimeNG",
+              "template": {
+                "styleRef": "→ 参考 [PrimeNG 规范](primeng.md)"
+              },
+              "affectedTemplates": [
+                "skills/reef-style-frontend/SKILL.md.tmpl"
+              ],
+              "fragments": ["ui-lib/primeng"]
+            },
+            {
+              "value": "none",
+              "label": "不使用 UI 组件库",
+              "template": { "styleRef": "" },
+              "affectedTemplates": [
+                "skills/reef-style-frontend/SKILL.md.tmpl"
+              ]
+            }
+          ]
+        },
+        {
+          "key": "reef.frontend.tsConfig",
+          "label": "TypeScript",
+          "type": "select",
+          "options": [
+            {
+              "value": "strict",
+              "label": "严格模式",
+              "template": {
+                "styleRef": "→ 参考 [TypeScript Strict 规范](strict.md)"
+              },
+              "affectedTemplates": [
+                "skills/reef-style-frontend/SKILL.md.tmpl"
+              ],
+              "fragments": ["ts-config/strict"]
+            },
+            {
+              "value": "standard",
+              "label": "标准模式",
+              "template": { "styleRef": "" },
+              "affectedTemplates": [
+                "skills/reef-style-frontend/SKILL.md.tmpl"
+              ]
+            },
+            {
+              "value": "none",
+              "label": "不配置",
+              "template": { "styleRef": "" },
+              "affectedTemplates": [
+                "skills/reef-style-frontend/SKILL.md.tmpl"
+              ]
+            }
+          ]
+        },
+        {
+          "key": "reef.frontend.css",
+          "label": "CSS",
+          "type": "select",
+          "options": [
+            {
+              "value": "tailwind",
+              "label": "Tailwind CSS",
+              "template": {
+                "styleRef": "→ 参考 [Tailwind CSS 规范](tailwind.md)"
+              },
+              "affectedTemplates": [
+                "skills/reef-style-frontend/SKILL.md.tmpl"
+              ],
+              "fragments": ["css/tailwind"]
+            },
+            {
+              "value": "none",
+              "label": "不使用",
+              "template": { "styleRef": "" },
+              "affectedTemplates": [
+                "skills/reef-style-frontend/SKILL.md.tmpl"
+              ]
+            }
+          ]
+        },
+        {
+          "key": "reef.frontend.test",
+          "label": "单元测试",
+          "type": "select",
+          "options": [
+            {
+              "value": "vitest",
+              "label": "Vitest",
+              "template": {
+                "styleRef": "→ 参考 [Vitest 规范](vitest.md)"
+              },
+              "affectedTemplates": [
+                "skills/reef-style-frontend/SKILL.md.tmpl"
+              ],
+              "fragments": ["test/vitest"]
+            },
+            {
+              "value": "none",
+              "label": "不使用",
+              "template": { "styleRef": "" },
+              "affectedTemplates": [
+                "skills/reef-style-frontend/SKILL.md.tmpl"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "reef.backend.language",
+      "label": "后端语言",
+      "description": "项目使用的后端技术栈",
+      "type": "select",
+      "dependsOn": { "key": "reef.techs", "value": "backend", "contains": true },
+      "options": [
+        {
+          "value": "java",
+          "label": "Java",
+          "template": {
+            "label": "Spring Boot 3.5 + Java 25",
+            "buildTool": "./gradlew:*",
+            "formatCmd": "./gradlew",
+            "fileExt": "*.java",
+            "sourcePath": "src/main/java/ src/test/java/",
+            "styleRef": "→ 参考 [Java 后端速查](quick-reference.md)"
+          },
+          "affectedTemplates": [
+            "skills/reef-style-backend/SKILL.md.tmpl",
+            "agents/reef-review-backend.md.tmpl",
+            "skills/reef-review/SKILL.md.tmpl",
+            "skills/reef-gen-backend/SKILL.md.tmpl"
+          ],
+          "fragments": ["java/api-spec", "java/dependency-management", "java/exception-handling", "java/security-redlines"]
+        },
+        {
+          "value": "python",
+          "label": "Python / FastAPI",
+          "template": {
+            "label": "FastAPI + Python 3.10+",
+            "buildTool": "uv:*",
+            "formatCmd": "ruff",
+            "fileExt": "*.py",
+            "sourcePath": "app/ tests/",
+            "styleRef": "→ 参考 [Python FastAPI 后瑞速查](quick-reference.md)",
+            "isPython": "true"
+          },
+          "affectedTemplates": [
+            "skills/reef-style-backend/SKILL.md.tmpl",
+            "agents/reef-review-backend.md.tmpl",
+            "skills/reef-review/SKILL.md.tmpl",
+            "skills/reef-gen-backend/SKILL.md.tmpl"
+          ],
+          "fragments": ["python/api-spec", "python/dependency-management", "python/exception-handling", "python/security-redlines"]
+        },
+        {
+          "value": "none",
+          "label": "不使用后端",
+          "template": {
+            "label": "不使用后端",
+            "buildTool": "",
+            "formatCmd": "",
+            "fileExt": "",
+            "sourcePath": "",
+            "styleRef": ""
+          },
+          "affectedTemplates": [
+            "skills/reef-style-backend/SKILL.md.tmpl",
+            "agents/reef-review-backend.md.tmpl",
+            "skills/reef-review/SKILL.md.tmpl",
+            "skills/reef-gen-backend/SKILL.md.tmpl"
+          ]
+        }
+      ]
+    },
+    {
+      "key": "reef.backend.java.details",
+      "label": "Java 框架选型",
+      "description": "选择需要使用的 Java 框架和技术",
+      "type": "group",
+      "dependsOn": { "key": "reef.backend.language", "value": "java" },
+      "questions": [
+        {
+          "key": "reef.backend.java.framework",
+          "label": "Web 框架",
+          "type": "select",
+          "options": [
+            {
+              "value": "spring-boot",
+              "label": "Spring Boot",
+              "template": {
+                "styleRef": "→ 参考 [Spring Boot 规范](spring-boot.md)"
+              },
+              "affectedTemplates": [
+                "skills/reef-style-backend/SKILL.md.tmpl"
+              ],
+              "fragments": ["java/framework/spring-boot", "java/test/spring-mvc-test", "java/test/spring-service-test"]
+            },
+            {
+              "value": "none",
+              "label": "不使用",
+              "template": {},
+              "affectedTemplates": [
+                "skills/reef-style-backend/SKILL.md.tmpl"
+              ]
+            }
+          ]
+        },
+        {
+          "key": "reef.backend.java.orm",
+          "label": "ORM",
+          "type": "select",
+          "options": [
+            {
+              "value": "hibernate",
+              "label": "Hibernate / JPA",
+              "template": {
+                "styleRef": "→ 参考 [Hibernate 规范](hibernate.md)"
+              },
+              "affectedTemplates": [
+                "skills/reef-style-backend/SKILL.md.tmpl"
+              ],
+              "fragments": ["java/orm/hibernate", "java/test/data-jpa-test"]
+            },
+            {
+              "value": "none",
+              "label": "不使用",
+              "template": {},
+              "affectedTemplates": [
+                "skills/reef-style-backend/SKILL.md.tmpl"
+              ]
+            }
+          ]
+        },
+        {
+          "key": "reef.backend.java.dbMigration",
+          "label": "数据库迁移",
+          "type": "select",
+          "options": [
+            {
+              "value": "liquibase",
+              "label": "Liquibase",
+              "template": {
+                "styleRef": "→ 参考 [Liquibase 规范](liquibase.md)"
+              },
+              "affectedTemplates": [
+                "skills/reef-style-backend/SKILL.md.tmpl"
+              ],
+              "fragments": ["java/db-migration/liquibase"]
+            },
+            {
+              "value": "none",
+              "label": "不使用",
+              "template": {},
+              "affectedTemplates": [
+                "skills/reef-style-backend/SKILL.md.tmpl"
+              ]
+            }
+          ]
+        },
+        {
+          "key": "reef.backend.java.ai",
+          "label": "AI 集成",
+          "type": "select",
+          "options": [
+            {
+              "value": "spring-ai",
+              "label": "Spring AI",
+              "template": {
+                "styleRef": "→ 参考 [Spring AI 规范](spring-ai.md)"
+              },
+              "affectedTemplates": [
+                "skills/reef-style-backend/SKILL.md.tmpl"
+              ],
+              "fragments": ["java/ai/spring-ai"]
+            },
+            {
+              "value": "none",
+              "label": "不使用",
+              "template": {},
+              "affectedTemplates": [
+                "skills/reef-style-backend/SKILL.md.tmpl"
+              ]
+            }
+          ]
+        },
+        {
+          "key": "reef.backend.java.test",
+          "label": "单元测试",
+          "type": "select",
+          "options": [
+            {
+              "value": "junit5",
+              "label": "JUnit 5",
+              "template": {
+                "styleRef": "→ 参考 [JUnit5 规范](junit5.md)、[Spring MVC Test](spring-mvc-test.md)、[Spring Service Test](spring-service-test.md)、[DataJPA Test](data-jpa-test.md)"
+              },
+              "affectedTemplates": [
+                "skills/reef-style-backend/SKILL.md.tmpl"
+              ],
+              "fragments": ["java/test/junit5"]
+            },
+            {
+              "value": "none",
+              "label": "不使用",
+              "template": {},
+              "affectedTemplates": [
+                "skills/reef-style-backend/SKILL.md.tmpl"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "reef.backend.python.details",
+      "label": "Python 框架选型",
+      "description": "选择需要使用的 Python 框架和技术",
+      "type": "group",
+      "dependsOn": { "key": "reef.backend.language", "value": "python" },
+      "questions": [
+        {
+          "key": "reef.backend.python.framework",
+          "label": "Web 框架",
+          "type": "select",
+          "options": [
+            {
+              "value": "fastapi",
+              "label": "FastAPI",
+              "template": {
+                "styleRef": "→ 参考 [FastAPI 规范](fastapi-quick-reference.md)"
+              },
+              "affectedTemplates": [
+                "skills/reef-style-backend/SKILL.md.tmpl"
+              ],
+              "fragments": ["python/fastapi-quick-reference"]
+            },
+            {
+              "value": "none",
+              "label": "不使用",
+              "template": {},
+              "affectedTemplates": [
+                "skills/reef-style-backend/SKILL.md.tmpl"
+              ]
+            }
+          ]
+        },
+        {
+          "key": "reef.backend.python.orm",
+          "label": "ORM",
+          "type": "select",
+          "options": [
+            {
+              "value": "sqlalchemy",
+              "label": "SQLAlchemy",
+              "template": {
+                "styleRef": "→ 参考 [SQLAlchemy 规范](sqlalchemy-orm.md)"
+              },
+              "affectedTemplates": [
+                "skills/reef-style-backend/SKILL.md.tmpl"
+              ],
+              "fragments": ["python/sqlalchemy-orm"]
+            },
+            {
+              "value": "none",
+              "label": "不使用",
+              "template": {},
+              "affectedTemplates": [
+                "skills/reef-style-backend/SKILL.md.tmpl"
+              ]
+            }
+          ]
+        },
+        {
+          "key": "reef.backend.python.dbMigration",
+          "label": "数据库迁移",
+          "type": "select",
+          "options": [
+            {
+              "value": "alembic",
+              "label": "Alembic",
+              "template": {
+                "styleRef": "→ 参考 [Alembic 规范](alembic-migration.md)"
+              },
+              "affectedTemplates": [
+                "skills/reef-style-backend/SKILL.md.tmpl"
+              ],
+              "fragments": ["python/alembic-migration"]
+            },
+            {
+              "value": "none",
+              "label": "不使用",
+              "template": {},
+              "affectedTemplates": [
+                "skills/reef-style-backend/SKILL.md.tmpl"
+              ]
+            }
+          ]
+        },
+        {
+          "key": "reef.backend.python.ai",
+          "label": "AI 集成",
+          "type": "select",
+          "options": [
+            {
+              "value": "langchain",
+              "label": "LangChain",
+              "template": {
+                "styleRef": "→ 参考 [LangChain 规范](langchain/quick-reference.md)"
+              },
+              "affectedTemplates": [
+                "skills/reef-style-backend/SKILL.md.tmpl"
+              ],
+              "fragments": ["python/langchain"]
+            },
+            {
+              "value": "none",
+              "label": "不使用",
+              "template": {},
+              "affectedTemplates": [
+                "skills/reef-style-backend/SKILL.md.tmpl"
+              ]
+            }
+          ]
+        },
+        {
+          "key": "reef.backend.python.test",
+          "label": "单元测试",
+          "type": "select",
+          "options": [
+            {
+              "value": "pytest",
+              "label": "pytest",
+              "template": {
+                "styleRef": "→ 参考 [pytest 规范](pytest-testing.md)"
+              },
+              "affectedTemplates": [
+                "skills/reef-style-backend/SKILL.md.tmpl"
+              ],
+              "fragments": ["python/pytest-testing"]
+            },
+            {
+              "value": "none",
+              "label": "不使用",
+              "template": {},
+              "affectedTemplates": [
+                "skills/reef-style-backend/SKILL.md.tmpl"
+              ]
+            }
+          ]
+        },
+        {
+          "key": "reef.backend.python.typeChecker",
+          "label": "类型检查",
+          "type": "select",
+          "options": [
+            {
+              "value": "mypy",
+              "label": "mypy",
+              "template": {
+                "styleRef": "→ 参考 [ruff + mypy 工具链规范](ruff-mypy-toolchain.md)"
+              },
+              "affectedTemplates": [
+                "skills/reef-style-backend/SKILL.md.tmpl"
+              ],
+              "fragments": ["python/ruff-mypy-toolchain"]
+            },
+            {
+              "value": "none",
+              "label": "不使用",
+              "template": {},
+              "affectedTemplates": [
+                "skills/reef-style-backend/SKILL.md.tmpl"
+              ]
+            }
+          ]
+        },
+        {
+          "key": "reef.backend.python.formatter",
+          "label": "代码格式化",
+          "type": "select",
+          "options": [
+            {
+              "value": "ruff",
+              "label": "ruff",
+              "template": {
+                "styleRef": "→ 参考 [ruff + mypy 工具链规范](ruff-mypy-toolchain.md)"
+              },
+              "affectedTemplates": [
+                "skills/reef-style-backend/SKILL.md.tmpl"
+              ],
+              "fragments": ["python/ruff-mypy-toolchain"]
+            },
+            {
+              "value": "none",
+              "label": "不使用",
+              "template": {},
+              "affectedTemplates": [
+                "skills/reef-style-backend/SKILL.md.tmpl"
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

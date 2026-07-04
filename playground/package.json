@@ -1,0 +1,16 @@
+{
+  "name": "deepstorm-playground",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "bash scripts/start-dev.sh",
+    "setup:all": "bash scripts/setup-all.sh",
+    "setup:tide": "bash scripts/setup-tide.sh",
+    "setup:reef": "bash scripts/setup-reef.sh",
+    "setup:sweep": "bash scripts/setup-sweep.sh",
+    "setup:atoll": "bash scripts/setup-atoll.sh",
+    "e2e:install": "cd e2e && npm install",
+    "e2e:test": "cd e2e && npx playwright test",
+    "e2e:report": "cd e2e && npx playwright show-report flows/reports"
+  }
+}

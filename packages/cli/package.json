@@ -1,0 +1,40 @@
+{
+  "name": "@deepstorm/cli",
+  "version": "0.1.0",
+  "description": "DeepStorm CLI — 一键配置项目开发环境",
+  "license": "MIT",
+  "author": "billkang",
+  "bin": {
+    "deepstorm": "./dist/cli.js"
+  },
+  "files": [
+    "dist/"
+  ],
+  "scripts": {
+    "build": "node scripts/build.mjs && node dist/build-registry.js",
+    "publish": "node scripts/publish.mjs",
+    "test": "vitest run --coverage",
+    "prepublishOnly": "npm run build",
+    "prepack": "npm run build"
+  },
+  "dependencies": {
+    "@clack/prompts": "^0.9.0",
+    "commander": "^12.0.0",
+    "dotenv": "^17.4.2",
+    "handlebars": "^4.7.8",
+    "js-yaml": "^4.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@vitest/coverage-v8": "^4.1.0",
+    "esbuild": "^0.28.1",
+    "lightningcss": "^1.32.0",
+    "lightningcss-darwin-arm64": "^1.32.0",
+    "typescript": "^5.6.0",
+    "vite": "^8.0.16",
+    "vitest": "^4.1.9"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

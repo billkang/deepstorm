@@ -1,0 +1,19 @@
+{
+  "name": "figma",
+  "domain": "design-tools",
+  "label": "Figma",
+  "description": "原型设计与协作",
+  "envStubs": [
+    {
+      "key": "FIGMA_API_KEY",
+      "comment": "Figma Access Token — 从 Figma > Settings > Personal Access Tokens 获取"
+    }
+  ],
+  "mcpServers": {
+    "figma": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "dotenv-cli", "-e", ".env", "--", "npx", "-y", "figma-developer-mcp", "--stdio"]
+    }
+  }
+}

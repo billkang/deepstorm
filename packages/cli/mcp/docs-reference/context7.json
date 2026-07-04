@@ -1,0 +1,28 @@
+{
+  "name": "context7",
+  "domain": "docs-reference",
+  "label": "Context7",
+  "description": "库/框架文档实时查询 — React、Next.js、Angular、Prisma、Django 等",
+  "envStubs": [
+    {
+      "key": "CONTEXT7_API_KEY",
+      "comment": "Context7 API Key（ctx7sk_ 开头）— 从 https://context7.com/dashboard 获取"
+    }
+  ],
+  "mcpServers": {
+    "context7": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "dotenv-cli",
+        "-e",
+        ".env",
+        "--",
+        "npx",
+        "-y",
+        "@upstash/context7-mcp"
+      ]
+    }
+  }
+}

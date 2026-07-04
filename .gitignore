@@ -1,0 +1,14 @@
+.claude/settings.local.json
+.claude/skills/bmad-*
+.env
+.DS_Store
+.pnpm-store
+node_modules/
+
+# BMAD Method
+_bmad/
+
+.deepstorm/
+tide-data/
+packages/cli/dist/
+packages/cli/coverage/

@@ -1,0 +1,1163 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DeepStorm — Spec 驱动的 AI 协同软件工程实践</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Noto+Sans+SC:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#faf8f6;
+  --bg-alt:#f5f2ef;
+  --surface:#ffffff;
+  --surface-hover:#fefcfb;
+  --deepstorm-600:#e85a3a;
+  --deepstorm-500:#ff6b4a;
+  --deepstorm-400:#ff7f5e;
+  --deepstorm-300:#ffa68a;
+  --deepstorm-200:#ffc8b8;
+  --deepstorm-100:#ffe8e0;
+  --deepstorm-50:#fff5f0;
+  --teal-500:#14b8a6;
+  --teal-400:#2dd4bf;
+  --teal-100:#ccfbf1;
+  --teal-50:#f0fdfa;
+  --gold-500:#d97706;
+  --gold-400:#f59e0b;
+  --gold-100:#fef3c7;
+  --gold-50:#fffbeb;
+  --indigo-500:#6366f1;
+  --indigo-400:#818cf8;
+  --indigo-100:#e0e7ff;
+  --indigo-50:#eef2ff;
+  --green-600:#16a34a;
+  --green-100:#dcfce7;
+  --text:#1c1917;
+  --text-80:rgba(28,25,23,0.8);
+  --text-60:rgba(28,25,23,0.6);
+  --text-40:rgba(28,25,23,0.35);
+  --text-20:rgba(28,25,23,0.12);
+  --text-10:rgba(28,25,23,0.06);
+  --text-05:rgba(28,25,23,0.03);
+  --radius-outer:2rem;
+  --radius-inner:calc(2rem - 0.375rem);
+  --bezier-smooth:cubic-bezier(0.32,0.72,0,1);
+}
+html{scroll-behavior:smooth}
+body{
+  font-family:'Plus Jakarta Sans','Noto Sans SC',sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+::selection{background:var(--deepstorm-200);color:var(--text)}
+
+/* Nav */
+nav{
+  position:fixed;top:1.5rem;left:50%;transform:translateX(-50%);
+  z-index:100;padding:0.375rem;
+  background:rgba(255,255,255,0.75);
+  backdrop-filter:blur(48px);
+  -webkit-backdrop-filter:blur(48px);
+  border-radius:999px;
+  border:1px solid var(--text-10);
+  box-shadow:0 4px 24px rgba(28,25,23,0.06);
+  display:flex;align-items:center;
+  transition:all 0.5s var(--bezier-smooth);
+}
+nav .nav-inner{display:flex;align-items:center;gap:0.25rem;padding:0.25rem 0.5rem}
+nav a{
+  padding:0.5rem 1rem;border-radius:999px;
+  font-size:0.75rem;font-weight:500;letter-spacing:0.02em;
+  color:var(--text-60);text-decoration:none;
+  transition:all 0.4s var(--bezier-smooth);white-space:nowrap;
+}
+nav a:hover,nav a.active{color:var(--text);background:var(--text-10)}
+nav .logo{font-weight:700;font-size:0.85rem;color:var(--deepstorm-500);padding:0.5rem 0.75rem 0.5rem 1rem;letter-spacing:0.04em}
+nav .hamburger{display:none;background:none;border:none;color:var(--text);cursor:pointer;width:36px;height:36px;position:relative}
+
+/* Hero */
+.hero{
+  min-height:100dvh;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  text-align:center;position:relative;padding:2rem;
+  background:
+    radial-gradient(ellipse 80% 60% at 50% -10%, var(--deepstorm-100) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 50% at 20% 80%, var(--teal-50) 0%, transparent 50%),
+    radial-gradient(ellipse 50% 50% at 80% 80%, var(--deepstorm-50) 0%, transparent 50%),
+    var(--bg);
+}
+.hero .orb{position:absolute;border-radius:50%;filter:blur(100px);pointer-events:none}
+.hero .orb-1{width:500px;height:500px;background:var(--deepstorm-100);top:-150px;right:-80px}
+.hero .orb-2{width:400px;height:400px;background:var(--teal-50);bottom:-150px;left:-80px}
+.hero .badge{
+  display:inline-flex;align-items:center;gap:0.5rem;
+  padding:0.375rem 1rem 0.375rem 0.5rem;border-radius:999px;
+  background:var(--surface);border:1px solid var(--text-10);
+  font-size:0.7rem;font-weight:500;letter-spacing:0.15em;text-transform:uppercase;
+  color:var(--text-60);margin-bottom:2rem;
+  box-shadow:0 2px 8px rgba(28,25,23,0.04);
+}
+.hero .badge .dot{width:6px;height:6px;border-radius:50%;background:var(--deepstorm-500);animation:pulse-dot 2s ease-in-out infinite}
+@keyframes pulse-dot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.5;transform:scale(0.8)}}
+.hero h1{
+  font-size:clamp(4rem,14vw,9rem);font-weight:800;
+  letter-spacing:-0.04em;line-height:0.92;
+  background:linear-gradient(135deg,var(--text)25%,var(--deepstorm-500)50%,var(--teal-500)75%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  margin-bottom:1.5rem;position:relative;
+}
+.hero p{
+  font-size:clamp(1rem,2vw,1.25rem);color:var(--text-60);
+  max-width:540px;line-height:1.7;font-weight:400;letter-spacing:0.01em;
+}
+.hero .cta-row{margin-top:2.5rem;display:flex;gap:1rem;flex-wrap:wrap;justify-content:center}
+.hero .scroll-hint{
+  position:absolute;bottom:2.5rem;
+  display:flex;flex-direction:column;align-items:center;gap:0.5rem;
+  color:var(--text-40);font-size:0.65rem;letter-spacing:0.15em;text-transform:uppercase;
+  animation:float-down 2.5s ease-in-out infinite;
+}
+@keyframes float-down{0%,100%{transform:translateY(0)}50%{transform:translateY(8px)}}
+
+/* Buttons */
+.btn{
+  display:inline-flex;align-items:center;gap:0.75rem;
+  padding:0.75rem 1.75rem;border-radius:999px;
+  font-size:0.85rem;font-weight:600;text-decoration:none;
+  transition:all 0.5s var(--bezier-smooth);cursor:pointer;border:none;
+}
+.btn-primary{
+  background:linear-gradient(135deg,var(--deepstorm-500),var(--deepstorm-600));color:#fff;
+  box-shadow:0 4px 20px rgba(255,107,74,0.25);
+}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(255,107,74,0.35)}
+.btn-primary:active{transform:scale(0.97)}
+.btn-ghost{
+  background:var(--surface);color:var(--text-80);
+  border:1px solid var(--text-10);
+}
+.btn-ghost:hover{background:var(--bg-alt);color:var(--text);transform:translateY(-2px)}
+.btn .icon-wrap{
+  width:1.75rem;height:1.75rem;border-radius:50%;
+  background:rgba(0,0,0,0.15);color:#fff;
+  display:flex;align-items:center;justify-content:center;
+  font-size:0.75rem;transition:all 0.4s var(--bezier-smooth);
+}
+.btn:hover .icon-wrap{transform:translateX(2px) scale(1.05)}
+
+/* Sections */
+section{padding:6rem 1.5rem;position:relative}
+@media(min-width:768px){section{padding:6rem 2rem}}
+.section-inner{max-width:1200px;margin:0 auto}
+.eyebrow{
+  display:inline-flex;align-items:center;gap:0.5rem;
+  padding:0.25rem 0.75rem 0.25rem 0.5rem;border-radius:999px;
+  background:var(--surface);border:1px solid var(--text-10);
+  font-size:0.65rem;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;
+  color:var(--deepstorm-500);margin-bottom:1rem;
+}
+.eyebrow .dash{width:1.5rem;height:1px;background:var(--deepstorm-400);opacity:0.5}
+.section-title{
+  font-size:clamp(2rem,5vw,3.2rem);font-weight:700;
+  letter-spacing:-0.03em;line-height:1.1;margin-bottom:1rem;color:var(--text);
+}
+.section-sub{
+  font-size:1rem;color:var(--text-60);line-height:1.7;max-width:600px;margin-bottom:3rem;font-weight:400;
+}
+
+/* Glass Card */
+.glass-card-outer{
+  background:var(--text-05);border:1px solid var(--text-10);
+  border-radius:var(--radius-outer);padding:0.375rem;
+  box-shadow:inset 0 1px 1px rgba(255,255,255,0.5);
+}
+.glass-card-inner{
+  background:var(--surface);border-radius:var(--radius-inner);
+  padding:2rem;height:100%;transition:all 0.6s var(--bezier-smooth);
+}
+.glass-card-inner:hover{background:var(--surface-hover)}
+
+/* Problem Grid */
+.problem-grid{display:grid;grid-template-columns:1fr;gap:1rem}
+@media(min-width:768px){.problem-grid{grid-template-columns:repeat(3,1fr)}}
+.problem-card{display:flex;flex-direction:column;padding:2rem;min-height:220px}
+.problem-card .icon-box{
+  width:2.5rem;height:2.5rem;border-radius:0.75rem;
+  background:var(--deepstorm-50);display:flex;align-items:center;justify-content:center;
+  font-size:1.2rem;margin-bottom:1rem;flex-shrink:0;
+}
+.problem-card h3{font-size:1rem;font-weight:600;margin-bottom:0.5rem;color:var(--text)}
+.problem-card p{font-size:0.85rem;color:var(--text-60);line-height:1.6;flex:1}
+
+/* Goal Banner */
+.goal-banner{
+  margin-top:2rem;border-radius:var(--radius-outer);
+  background:linear-gradient(135deg,var(--deepstorm-50),var(--teal-50),var(--gold-50));
+  border:1px solid var(--text-10);padding:0.375rem;
+}
+.goal-banner-inner{
+  background:var(--surface);border-radius:var(--radius-inner);padding:2rem 2.5rem;
+}
+.goal-banner-inner h3{
+  font-size:0.85rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;
+  color:var(--text-40);margin-bottom:1rem;
+}
+.goal-banner-inner .goal-items{display:flex;flex-wrap:wrap;gap:1.5rem}
+.goal-banner-inner .goal-item{flex:1;min-width:180px;display:flex;align-items:flex-start;gap:0.75rem}
+.goal-banner-inner .goal-num{
+  width:1.5rem;height:1.5rem;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:0.65rem;font-weight:700;flex-shrink:0;margin-top:0.15rem;
+}
+.goal-banner-inner .goal-num.g1{background:var(--deepstorm-100);color:var(--deepstorm-600)}
+.goal-banner-inner .goal-num.g2{background:var(--teal-50);color:var(--teal-600)}
+.goal-banner-inner .goal-num.g3{background:var(--gold-50);color:var(--gold-600)}
+.goal-banner-inner .goal-text strong{display:block;font-size:0.9rem;margin-bottom:0.15rem}
+.goal-banner-inner .goal-text strong.g1{color:var(--deepstorm-500)}
+.goal-banner-inner .goal-text strong.g2{color:var(--teal-500)}
+.goal-banner-inner .goal-text strong.g3{color:var(--gold-500)}
+.goal-banner-inner .goal-text span{font-size:0.8rem;color:var(--text-60);line-height:1.5}
+
+/* Principles */
+.principles-grid{display:grid;gap:1.5rem}
+@media(min-width:768px){.principles-grid{grid-template-columns:repeat(3,1fr)}}
+.principle-card{text-align:center;padding:2.5rem 2rem}
+.principle-card .num{
+  font-size:3rem;font-weight:800;
+  background:linear-gradient(135deg,var(--deepstorm-500),var(--teal-500));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  line-height:1;margin-bottom:0.75rem;
+}
+.principle-card h3{font-size:1.05rem;font-weight:600;margin-bottom:0.5rem}
+.principle-card p{font-size:0.85rem;color:var(--text-60);line-height:1.6}
+
+/* Quote */
+.quote-block{margin:2rem auto;max-width:700px;text-align:center;padding:3rem 2rem}
+.quote-block blockquote{
+  font-size:clamp(1.05rem,2vw,1.3rem);font-weight:400;
+  line-height:1.8;color:var(--text-80);font-style:normal;letter-spacing:0.01em;
+}
+.quote-block blockquote::before{content:'\201C';font-size:3rem;display:block;color:var(--deepstorm-400);line-height:0.8;margin-bottom:0.5rem;font-weight:300}
+
+/* Three-Layer Spec */
+.spec-visual{display:flex;flex-direction:column;gap:0}
+.spec-layer-wrap{display:flex;flex-direction:column;align-items:stretch}
+.spec-layer{
+  display:flex;flex-direction:column;padding:2.5rem 2rem;
+  border-radius:1.25rem;flex:1;min-height:260px;
+  transition:all 0.5s var(--bezier-smooth);
+}
+.spec-layer:hover{transform:translateY(-2px)}
+.spec-layer.business{background:linear-gradient(135deg,var(--deepstorm-50),var(--surface));border:1px solid var(--deepstorm-200)}
+.spec-layer.technical{background:linear-gradient(135deg,var(--teal-50),var(--surface));border:1px solid rgba(45,212,191,0.25)}
+.spec-layer.verification{background:linear-gradient(135deg,var(--gold-50),var(--surface));border:1px solid rgba(245,158,11,0.25)}
+.spec-layer .layer-label{font-size:0.65rem;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;margin-bottom:0.5rem}
+.spec-layer.business .layer-label{color:var(--deepstorm-500)}
+.spec-layer.technical .layer-label{color:var(--teal-500)}
+.spec-layer.verification .layer-label{color:var(--gold-500)}
+.spec-layer h3{font-size:1.2rem;font-weight:700;margin-bottom:0.75rem}
+.spec-layer .layer-desc{font-size:0.85rem;color:var(--text-60);line-height:1.7;flex:1}
+.spec-layer .tool-tag{
+  display:inline-block;padding:0.3rem 0.75rem;border-radius:6px;
+  font-size:0.7rem;font-weight:600;letter-spacing:0.05em;
+  margin-top:1rem;align-self:flex-start;
+}
+.business .tool-tag{background:var(--deepstorm-100);color:var(--deepstorm-600)}
+.technical .tool-tag{background:var(--teal-50);color:var(--teal-500)}
+.verification .tool-tag{background:var(--gold-50);color:var(--gold-500)}
+.spec-arrow-h{
+  display:flex;align-items:center;justify-content:center;
+  padding:0.5rem 0;color:var(--text-40);font-size:1rem;gap:0.35rem;flex-shrink:0;
+}
+.spec-arrow-h span{font-size:0.6rem;letter-spacing:0.08em;text-transform:uppercase}
+.spec-layer .consumer-list{display:flex;flex-wrap:wrap;gap:0.5rem;margin-top:0.75rem}
+.spec-layer .consumer-tag{
+  font-size:0.65rem;padding:0.2rem 0.55rem;border-radius:4px;
+  background:var(--text-05);color:var(--text-60);
+}
+@media(max-width:1023px){.spec-layer-wrap:not(:last-child) .spec-arrow-h{padding:0.35rem 0}}
+@media(min-width:1024px){
+  .spec-visual{flex-direction:row;align-items:stretch;gap:0}
+  .spec-layer-wrap{flex-direction:row;align-items:center;flex:1}
+  .spec-layer{min-height:280px}
+  .spec-arrow-h{flex-direction:column;padding:0 0.75rem;min-width:2.5rem}
+  .spec-arrow-h span{display:block}
+}
+
+/* Feature ID */
+.feature-id-demo{
+  margin-top:2rem;padding:1.5rem;border-radius:1rem;
+  background:var(--bg-alt);border:1px solid var(--text-10);
+  font-family:monospace;font-size:0.8rem;line-height:1.8;color:var(--text-80);
+}
+.feature-id-demo .fid{color:var(--deepstorm-500);font-weight:600}
+.feature-id-demo .indent{padding-left:1.5rem}
+.feature-id-demo .indent-2{padding-left:3rem}
+.feature-id-demo .bullet{color:var(--text-40)}
+
+/* Comparison Table */
+.table-wrap{overflow-x:auto;border-radius:var(--radius-outer);border:1px solid var(--text-10);background:var(--surface)}
+.table-wrap table{width:100%;border-collapse:collapse;font-size:0.82rem}
+.table-wrap th{
+  text-align:left;padding:1rem 1.25rem;
+  font-weight:600;font-size:0.7rem;letter-spacing:0.08em;text-transform:uppercase;
+  color:var(--text-60);background:var(--text-05);border-bottom:1px solid var(--text-10);white-space:nowrap;
+}
+.table-wrap td{
+  padding:1rem 1.25rem;border-bottom:1px solid var(--text-10);
+  color:var(--text-60);line-height:1.5;vertical-align:top;
+}
+.table-wrap tr:last-child td{border-bottom:none}
+.table-wrap td:first-child{font-weight:600;color:var(--text);white-space:nowrap}
+.table-wrap .highlight-col{color:var(--deepstorm-500)}
+
+/* Suites Grid */
+.suites-grid{display:grid;gap:1rem}
+@media(min-width:640px){.suites-grid{grid-template-columns:repeat(2,1fr)}}
+.suite-card{text-align:center;padding:2.5rem 1.5rem;position:relative;overflow:hidden}
+.suite-card .suite-icon{
+  width:3.5rem;height:3.5rem;border-radius:1rem;
+  display:flex;align-items:center;justify-content:center;
+  margin:0 auto 1rem;font-size:1.5rem;font-weight:700;
+}
+.suite-card .suite-icon.tide{background:linear-gradient(135deg,var(--teal-50),var(--surface));color:var(--teal-500)}
+.suite-card .suite-icon.reef{background:linear-gradient(135deg,var(--deepstorm-50),var(--surface));color:var(--deepstorm-500)}
+.suite-card .suite-icon.sweep{background:linear-gradient(135deg,var(--gold-50),var(--surface));color:var(--gold-500)}
+.suite-card .suite-icon.atoll{background:linear-gradient(135deg,var(--indigo-50),var(--surface));color:var(--indigo-400)}
+.suite-card h3{font-size:1.1rem;font-weight:700;margin-bottom:0.25rem}
+.suite-card .role{font-size:0.7rem;color:var(--text-40);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:0.75rem}
+.suite-card .desc{font-size:0.82rem;color:var(--text-60);line-height:1.6}
+.suite-card .eco-meta{margin-top:1rem;padding-top:1rem;border-top:1px solid var(--text-10);font-size:0.72rem;color:var(--text-40);line-height:1.5}
+.suite-card .eco-meta strong{color:var(--text-60)}
+
+/* Pipeline - Role Groups (New Design) */
+.pipeline{display:flex;flex-direction:column;gap:0}
+.pgroup{
+  border-radius:1.25rem;padding:0.375rem;margin-bottom:0;
+  transition:all 0.4s var(--bezier-smooth);
+}
+.pgroup-product{background:linear-gradient(135deg,rgba(20,184,166,0.12),rgba(20,184,166,0.03));border:1px solid rgba(20,184,166,0.15)}
+.pgroup-dev{background:linear-gradient(135deg,rgba(99,102,241,0.1),rgba(99,102,241,0.02));border:1px solid rgba(99,102,241,0.12)}
+.pgroup-ai{background:linear-gradient(135deg,rgba(255,107,74,0.12),rgba(255,107,74,0.03));border:1px solid rgba(255,107,74,0.15)}
+.pgroup-ci{background:linear-gradient(135deg,rgba(22,163,74,0.08),rgba(22,163,74,0.02));border:1px solid rgba(22,163,74,0.1)}
+.pgroup-manual{background:linear-gradient(135deg,rgba(217,119,6,0.1),rgba(217,119,6,0.02));border:1px solid rgba(217,119,6,0.12)}
+.pgroup-header{
+  display:flex;align-items:center;gap:0.5rem;
+  padding:0.75rem 1.25rem;margin-bottom:0.25rem;
+  border-radius:calc(1.25rem - 0.375rem) calc(1.25rem - 0.375rem) 0 0;
+}
+.pgroup-header .pgroup-icon{font-size:1.1rem}
+.pgroup-header .pgroup-title{font-size:0.75rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase}
+.pgroup-product .pgroup-header{background:rgba(20,184,166,0.06);color:var(--teal-500)}
+.pgroup-dev .pgroup-header{background:rgba(99,102,241,0.06);color:var(--indigo-500)}
+.pgroup-ai .pgroup-header{background:rgba(255,107,74,0.06);color:var(--deepstorm-500)}
+.pgroup-ci .pgroup-header{background:rgba(22,163,74,0.06);color:var(--green-600)}
+.pgroup-manual .pgroup-header{background:rgba(217,119,6,0.06);color:var(--gold-500)}
+.pgroup-steps{padding:0.5rem 1.25rem 1rem}
+.pg-step{display:flex;align-items:flex-start;gap:0.75rem}
+.pg-step-dot{
+  width:1.75rem;height:1.75rem;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:0.65rem;font-weight:700;flex-shrink:0;margin-top:0.1rem;
+  background:var(--text-10);color:var(--text-60);
+}
+.pg-step-dot.ai{background:var(--deepstorm-100);color:var(--deepstorm-600)}
+.pg-step-dot.doc{background:var(--gold-100);color:var(--gold-600)}
+.pg-step-dot.ci{background:var(--green-100);color:var(--green-600)}
+.pg-step-body{flex:1;min-width:0}
+.pg-step-head{
+  font-size:0.88rem;font-weight:600;color:var(--text);
+  display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;
+}
+.pg-actor{
+  font-size:0.6rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;
+  padding:0.15rem 0.4rem;border-radius:3px;
+}
+.pg-actor.product{background:var(--teal-50);color:var(--teal-500)}
+.pg-actor.dev{background:var(--indigo-50);color:var(--indigo-500)}
+.pg-actor.ai{background:var(--deepstorm-50);color:var(--deepstorm-600)}
+.pg-actor.test{background:var(--gold-50);color:var(--gold-500)}
+.pg-actor.ci{background:var(--green-100);color:var(--green-600)}
+.pg-step-desc{font-size:0.78rem;color:var(--text-60);line-height:1.6;margin-top:0.15rem}
+.pg-meta{display:flex;flex-wrap:wrap;gap:0.35rem;margin-top:0.5rem}
+.pg-tag{
+  display:inline-block;padding:0.15rem 0.5rem;border-radius:4px;
+  font-size:0.62rem;font-weight:600;
+  background:var(--text-05);color:var(--text-60);
+}
+.pg-tag.warn{background:rgba(239,68,68,0.08);color:#dc2626}
+.pg-tag.ok{background:var(--green-100);color:var(--green-600)}
+.pg-conn{
+  display:flex;align-items:center;justify-content:center;
+  padding:0.15rem 0 0.15rem 2.5rem;
+  color:var(--text-30);font-size:0.7rem;
+}
+.pgroup-gap{
+  display:flex;align-items:center;justify-content:center;
+  padding:0.35rem 0;
+  color:var(--text-30);font-size:0.85rem;
+}
+.pg-gap-arrow{opacity:0.4}
+@media(max-width:639px){
+  .pg-step-head{font-size:0.82rem}
+  .pgroup-steps{padding:0.5rem 0.75rem 0.75rem}
+}
+
+/* Pipeline section: wider inner */
+.pipeline-section .section-inner{max-width:960px}
+
+/* Roadmap */
+.roadmap-stage{
+  padding:1.5rem;border-radius:var(--radius-inner);
+  border:1px solid var(--text-10);margin-bottom:1rem;
+  background:var(--surface);transition:all 0.4s var(--bezier-smooth);
+}
+.roadmap-stage:hover{background:var(--surface-hover);border-color:var(--text-20)}
+.roadmap-stage .stage-header{display:flex;align-items:center;gap:0.75rem;margin-bottom:0.75rem}
+.roadmap-stage .stage-badge{
+  padding:0.2rem 0.6rem;border-radius:4px;
+  font-size:0.65rem;font-weight:600;letter-spacing:0.05em;
+}
+.roadmap-stage .stage-badge.phase1{background:var(--deepstorm-100);color:var(--deepstorm-600)}
+.roadmap-stage .stage-badge.phase2{background:var(--teal-50);color:var(--teal-500)}
+.roadmap-stage h3{font-size:1rem;font-weight:600}
+.roadmap-stage p{font-size:0.82rem;color:var(--text-60);line-height:1.6}
+
+/* Footer */
+footer{
+  text-align:center;padding:3rem 1.5rem;
+  border-top:1px solid var(--text-10);color:var(--text-40);
+  font-size:0.75rem;line-height:1.8;
+}
+footer strong{color:var(--text-60)}
+
+/* Scroll Reveal */
+.reveal{opacity:0;transform:translateY(48px);transition:all 0.9s var(--bezier-smooth)}
+.reveal.visible{opacity:1;transform:translateY(0)}
+.reveal-delay-1{transition-delay:0.1s}
+.reveal-delay-2{transition-delay:0.2s}
+.reveal-delay-3{transition-delay:0.3s}
+
+/* Mobile Nav */
+@media(max-width:767px){
+  nav{top:1rem;left:1rem;right:1rem;transform:none;border-radius:1.5rem;padding:0.25rem;justify-content:space-between}
+  nav .nav-inner{display:none}
+  nav .hamburger{display:flex;align-items:center;justify-content:center}
+  nav.open .nav-inner{
+    display:flex;flex-direction:column;
+    position:fixed;top:0;left:0;right:0;bottom:0;
+    background:rgba(255,255,255,0.95);backdrop-filter:blur(48px);
+    -webkit-backdrop-filter:blur(48px);
+    justify-content:center;align-items:center;gap:0.5rem;padding:2rem;z-index:-1;border-radius:0;
+  }
+  nav.open .nav-inner a{
+    font-size:1.1rem;padding:1rem 2rem;color:var(--text);
+    opacity:0;animation:nav-in 0.4s var(--bezier-smooth) forwards;
+  }
+  nav.open .nav-inner a:nth-child(2){animation-delay:0.05s}
+  nav.open .nav-inner a:nth-child(3){animation-delay:0.1s}
+  nav.open .nav-inner a:nth-child(4){animation-delay:0.15s}
+  nav.open .nav-inner a:nth-child(5){animation-delay:0.2s}
+  nav.open .nav-inner a:nth-child(6){animation-delay:0.25s}
+  nav.open .nav-inner a:nth-child(7){animation-delay:0.3s}
+  @keyframes nav-in{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+  .hero h1{font-size:clamp(3rem,18vw,5rem)}
+  .section-title{font-size:1.75rem}
+}
+
+/* Gradient divider */
+.gradient-divider{
+  height:1px;border:none;
+  background:linear-gradient(90deg,transparent,var(--text-10),var(--deepstorm-400),var(--text-10),transparent);
+  margin:0 auto;
+}
+
+/* Print Styles — PDF 优化布局 */
+@media print{
+  @page{margin:0}
+  html{font-size:9pt}
+  body{background:white!important;color:#1c1917!important}
+  .reveal{opacity:1!important;transform:none!important}
+  nav,.orb,.scroll-hint,.cta-row,.hamburger{display:none!important}
+  .gradient-divider{display:none}
+
+  /* Hero — 紧凑，不要全屏 */
+  .hero{
+    min-height:0!important;padding:1.5rem 2rem 0.5rem!important;
+    background:none!important;text-align:center!important;
+  }
+  .hero .badge{display:none}
+  .hero h1{font-size:3.2rem!important;-webkit-text-fill-color:#1c1917!important;background:none!important;color:#1c1917!important;margin-bottom:0.4rem!important}
+  .hero p{font-size:0.85rem!important;max-width:100%!important;color:#555!important;margin-bottom:0!important}
+
+  /* Sections — 减少上下留白 */
+  section{padding:1rem 1.8rem!important}
+  .section-title{font-size:1.4rem!important;margin-bottom:0.4rem!important}
+  .section-sub{font-size:0.78rem!important;margin-bottom:0.8rem!important;max-width:100%!important}
+  .eyebrow{margin-bottom:0.4rem!important;font-size:0.55rem!important}
+
+  /* 去掉 glass-card 嵌套外边框 — 减少浪费 */
+  .glass-card-outer{background:none!important;border:none!important;padding:0!important;border-radius:0!important;box-shadow:none!important}
+  .glass-card-inner{padding:1rem 1rem!important;border-radius:0.5rem!important;border:0.5px solid #ddd!important;background:white!important;box-shadow:none!important}
+
+  /* Problem Grid */
+  .problem-grid{grid-template-columns:repeat(3,1fr)!important;gap:0.6rem!important}
+  .problem-card{min-height:0!important;padding:0.8rem!important}
+  .problem-card .icon-box{width:1.6rem;height:1.6rem;font-size:0.8rem;margin-bottom:0.4rem}
+
+  /* Goal Banner */
+  .goal-banner{margin-top:0.8rem!important;padding:0!important;background:none!important;border:none!important}
+  .goal-banner-inner{padding:0.8rem 1rem!important;border:0.5px solid #ddd!important}
+  .goal-banner-inner .goal-items{gap:0.8rem!important}
+  .goal-banner-inner .goal-item{min-width:140px!important}
+  .goal-banner-inner .goal-text strong{font-size:0.8rem!important}
+  .goal-banner-inner .goal-text span{font-size:0.7rem!important}
+
+  /* Quote */
+  .quote-block{margin:0.5rem auto!important;padding:0.8rem!important}
+  .quote-block blockquote{font-size:0.78rem!important;line-height:1.5!important}
+
+  /* Principles */
+  .principles-grid{gap:0.6rem!important}
+  .principle-card{padding:1rem!important}
+  .principle-card .num{font-size:1.8rem!important;margin-bottom:0.3rem!important}
+  .principle-card h3{font-size:0.85rem!important}
+  .principle-card p{font-size:0.72rem!important}
+
+  /* Three-Layer Spec — 紧凑横排 */
+  .spec-visual{flex-direction:row!important;align-items:stretch!important;gap:2px!important}
+  .spec-layer-wrap{flex-direction:row!important;align-items:center!important;flex:1!important}
+  .spec-layer{min-height:160px!important;padding:1rem!important;border-radius:0.6rem!important}
+  .spec-layer .layer-label{font-size:0.5rem!important;margin-bottom:0.2rem!important}
+  .spec-layer h3{font-size:0.85rem!important;margin-bottom:0.3rem!important}
+  .spec-layer .layer-desc{font-size:0.68rem!important;line-height:1.4!important}
+  .spec-layer .tool-tag{font-size:0.55rem!important;padding:0.15rem 0.4rem!important;margin-top:0.3rem!important}
+  .spec-layer .consumer-tag{font-size:0.5rem!important;padding:0.1rem 0.35rem!important}
+  .spec-arrow-h{padding:0 0.3rem!important;font-size:0.7rem!important}
+  .spec-arrow-h span{font-size:0.45rem!important}
+
+  /* Feature ID Demo */
+  .feature-id-demo{padding:0.6rem 0.8rem!important;font-size:0.7rem!important;margin-top:0.6rem!important}
+  .feature-id-demo .indent{padding-left:1rem!important}
+  .feature-id-demo .indent-2{padding-left:2rem!important}
+
+  /* Comparison Table */
+  .table-wrap{font-size:0.7rem!important}
+  .table-wrap th{padding:0.4rem 0.6rem!important;font-size:0.6rem!important}
+  .table-wrap td{padding:0.35rem 0.6rem!important;font-size:0.68rem!important}
+
+  /* Suites Grid */
+  .suites-grid{grid-template-columns:repeat(2,1fr)!important;gap:0.6rem!important}
+  .suite-card{padding:0.8rem 0.8rem!important}
+  .suite-card .suite-icon{width:2.2rem;height:2.2rem;font-size:1rem;margin-bottom:0.4rem}
+  .suite-card h3{font-size:0.85rem!important}
+  .suite-card .desc{font-size:0.68rem!important}
+  .suite-card .eco-meta{font-size:0.6rem!important;margin-top:0.4rem;padding-top:0.4rem}
+
+  /* Pipeline — 紧凑分组，控制分页 */
+  .pipeline-section .section-inner{max-width:100%!important}
+  .pgroup{border-radius:0.5rem!important;padding:0.2rem!important;margin:0!important;page-break-inside:avoid!important}
+  .pgroup-header{padding:0.35rem 0.75rem!important}
+  .pgroup-header .pgroup-icon{font-size:0.8rem!important}
+  .pgroup-header .pgroup-title{font-size:0.6rem!important}
+  .pgroup-steps{padding:0.15rem 0.75rem 0.5rem!important}
+  .pg-step{gap:0.4rem!important}
+  .pg-step-dot{width:1.2rem;height:1.2rem;font-size:0.5rem!important;margin-top:0;flex-shrink:0!important}
+  .pg-step-head{font-size:0.72rem!important;gap:0.3rem!important}
+  .pg-step-desc{font-size:0.62rem!important;line-height:1.35!important}
+  .pg-meta{gap:0.2rem!important;margin-top:0.2rem!important}
+  .pg-tag{font-size:0.5rem!important;padding:0.1rem 0.3rem!important}
+  .pg-actor{font-size:0.48rem!important;padding:0.08rem 0.3rem!important}
+  .pg-conn{padding:0.05rem 0 0.05rem 1.6rem!important;font-size:0.5rem!important}
+  .pgroup-gap{padding:0.1rem 0!important;font-size:0.6rem!important}
+
+  /* 前 4 组 pipeline 保持在一页内，第 5 组人工验证另起一页 */
+  .pgroup-manual{page-break-before:always!important}
+
+  /* Roadmap */
+  .roadmap-stage{padding:0.6rem 0.8rem!important;margin-bottom:0.5rem!important}
+  .roadmap-stage .stage-header{margin-bottom:0.3rem!important}
+  .roadmap-stage h3{font-size:0.8rem!important}
+  .roadmap-stage p{font-size:0.7rem!important}
+
+  /* Footer */
+  footer{padding:0.8rem!important;font-size:0.6rem!important}
+
+  /* 长表格/大区块分页保护 */
+  .spec-visual,.principles-grid,.suites-grid,.pgroup{page-break-inside:avoid!important}
+}
+</style>
+</head>
+<body>
+
+<nav id="navbar">
+  <div class="nav-inner">
+    <span class="logo">DeepStorm</span>
+    <a href="#background">背景</a>
+    <a href="#philosophy">思路</a>
+    <a href="#spec">三层 Spec</a>
+    <a href="#comparison">对比</a>
+    <a href="#suites">套件</a>
+    <a href="#roadmap">路径</a>
+  </div>
+  <button class="hamburger" id="hamburger" aria-label="菜单">
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+      <line x1="3" y1="6" x2="17" y2="6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      <line x1="3" y1="10" x2="17" y2="10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      <line x1="3" y1="14" x2="17" y2="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    </svg>
+  </button>
+</nav>
+
+<section class="hero" id="hero">
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="badge"><span class="dot"></span> AI 协同工程实践 · Spec 驱动开发</div>
+  <h1>DeepStorm</h1>
+  <p>以结构化规格文档串联需求、规范、测试与实现，让 AI 在持续的工程上下文中系统工作。</p>
+  <div class="cta-row">
+    <a href="#spec" class="btn btn-primary">探索三层 Spec<span class="icon-wrap">↓</span></a>
+    <a href="#background" class="btn btn-ghost">了解背景</a>
+  </div>
+  <div class="scroll-hint">Scroll</div>
+</section>
+
+<section id="background">
+  <div class="section-inner">
+    <div class="eyebrow reveal"><span class="dash"></span> 背景与问题</div>
+    <h2 class="section-title reveal">AI 辅助开发的现状与局限</h2>
+    <p class="section-sub reveal">代码生成速度的提升，并不直接等同于需求理解准确度、系统设计一致性和工程可维护性的提升。</p>
+
+    <div class="problem-grid">
+      <div class="glass-card-outer reveal">
+        <div class="glass-card-inner problem-card">
+          <div class="icon-box">🔄</div>
+          <h3>信息传递衰减与失真</h3>
+          <p>从产品需求到技术实现的多层翻译过程中，原始意图容易偏离。信息在角色间传递时持续衰减，团队需要大量反复沟通来对齐理解。</p>
+        </div>
+      </div>
+      <div class="glass-card-outer reveal reveal-delay-1">
+        <div class="glass-card-inner problem-card">
+          <div class="icon-box">🧩</div>
+          <h3>上下文碎片化</h3>
+          <p>AI 缺乏持续稳定的工程上下文，每个会话独立理解任务，无法感知上游决策、业务背景和架构约束，生成结果容易偏离实际意图。</p>
+        </div>
+      </div>
+      <div class="glass-card-outer reveal reveal-delay-2">
+        <div class="glass-card-inner problem-card">
+          <div class="icon-box">🔗</div>
+          <h3>需求·规范·测试 脱节</h3>
+          <p>需求、规范、测试、实现之间缺少显性关联，变更影响难以快速追踪，规约与历史决策无法沉淀为长期工程资产。</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="goal-banner reveal">
+      <div class="goal-banner-inner">
+        <h3>三个递进目标</h3>
+        <div class="goal-items">
+          <div class="goal-item">
+            <div class="goal-num g1">1</div>
+            <div class="goal-text">
+              <strong class="g1">效率提升</strong>
+              <span>利用 AI 辅助代码生成、测试生成、规范草拟，减少重复性手工劳动，加快从需求到交付的流转速度。</span>
+            </div>
+          </div>
+          <div class="goal-item">
+            <div class="goal-num g2">2</div>
+            <div class="goal-text">
+              <strong class="g2">上下文连续性</strong>
+              <span>通过结构化规格文档将需求、接口规范、测试用例和实现代码串联为一条显性链路，降低因信息断层导致的理解偏差和返工。</span>
+            </div>
+          </div>
+          <div class="goal-item">
+            <div class="goal-num g3">3</div>
+            <div class="goal-text">
+              <strong class="g3">规约资产化积累</strong>
+              <span>每次需求澄清、设计决策和验收标准制定都以结构化形态沉淀，构成可追溯的历史记录，使变更影响评估有据可依。</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="quote-block reveal">
+      <blockquote>
+        当前 AI 辅助开发提升了单点的执行速度，却未能解决跨环节的上下文断层。<br>这正是 SDD 能够弥补的部分——以结构化规格文档作为各环节的共同输入，使需求、规范、验证之间保持显性关联。
+      </blockquote>
+    </div>
+  </div>
+</section>
+
+<hr class="gradient-divider" style="width:60%">
+
+<section id="philosophy">
+  <div class="section-inner">
+    <div class="eyebrow reveal"><span class="dash"></span> 核心思路</div>
+    <h2 class="section-title reveal">以 Spec 为轴的 AI 协同工程</h2>
+    <p class="section-sub reveal">利用 AI 提升各环节执行效率，同时以结构化 Spec 将需求、规范、验证、实现串联，使 AI 和人在一致的上下文中协作。</p>
+
+    <div class="principles-grid">
+      <div class="glass-card-outer reveal">
+        <div class="glass-card-inner principle-card">
+          <div class="num">01</div>
+          <h3>需求质量前置</h3>
+          <p>利用 AI 辅助的结构化追问与校验，在需求进入开发前澄清边界条件、异常路径与验收标准，将缺陷拦截在产品阶段。</p>
+        </div>
+      </div>
+      <div class="glass-card-outer reveal reveal-delay-1">
+        <div class="glass-card-inner principle-card">
+          <div class="num">02</div>
+          <h3>上下文连续性</h3>
+          <p>通过统一的 feature_id 将需求、接口规范、测试用例、实现代码显性关联，使 AI 在任何步骤都能获取上游结构化信息。</p>
+        </div>
+      </div>
+      <div class="glass-card-outer reveal reveal-delay-2">
+        <div class="glass-card-inner principle-card">
+          <div class="num">03</div>
+          <h3>人机边界清晰</h3>
+          <p>人负责决策（目标、约束、策略），AI 负责生成与执行（结构化、草稿、代码）。所有 AI 产出均需人工确认，不绕过判断上线。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="gradient-divider" style="width:40%">
+
+<section id="spec">
+  <div class="section-inner">
+    <div class="eyebrow reveal"><span class="dash"></span> 三层 Spec 体系</div>
+    <h2 class="section-title reveal">结构化的工程规约链路</h2>
+    <p class="section-sub reveal">三层 Spec 之间为单向驱动关系：上层产出作为下层输入，形成信息密度高、传递损耗低的工程链路。</p>
+
+    <div class="spec-visual reveal">
+      <div class="spec-layer-wrap">
+        <div class="spec-layer business">
+          <div class="layer-label">第一层 · Business Spec</div>
+          <h3>业务规范</h3>
+          <p class="layer-desc">业务目标、用户目标、验收标准、Story 列表。由产品侧维护，需求驱动更新，写完归档为主，部分修改可追加。</p>
+          <div class="consumer-list">
+            <span class="consumer-tag">消费者：产品</span>
+            <span class="consumer-tag">消费者：开发</span>
+          </div>
+          <span class="tool-tag">工具：BMAD</span>
+        </div>
+        <div class="spec-arrow-h">&rarr; <span>驱动</span></div>
+      </div>
+
+      <div class="spec-layer-wrap">
+        <div class="spec-layer technical">
+          <div class="layer-label">第二层 · Technical Spec</div>
+          <h3>技术规范</h3>
+          <p class="layer-desc">接口规范、数据模型、业务规则、开发约束。由开发侧维护，迭代驱动持续演化，反映系统当前真实状态。</p>
+          <div class="consumer-list">
+            <span class="consumer-tag">消费者：开发</span>
+            <span class="consumer-tag">消费者：AI 代码生成</span>
+          </div>
+          <span class="tool-tag">工具：OpenSpec</span>
+        </div>
+        <div class="spec-arrow-h">&rarr; <span>驱动</span></div>
+      </div>
+
+      <div class="spec-layer-wrap">
+        <div class="spec-layer verification">
+          <div class="layer-label">第三层 · Verification Spec</div>
+          <h3>验证规范</h3>
+          <p class="layer-desc">测试用例、断言、预期行为（正常/异常/边界）。由测试侧维护，随功能和缺陷修复持续补充。</p>
+          <div class="consumer-list">
+            <span class="consumer-tag">消费者：测试</span>
+            <span class="consumer-tag">消费者：AI 测试生成</span>
+          </div>
+          <span class="tool-tag">工具：Superpowers</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="feature-id-demo reveal">
+      <div><span class="fid">feature_id: AUTH-LOGIN-WECOM</span></div>
+      <div class="indent"><span class="bullet">●</span> Business Spec &rarr; epics/epic-1.md 中的对应 Story</div>
+      <div class="indent"><span class="bullet">●</span> Technical Spec &rarr; POST /auth/wecom、数据字段定义</div>
+      <div class="indent"><span class="bullet">●</span> Verification &rarr; invalid_qr / expired_qr / unauthorized_org 测试场景</div>
+      <div class="indent"><span class="bullet">●</span> 实现代码 &rarr; auth/wecom.ts</div>
+    </div>
+  </div>
+</section>
+
+<hr class="gradient-divider" style="width:60%">
+
+<section id="comparison">
+  <div class="section-inner">
+    <div class="eyebrow reveal"><span class="dash"></span> 模式对比</div>
+    <h2 class="section-title reveal">与传统做法和当前 AI 辅助的区别</h2>
+    <p class="section-sub reveal">传统模式困于人工翻译损耗，当前 AI 模式快在单点却未解决断裂，DeepStorm 用结构化规约让 AI 在连续上下文中系统工作。</p>
+
+    <div class="table-wrap reveal">
+      <table>
+        <thead>
+          <tr>
+            <th>维度</th>
+            <th>传统敏捷</th>
+            <th>当前 AI 辅助</th>
+            <th class="highlight-col">DeepStorm 实践</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>核心机制</td>
+            <td>人工翻译文档，口传信息</td>
+            <td>AI 片段式生成，局部加速</td>
+            <td style="color:var(--deepstorm-500);font-weight:600">SDD 结构化规约 + AI 系统执行</td>
+          </tr>
+          <tr>
+            <td>上下文状态</td>
+            <td>角色边界处断裂</td>
+            <td>每次会话重新注入，仍断裂</td>
+            <td style="color:var(--deepstorm-500);font-weight:600">Spec 文件持续传递，AI 直读上游</td>
+          </tr>
+          <tr>
+            <td>需求验证</td>
+            <td>编码或测试阶段才暴露</td>
+            <td>无机制性改善</td>
+            <td style="color:var(--deepstorm-500);font-weight:600">产品阶段前置校验，缺陷提前暴露</td>
+          </tr>
+          <tr>
+            <td>测试生成</td>
+            <td>人工编写，覆盖依赖经验</td>
+            <td>局部生成，与需求关联弱</td>
+            <td style="color:var(--deepstorm-500);font-weight:600">从验收标准直接派生，覆盖系统化</td>
+          </tr>
+          <tr>
+            <td>变更响应</td>
+            <td>人工通知，依赖记忆</td>
+            <td>仍靠人工，遗漏风险不变</td>
+            <td style="color:var(--deepstorm-500);font-weight:600">feature_id 关联，影响可定位</td>
+          </tr>
+          <tr>
+            <td>人机分工</td>
+            <td>人全链路执行</td>
+            <td>人主导，AI 辅助单点</td>
+            <td style="color:var(--deepstorm-500);font-weight:600">人决策 + 确认，AI 在规约框架内生成</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<hr class="gradient-divider" style="width:40%">
+
+<section id="suites">
+  <div class="section-inner">
+    <div class="eyebrow reveal"><span class="dash"></span> 工具套件</div>
+    <h2 class="section-title reveal">DeepStorm 生态体系</h2>
+    <p class="section-sub reveal">四个子套件分别面向不同角色，命名源自珊瑚礁生态系统，隐喻个体协作构建复杂系统的工程理念。</p>
+
+    <div class="suites-grid">
+      <div class="glass-card-outer reveal">
+        <div class="glass-card-inner suite-card">
+          <div class="suite-icon tide">🌊</div>
+          <h3>Tide</h3>
+          <div class="role">潮汐 · Desktop Extension</div>
+          <p class="desc">需求流人的源头。负责需求结构化、PRD 管理、Jira 同步，为整个链路提供驱动力。</p>
+          <div class="eco-meta"><strong>生态隐喻：</strong>潮汐，养分与势能的周期性输入</div>
+        </div>
+      </div>
+      <div class="glass-card-outer reveal reveal-delay-1">
+        <div class="glass-card-inner suite-card">
+          <div class="suite-icon reef">🪸</div>
+          <h3>Reef</h3>
+          <div class="role">礁群 · Claude Code Plugin</div>
+          <p class="desc">代码的持续构建与结构沉淀。负责规范生成、代码实现、架构约束检查。</p>
+          <div class="eco-meta"><strong>海洋隐喻：</strong>珊瑚礁群由无数珊瑚虫经年构建</div>
+        </div>
+      </div>
+      <div class="glass-card-outer reveal reveal-delay-2">
+        <div class="glass-card-inner suite-card">
+          <div class="suite-icon sweep">🌊</div>
+          <h3>Sweep</h3>
+          <div class="role">扫掠 · Claude Code Plugin</div>
+          <p class="desc">持续感知代码质量。负责测试生成、覆盖率分析、CI 结果解读，异常的第一道探测器。</p>
+          <div class="eco-meta"><strong>生态隐喻：</strong>与珊瑚共生，对水质极其敏感</div>
+        </div>
+      </div>
+      <div class="glass-card-outer reveal reveal-delay-3">
+        <div class="glass-card-inner suite-card">
+          <div class="suite-icon atoll">🏝️</div>
+          <h3>Atoll</h3>
+          <div class="role">环礁 · Desktop Extension</div>
+          <p class="desc">系统最终运行的稳定承载层。负责部署辅助、监控查询、故障排查和环境检查。</p>
+          <div class="eco-meta"><strong>生态隐喻：</strong>珊瑚礁发育的最高阶段</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="gradient-divider" style="width:60%">
+
+<section class="pipeline-section">
+  <div class="section-inner">
+    <div class="eyebrow reveal"><span class="dash"></span> 完整工程链路</div>
+    <h2 class="section-title reveal">从产品意图到自动化测试的全流程</h2>
+    <p class="section-sub reveal">链路的核心运行方式：产品输出高质量 PRD 后创建 Jira 任务，开发人员在新迭代中自行拉取任务，利用 AI 工具逐步完成 Spec 生成、代码实现和测试。除 CI 外，多数环节由人工按需触发。</p>
+
+    <div class="pipeline reveal">
+
+      <!-- Group: 产品侧 -->
+      <div class="pgroup pgroup-product">
+        <div class="pgroup-header">
+          <span class="pgroup-icon">&#x1F4CB;</span>
+          <span class="pgroup-title">产品侧 · 需求定义</span>
+        </div>
+        <div class="pgroup-steps">
+          <div class="pg-step">
+            <div class="pg-step-dot">1</div>
+            <div class="pg-step-body">
+              <div class="pg-step-head">产品意图（自然语言）<span class="pg-actor product">产品</span></div>
+              <div class="pg-step-desc">产品侧以自然语言描述业务目标、用户场景和期望产出，作为整条链路的原始输入。</div>
+            </div>
+          </div>
+          <div class="pg-conn">&darr;</div>
+          <div class="pg-step">
+            <div class="pg-step-dot ai">2</div>
+            <div class="pg-step-body">
+              <div class="pg-step-head">BMAD 结构化 <span class="pg-actor ai">AI 辅助</span></div>
+              <div class="pg-step-desc">产品侧使用 BMAD 工具，在 AI 辅助下将自然语言意图转化为结构化需求文档，澄清边界条件和验收标准。</div>
+              <div class="pg-meta"><span class="pg-tag">工具：BMAD</span><span class="pg-tag warn">需人工确认</span></div>
+            </div>
+          </div>
+          <div class="pg-conn">&darr;</div>
+          <div class="pg-step">
+            <div class="pg-step-dot doc">3</div>
+            <div class="pg-step-body">
+              <div class="pg-step-head">Business Spec 产出 <span class="pg-actor product">产品</span></div>
+              <div class="pg-step-desc">生成结构化 PRD 文档，包含 Story 拆分、验收标准定义、非功能需求梳理，作为下游开发输入。</div>
+              <div class="pg-meta"><span class="pg-tag">PRD + Story</span><span class="pg-tag">验收标准</span><span class="pg-tag">边界条件</span></div>
+            </div>
+          </div>
+          <div class="pg-conn">&darr;</div>
+          <div class="pg-step">
+            <div class="pg-step-dot">4</div>
+            <div class="pg-step-body">
+              <div class="pg-step-head">产品创建 Jira 任务 <span class="pg-actor product">产品</span></div>
+              <div class="pg-step-desc">产品将结构化的 Story 内容创建为 Jira 任务，附带完整的结构化描述、Figma 设计稿链接和相关上下文。</div>
+              <div class="pg-meta"><span class="pg-tag">工具：Jira</span><span class="pg-tag">含 Figma 链接</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="pgroup-gap"><span class="pg-gap-arrow">&#x2935;</span></div>
+
+      <!-- Group: 开发侧 -->
+      <div class="pgroup pgroup-dev">
+        <div class="pgroup-header">
+          <span class="pgroup-icon">&#x1F6E0;</span>
+          <span class="pgroup-title">开发侧 · 技术实现</span>
+        </div>
+        <div class="pgroup-steps">
+          <div class="pg-step">
+            <div class="pg-step-dot">5</div>
+            <div class="pg-step-body">
+              <div class="pg-step-head">新迭代开始，任务分配给开发人员 <span class="pg-actor dev">开发</span></div>
+              <div class="pg-step-desc">在敏捷迭代规划中，Jira 任务被分配给开发人员。开发人员获取任务后，拉取上游的 Business Spec 作为输入。</div>
+            </div>
+          </div>
+          <div class="pg-conn">&darr;</div>
+          <div class="pg-step">
+            <div class="pg-step-dot ai">6</div>
+            <div class="pg-step-body">
+              <div class="pg-step-head">生成 Technical Spec <span class="pg-actor dev">开发</span><span class="pg-actor ai">AI</span></div>
+              <div class="pg-step-desc">开发人员在 Claude Code 中运行 AI Skill，基于 Business Spec 自动生成 Technical Spec，包括接口定义、数据模型、业务规则和开发约束。</div>
+              <div class="pg-meta"><span class="pg-tag">工具：OpenSpec</span><span class="pg-tag">接口规范</span><span class="pg-tag">数据模型</span><span class="pg-tag warn">需人工确认</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="pgroup-gap"><span class="pg-gap-arrow">&#x2935;</span></div>
+
+      <!-- Group: AI 自动化生成 -->
+      <div class="pgroup pgroup-ai">
+        <div class="pgroup-header">
+          <span class="pgroup-icon">&#x1F916;</span>
+          <span class="pgroup-title">AI 自动化生成</span>
+        </div>
+        <div class="pgroup-steps">
+          <div class="pg-step">
+            <div class="pg-step-dot ai">7</div>
+            <div class="pg-step-body">
+              <div class="pg-step-head">生成 Verification Spec <span class="pg-actor test">测试</span><span class="pg-actor ai">AI</span></div>
+              <div class="pg-step-desc">基于 Technical Spec 的接口定义和业务规则，生成结构化的测试用例文档，覆盖正常路径、异常路径和边界条件。</div>
+              <div class="pg-meta"><span class="pg-tag">Superpowers</span><span class="pg-tag">正常场景</span><span class="pg-tag">异常场景</span><span class="pg-tag">边界条件</span><span class="pg-tag warn">需人工审核</span></div>
+            </div>
+          </div>
+          <div class="pg-conn">&darr;</div>
+          <div class="pg-step">
+            <div class="pg-step-dot ai">8</div>
+            <div class="pg-step-body">
+              <div class="pg-step-head">测试代码 + 实现代码 <span class="pg-actor ai">AI 生成</span></div>
+              <div class="pg-step-desc">Superpowers 将测试用例转化为可执行的单元测试和集成测试，Claude Code 基于 Technical Spec 生成实现代码（TDD 模式）。</div>
+              <div class="pg-meta"><span class="pg-tag">Claude Code 实现</span><span class="pg-tag">Superpowers 测试</span><span class="pg-tag ok">可自动化执行</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="pgroup-gap"><span class="pg-gap-arrow">&#x2935;</span></div>
+
+      <!-- Group: CI 自动化 -->
+      <div class="pgroup pgroup-ci">
+        <div class="pgroup-header">
+          <span class="pgroup-icon">&#x26A1;</span>
+          <span class="pgroup-title">CI 持续集成</span>
+        </div>
+        <div class="pgroup-steps">
+          <div class="pg-step">
+            <div class="pg-step-dot ci">9</div>
+            <div class="pg-step-body">
+              <div class="pg-step-head">CI 自动触发：测试执行 + 覆盖率报告 <span class="pg-actor ci">CI</span></div>
+              <div class="pg-step-desc">代码提交后 CI 管线自动触发，运行所有测试用例并生成覆盖率报告。结果快速反馈给开发人员，确保变更不引入回归。</div>
+              <div class="pg-meta"><span class="pg-tag">自动化测试</span><span class="pg-tag">覆盖率分析</span><span class="pg-tag ok">全自动</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="pgroup-gap"><span class="pg-gap-arrow">&#x2935;</span></div>
+
+      <!-- Group: 人工验证 -->
+      <div class="pgroup pgroup-manual">
+        <div class="pgroup-header">
+          <span class="pgroup-icon">&#x1F464;</span>
+          <span class="pgroup-title">人工验证 · 最终把关</span>
+        </div>
+        <div class="pgroup-steps">
+          <div class="pg-step">
+            <div class="pg-step-dot">10</div>
+            <div class="pg-step-body">
+              <div class="pg-step-head">人工探索性测试（少量）<span class="pg-actor test">测试</span></div>
+              <div class="pg-step-desc">在自动化测试覆盖的基础上，进行少量人工探索性测试，覆盖自动化难以发现的交互问题和体验问题。</div>
+              <div class="pg-meta"><span class="pg-tag">探索性测试</span><span class="pg-tag">交互验证</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<hr class="gradient-divider" style="width:40%">
+
+<section id="roadmap">
+  <div class="section-inner">
+    <div class="eyebrow reveal"><span class="dash"></span> 价值与路径</div>
+    <h2 class="section-title reveal">预期价值与实施路径</h2>
+    <p class="section-sub reveal">AI 加速 + 结构化上下文 → 将信息不对齐和重复手工劳动带来的损耗控制在较低水平，让团队聚焦高价值决策和创造性工作。</p>
+
+    <div class="roadmap-stage reveal">
+      <div class="stage-header">
+        <span class="stage-badge phase1">✅</span>
+        <h3>Tide — 产品需求结构化</h3>
+      </div>
+      <p>使用 BMAD 在 AI 辅助下将自然语言意图转化为结构化需求文档，产出 PRD + Story + 验收标准，并同步至 Jira 任务管理，为整条链路提供驱动力。<strong style="color:var(--green-600)">已实现。</strong></p>
+    </div>
+
+    <div class="roadmap-stage reveal reveal-delay-1">
+      <div class="stage-header">
+        <span class="stage-badge phase1">✅</span>
+        <h3>Reef — 规范生成与代码实现</h3>
+      </div>
+      <p>基于 Business Spec 自动生成 Technical Spec（接口定义、数据模型、业务规则），建立 feature_id 关联规则和 Spec 文件组织约定，并通过 hooks 在 Claude Code 中执行自动格式化、文件保护和运行测试。<strong style="color:var(--green-600)">已实现。</strong></p>
+    </div>
+
+    <div class="roadmap-stage reveal reveal-delay-2">
+      <div class="stage-header">
+        <span class="stage-badge phase1">✅</span>
+        <h3>Sweep — 测试生成与覆盖率分析</h3>
+      </div>
+      <p>从验收标准半自动生成测试用例，覆盖正常路径、异常路径和边界条件，并将测试场景转化为可执行的单元测试和集成测试。结合 CI 管线自动触发测试执行，结果快速反馈。<strong style="color:var(--green-600)">已实现。</strong></p>
+    </div>
+
+    <div class="roadmap-stage reveal reveal-delay-3">
+      <div class="stage-header">
+        <span class="stage-badge phase2">○</span>
+        <h3>Atoll — 部署辅助、监控与运维排查（暂未实现）</h3>
+      </div>
+      <p>部署辅助、监控查询、故障排查和环境检查。作为系统的稳定承载层，待后续迭代接入。</p>
+    </div>
+
+    <div class="glass-card-outer reveal" style="margin-top:2rem">
+      <div class="glass-card-inner" style="text-align:center;padding:2.5rem">
+        <p style="color:var(--text-60);font-size:0.9rem;line-height:1.8;max-width:600px;margin:0 auto">
+          这套实践旨在利用 AI 提升开发效率的同时，以结构化规格文档将产品、开发、测试的上下文串联。<br>
+          它是对 SDD、TDD 等既有范式的工程化应用，存在磨合成本和暂时无法解决的问题。<br>
+          但相比于团队各自为战、文档与代码脱节的现状，朝这个方向推进，<br>
+          <strong style="color:var(--deepstorm-500)">我们认为会更接近高质量的持续交付。</strong>
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <strong>DeepStorm</strong> — Spec 驱动的 AI 协同软件工程实践<br>
+  命名源自珊瑚礁生态系统 · 个体协作构建复杂系统
+</footer>
+
+<script>
+const navLinks = document.querySelectorAll('nav a:not(.logo)');
+const sections = document.querySelectorAll('section[id]');
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(entry => {
+    if(entry.isIntersecting){
+      navLinks.forEach(l => l.classList.remove('active'));
+      const link = document.querySelector('nav a[href="#'+entry.target.id+'"]');
+      if(link) link.classList.add('active');
+    }
+  });
+}, {threshold:0.3, rootMargin:'-80px 0px 0px 0px'});
+sections.forEach(s => observer.observe(s));
+
+const hamburger = document.getElementById('hamburger');
+const nav = document.getElementById('navbar');
+hamburger.addEventListener('click', () => {
+  nav.classList.toggle('open');
+  if(nav.classList.contains('open')){
+    hamburger.innerHTML = '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><line x1="4" y1="4" x2="16" y2="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="16" y1="4" x2="4" y2="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
+  } else {
+    hamburger.innerHTML = '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><line x1="3" y1="6" x2="17" y2="6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="3" y1="10" x2="17" y2="10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="3" y1="14" x2="17" y2="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
+  }
+});
+document.querySelectorAll('nav a').forEach(a => a.addEventListener('click', () => {
+  nav.classList.remove('open');
+  hamburger.innerHTML = '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><line x1="3" y1="6" x2="17" y2="6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="3" y1="10" x2="17" y2="10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="3" y1="14" x2="17" y2="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
+}));
+
+const revealObserver = new IntersectionObserver(entries => {
+  entries.forEach(entry => {
+    if(entry.isIntersecting){
+      entry.target.classList.add('visible');
+      revealObserver.unobserve(entry.target);
+    }
+  });
+}, {threshold:0.1, rootMargin:'0px 0px -60px 0px'});
+document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+
+window.addEventListener('scroll', () => {
+  if(window.scrollY > 100){
+    nav.style.background = 'rgba(255,255,255,0.9)';
+    nav.style.boxShadow = '0 4px 28px rgba(28,25,23,0.1)';
+  } else {
+    nav.style.background = 'rgba(255,255,255,0.75)';
+    nav.style.boxShadow = '0 4px 24px rgba(28,25,23,0.06)';
+  }
+}, {passive:true});
+</script>
+</body>
+</html>

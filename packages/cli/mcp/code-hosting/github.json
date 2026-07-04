@@ -1,0 +1,20 @@
+{
+  "name": "github",
+  "domain": "code-hosting",
+  "label": "GitHub",
+  "description": "源码托管与协作",
+  "envStubs": [
+    {
+      "key": "GITHUB_PERSONAL_ACCESS_TOKEN",
+      "comment": "GitHub Personal Access Token — 从 https://github.com/settings/tokens 获取"
+    }
+  ],
+  "mcpServers": {
+    "github": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "dotenv-cli", "-e", ".env", "--", "docker", "run", "-i", "--rm", "-e", "GITHUB_PERSONAL_ACCESS_TOKEN", "ghcr.io/github/github-mcp-server"]
+    }
+  },
+  "notes": "需要本地 Docker 环境"
+}

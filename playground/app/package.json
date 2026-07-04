@@ -1,0 +1,17 @@
+{
+  "name": "deepstorm-playground-app",
+  "version": "1.0.0",
+  "private": true,
+  "description": "DeepStorm 工具链测试工程 — 被测系统（Express 全栈 CRUD 应用）",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "express-session": "^1.19.0"
+  },
+  "engines": {
+    "node": ">=20.12"
+  }
+}

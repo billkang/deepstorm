@@ -1,0 +1,27 @@
+{
+  "name": "jira",
+  "domain": "project-management",
+  "label": "Jira",
+  "description": "任务跟踪与敏捷管理",
+  "envStubs": [
+    {
+      "key": "JIRA_INSTANCE_URL",
+      "comment": "Jira 实例 URL，如 https://your-domain.atlassian.net"
+    },
+    {
+      "key": "JIRA_USER_EMAIL",
+      "comment": "登录 Jira 时使用的邮箱地址"
+    },
+    {
+      "key": "JIRA_API_KEY",
+      "comment": "Jira API Token — 从 https://id.atlassian.com/manage/api-tokens 获取"
+    }
+  ],
+  "mcpServers": {
+    "jira": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "dotenv-cli", "-e", ".env", "--", "npx", "-y", "jira-mcp", "--stdio"]
+    }
+  }
+}

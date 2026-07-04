@@ -1,0 +1,21 @@
+# 运行 setup 后生成的配置文件，保留在本地供查看
+.claude/
+.env
+.env.example
+.mcp.json
+
+node_modules
+tide-data/
+
+# app 依赖
+app/node_modules/
+app/data/
+e2e/.playwright-mcp
+e2e/.sweep-init
+e2e/.sweep-selection.json
+e2e/playwright.config.ts
+e2e/tsconfig.json
+e2e/flows/reports/
+e2e/flows/topology.yaml
+e2e/scripts/
+e2e/test-results/

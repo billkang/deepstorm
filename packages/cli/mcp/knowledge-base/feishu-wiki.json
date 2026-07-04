@@ -1,0 +1,19 @@
+{
+  "name": "feishu-wiki",
+  "domain": "knowledge-base",
+  "label": "飞书知识库",
+  "description": "文档协作与知识库",
+  "envStubs": [
+    {
+      "key": "FEISHU_WEBHOOK_TOKEN",
+      "comment": "飞书机器人 Token — 从飞书开放平台 > 应用凭证获取"
+    }
+  ],
+  "mcpServers": {
+    "feishu-wiki": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "dotenv-cli", "-e", ".env", "--", "npx", "-y", "feishu-wiki@latest"]
+    }
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "tool": "sweep",
+  "label": "测试侧",
+  "description": "测试生成、覆盖率、CI",
+  "mcpSkills": ["deepstorm-mcp-jira-read", "deepstorm-mcp-feishu-wiki-read"],
+  "questions": [
+    {
+      "key": "sweep.e2eFramework",
+      "label": "E2E 测试框架",
+      "description": "选择要使用的端到端测试框架",
+      "type": "select",
+      "options": [
+        { "value": "playwright", "label": "Playwright", "description": "Microsoft 出品的跨浏览器 E2E 测试框架" }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,3 @@
+packages:
+  - packages/*
+storeDir: /Users/billkang/workspace/deepstorm/.pnpm-store

@@ -1,0 +1,26 @@
+{
+  "name": "@deepstorm/tide",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "DeepStorm 产品侧套件 — BMAD 需求讨论、PRD 管理、Jira 发布",
+  "license": "MIT",
+  "author": "billkang",
+  "keywords": [
+    "deepstorm",
+    "bmad",
+    "prd",
+    "product-management"
+  ],
+  "scripts": {
+    "test:hooks": "for f in hooks/__tests__/*.test.sh; do echo \"--- $f ---\"; bash \"$f\" || exit 1; done",
+    "test": "pnpm test:hooks"
+  },
+  "files": [
+    "skills/",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "restricted"
+  }
+}

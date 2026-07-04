@@ -1,0 +1,7 @@
+{
+  "tool": "tide",
+  "label": "产品侧",
+  "description": "BMAD 需求讨论、PRD、Jira",
+  "mcpSkills": ["deepstorm-mcp-jira-write", "deepstorm-mcp-feishu-wiki-write"],
+  "questions": []
+}

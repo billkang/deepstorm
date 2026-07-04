@@ -1,0 +1,26 @@
+{
+  "name": "@deepstorm/reef",
+  "version": "0.1.0",
+  "private": true,
+  "description": "DeepStorm 开发侧套件 — 规范生成、代码实现、架构合规",
+  "license": "MIT",
+  "author": "billkang",
+  "keywords": [
+    "deepstorm",
+    "code-generation",
+    "code-review"
+  ],
+  "scripts": {
+    "test:hooks": "for f in hooks/__tests__/*.test.sh; do echo \"--- $f ---\"; bash \"$f\" || exit 1; done",
+    "test": "pnpm test:hooks"
+  },
+  "files": [
+    "agents/",
+    "hooks/",
+    "skills/",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "restricted"
+  }
+}
