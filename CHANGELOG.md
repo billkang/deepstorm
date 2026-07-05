@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.2.4] - 2026-07-05
+
+### Features
+
+- 添加 CLI 构建物 E2E 验证流程，新增 `playground/scripts/verify-cli.sh`，支持 L0 冒烟（每次 build 后必跑）和 L1 全量（手动 `--full` 触发）(2b06dc4)
+- `package.json` 新增 `playground:verify` 快捷入口 (2b06dc4)
+- `deepstorm update` 运行时退化路径保护（registry 不可达时不影响模板同步）(2b06dc4)
+
+### Bug Fixes
+
+- 改进 `update`/`setup` 命令的配置保护机制，SHA256 校验含异常退出回滚 (2b06dc4)
+
 ## [0.2.3] - 2026-07-05
 
 ### Features
