@@ -54,7 +54,7 @@ describe('installMcpSkills', () => {
     const reader = new RegistryReader(registry)
     const installedSkillIds: string[] = []
 
-    installMcpSkills(['reef', 'tide'], reader, tmpDir, tmpDir, installedSkillIds)
+    installMcpSkills(['reef', 'tide'], reader, tmpDir, tmpDir, installedSkillIds, ['jira', 'feishu-wiki'])
 
     expect(installedSkillIds).toHaveLength(3)
     expect(installedSkillIds).toContain('deepstorm-mcp-jira-read')
@@ -85,7 +85,7 @@ describe('installMcpSkills', () => {
     const reader = new RegistryReader(registry)
     const installedSkillIds: string[] = []
 
-    installMcpSkills(['sweep'], reader, tmpDir, tmpDir, installedSkillIds)
+    installMcpSkills(['sweep'], reader, tmpDir, tmpDir, installedSkillIds, ['jira'])
 
     expect(installedSkillIds).toHaveLength(0)
     // No target directory should have been created
@@ -121,7 +121,7 @@ describe('installMcpSkills', () => {
     const reader = new RegistryReader(registry)
     const installedSkillIds: string[] = []
 
-    installMcpSkills(['reef', 'sweep'], reader, tmpDir, tmpDir, installedSkillIds)
+    installMcpSkills(['reef', 'sweep'], reader, tmpDir, tmpDir, installedSkillIds, ['jira'])
 
     expect(installedSkillIds).toHaveLength(1)
     expect(installedSkillIds).toEqual(['deepstorm-mcp-jira-read'])
@@ -147,9 +147,72 @@ describe('installMcpSkills', () => {
     const reader = new RegistryReader(registry)
     const installedSkillIds: string[] = []
 
-    installMcpSkills(['reef'], reader, tmpDir, tmpDir, installedSkillIds)
+    installMcpSkills(['reef'], reader, tmpDir, tmpDir, installedSkillIds, ['nonexistent'])
 
     expect(installedSkillIds).toHaveLength(0)
+  })
+
+  it('only installs MCP skills for selected services', () => {
+    const registry: Registry = {
+      version: '1',
+      tools: {
+        reef: { label: 'Reef', description: '' },
+      },
+      wizards: {
+        reef: {
+          tool: 'reef',
+          label: 'Reef',
+          description: '',
+          mcpSkills: ['deepstorm-mcp-jira-read', 'deepstorm-mcp-figma-read', 'deepstorm-mcp-feishu-wiki-read'],
+          questions: [],
+        },
+      },
+      skills: {},
+    }
+    const reader = new RegistryReader(registry)
+    const installedSkillIds: string[] = []
+
+    // 用户只选了 jira，没有选 figma/feishu-wiki
+    installMcpSkills(['reef'], reader, tmpDir, tmpDir, installedSkillIds, ['jira'])
+
+    // 只应安装 jira 相关的 MCP skill
+    expect(installedSkillIds).toHaveLength(1)
+    expect(installedSkillIds).toContain('deepstorm-mcp-jira-read')
+    expect(installedSkillIds).not.toContain('deepstorm-mcp-figma-read')
+    expect(installedSkillIds).not.toContain('deepstorm-mcp-feishu-wiki-read')
+
+    const targetSkillsDir = path.join(tmpDir, '.claude', 'skills')
+    expect(fs.existsSync(path.join(targetSkillsDir, 'deepstorm-mcp-jira-read', 'SKILL.md'))).toBe(true)
+    expect(fs.existsSync(path.join(targetSkillsDir, 'deepstorm-mcp-figma-read', 'SKILL.md'))).toBe(false)
+    expect(fs.existsSync(path.join(targetSkillsDir, 'deepstorm-mcp-feishu-wiki-read', 'SKILL.md'))).toBe(false)
+  })
+
+  it('skips MCP skills when no MCP services are selected', () => {
+    const registry: Registry = {
+      version: '1',
+      tools: {
+        reef: { label: 'Reef', description: '' },
+      },
+      wizards: {
+        reef: {
+          tool: 'reef',
+          label: 'Reef',
+          description: '',
+          mcpSkills: ['deepstorm-mcp-jira-read', 'deepstorm-mcp-figma-read'],
+          questions: [],
+        },
+      },
+      skills: {},
+    }
+    const reader = new RegistryReader(registry)
+    const installedSkillIds: string[] = []
+
+    // selectedMcpTools 为空数组 → 不安装任何 MCP 技能
+    installMcpSkills(['reef'], reader, tmpDir, tmpDir, installedSkillIds, [])
+
+    expect(installedSkillIds).toHaveLength(0)
+    const targetSkillsDir = path.join(tmpDir, '.claude', 'skills')
+    expect(fs.existsSync(targetSkillsDir)).toBe(false)
   })
 })
 

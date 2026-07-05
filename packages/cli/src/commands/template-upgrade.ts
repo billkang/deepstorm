@@ -2,7 +2,7 @@ import * as fs from 'node:fs'
 import * as path from 'node:path'
 import * as crypto from 'node:crypto'
 import { RegistryReader } from '../engine/registry'
-import { renderToolAssets } from './setup'
+import { renderToolAssets, installMcpSkills } from './setup'
 import { buildTemplateVariables } from '../template/registry'
 import { mergeHooks } from '../merger/hooks'
 import { ensureDir } from '../utils/fs'
@@ -384,8 +384,23 @@ export function syncToolAssets(
   const { config, installedMcpTools } = readSettingsConfig(targetDir)
   const templateVariables = buildTemplateVariables(registry, config, installedMcpTools)
 
-  // ── 3. 备份用户修改 ──
-  const backedUpFiles = backupModifiedAssets(targetDir, installedSkillIds, toolNames, registry)
+  // ── 2b. 计算需要同步的 MCP skill ID 列表 ──
+  const mcpSkillSet = new Set<string>()
+  if (installedMcpTools.length > 0) {
+    const selectedMcpSet = new Set(installedMcpTools)
+    for (const tool of toolNames) {
+      for (const skillId of reader.getToolMcpSkills(tool)) {
+        // 从 skill ID 提取 MCP 服务名（deepstorm-mcp-figma-read → figma）
+        const service = skillId.replace(/^deepstorm-mcp-/, '').replace(/-(read|write)$/, '')
+        if (selectedMcpSet.has(service)) mcpSkillSet.add(skillId)
+      }
+    }
+  }
+  const mcpSkillIds = [...mcpSkillSet]
+
+  // ── 3. 备份用户修改（包含常规 skill + 已安装的 MCP skill） ──
+  const allSkillIdsForBackup = [...new Set([...installedSkillIds, ...mcpSkillIds])]
+  const backedUpFiles = backupModifiedAssets(targetDir, allSkillIdsForBackup, toolNames, registry)
 
   if (backedUpFiles.length > 0) {
     console.log('\n⚠ 检测到用户修改的文件：')
@@ -434,11 +449,18 @@ export function syncToolAssets(
 
   const syncedSkills = actualSkillIds.length > 0 ? actualSkillIds : [...installedSkillIds]
 
-  // ── 5. 合并 hooks.json ──
+  // ── 5. 同步 MCP 技能（仅当用户已配置 MCP 服务时） ──
+  const syncedMcpSkillIds: string[] = []
+  if (installedMcpTools.length > 0) {
+    installMcpSkills(toolNames, reader, cliDir, targetDir, syncedMcpSkillIds, installedMcpTools)
+  }
+
+  // ── 6. 合并 hooks.json ──
   mergeToolHooksJson(toolNames, cliDir, targetDir)
 
-  // ── 6. 存储新的 checksum 快照 ──
-  storeNewChecksums(targetDir, installedSkillIds, toolNames, registry)
+  // ── 7. 存储新的 checksum 快照（包含常规 skill + MCP skill） ──
+  const allSkillIds = [...installedSkillIds, ...syncedMcpSkillIds]
+  storeNewChecksums(targetDir, allSkillIds, toolNames, registry)
 
   if (hasWarning) {
     console.log('\n⚠ 部分工具同步出错，请检查后重试')
@@ -449,7 +471,7 @@ export function syncToolAssets(
   const uniqueHooks = [...new Set(syncedHooks)]
 
   return {
-    syncedSkills,
+    syncedSkills: [...syncedSkills, ...syncedMcpSkillIds],
     syncedAgents: uniqueAgents,
     syncedHooks: uniqueHooks,
     backedUpFiles,

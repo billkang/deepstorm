@@ -109,7 +109,7 @@ async function runSetup(
   }
 
   // Step 3b: 安装选中工具所需的 MCP 使用指南 skill
-  installMcpSkills(tools, reader, cliDir, targetDir, installedSkillIds)
+  installMcpSkills(tools, reader, cliDir, targetDir, installedSkillIds, selectedMcpTools)
 
   // Step 4: 按 Way 1 遍历安装各工具的 assets（skills → agents → hooks）
   for (const tool of tools) {
@@ -272,6 +272,8 @@ export function renderToolAssets(
   registry: Registry,
   installedMcpTools: string[] = [],
   targetSubDir: string = '.claude',
+  /** 仅安装指定 ID 的 skill，未传入时安装所有匹配的 skill（setup 行为） */
+  skillIdFilter?: Set<string>,
 ): string[] {
   const installedSkillIds: string[] = []
   const targetSkillsDir = targetSubDir
@@ -285,6 +287,9 @@ export function renderToolAssets(
   for (const skill of toolSkills) {
     const skillId = getSkillId(skill, registry)
     if (!skillId) continue
+
+    // 仅安装指定的 skill（update 时传入 installedSkills），跳过非安装列表的 skill
+    if (skillIdFilter && !skillIdFilter.has(skillId)) continue
 
     // 根据 configKey 条件过滤：前端/后端未选时跳过对应的 skill
     if (shouldSkipSkill(skill, config)) {
@@ -413,15 +418,26 @@ export function installMcpSkills(
   cliDir: string,
   targetDir: string,
   installedSkillIds: string[],
+  selectedMcpTools: string[] = [],
 ): void {
   const mcpSkillsDir = path.join(cliDir, 'mcp-skills')
   const targetSkillsDir = path.join(targetDir, '.claude', 'skills')
   if (!fs.existsSync(mcpSkillsDir)) return
 
+  // 用户没有选中任何 MCP 服务时，不安装任何 MCP 技能
+  if (selectedMcpTools.length === 0) {
+    console.log('⏭ 未选择 MCP 服务，跳过 MCP 技能安装')
+    return
+  }
+
+  const selectedMcpSet = new Set(selectedMcpTools)
   const neededSkills = new Set<string>()
   for (const tool of tools) {
     const toolMcpSkills = reader.getToolMcpSkills(tool)
     for (const skillId of toolMcpSkills) {
+      // 从 skill ID 提取 MCP 服务名（deepstorm-mcp-figma-read → figma）
+      const service = skillId.replace(/^deepstorm-mcp-/, '').replace(/-(read|write)$/, '')
+      if (!selectedMcpSet.has(service)) continue
       neededSkills.add(skillId)
     }
   }

@@ -3,9 +3,10 @@ import * as fs from 'node:fs'
 import * as path from 'node:path'
 import os from 'node:os'
 
-// Mock renderToolAssets 以避免 setup.ts 的文件系统依赖
+// Mock renderToolAssets 和 installMcpSkills 以避免 setup.ts 的文件系统依赖
 vi.mock('../setup', () => ({
   renderToolAssets: vi.fn().mockReturnValue([]),
+  installMcpSkills: vi.fn(),
 }))
 
 // Mock mergeHooks
@@ -19,6 +20,7 @@ import {
   backupFile,
   syncToolAssets,
 } from '../template-upgrade'
+import { installMcpSkills as mockInstallMcpSkills } from '../setup'
 
 // ─── computeFileChecksum ──────────────────────────────────────────
 
@@ -200,7 +202,7 @@ describe('syncToolAssets', () => {
     expect(report.syncedHooks).toEqual([])
   })
 
-  it('有效工具应调用 renderToolAssets 并返回报告', () => {
+  it('有效工具应调用 renderToolAssets 并返回报告', async () => {
     const cliDir = path.join(tmpDir, 'dist')
     fs.mkdirSync(cliDir, { recursive: true })
 
@@ -230,5 +232,103 @@ describe('syncToolAssets', () => {
     expect(report.syncedSkills).toEqual(['tide-discuss', 'tide-read'])
     expect(report.syncedAgents).toEqual(['tide-agent.md'])
     expect(report.syncedHooks).toEqual(['post-checkout'])
+  })
+
+  it('同步 MCP 技能当用户已安装 MCP 服务时', () => {
+    mockInstallMcpSkills.mockImplementation((_tools, _reader, _cliDir, _targetDir, skillIds) => {
+      skillIds.push('deepstorm-mcp-jira-read')
+    })
+
+    const cliDir = path.join(tmpDir, 'dist')
+    fs.mkdirSync(cliDir, { recursive: true })
+
+    fs.writeFileSync(
+      path.join(cliDir, 'registry.json'),
+      JSON.stringify({
+        version: '1',
+        tools: { reef: { label: 'Reef', description: '' } },
+        wizards: {
+          reef: {
+            tool: 'reef',
+            label: 'Reef',
+            description: '',
+            mcpSkills: ['deepstorm-mcp-jira-read', 'deepstorm-mcp-figma-read'],
+            questions: [],
+          },
+        },
+        skills: {
+          'reef-gen-code': { tool: 'reef', configKey: 'x', configValue: 'y' },
+        },
+        toolAssets: {
+          reef: { agents: ['reef-agent.md'], hooks: ['post-checkout'] },
+        },
+      }),
+      'utf-8',
+    )
+
+    // settings.json 包含 installedMcpServers，表示用户已配置 jira MCP 服务
+    const settingsDir = path.join(tmpDir, '.claude')
+    fs.mkdirSync(settingsDir, { recursive: true })
+    fs.writeFileSync(
+      path.join(settingsDir, 'settings.json'),
+      JSON.stringify({
+        deepstorm: {
+          installedSkills: ['reef-gen-code'],
+          installedMcpServers: ['jira'],
+        },
+      }),
+      'utf-8',
+    )
+
+    const report = syncToolAssets(cliDir, tmpDir, ['reef-gen-code'])
+
+    // installMcpSkills 被调用，参数正确
+    expect(mockInstallMcpSkills).toHaveBeenCalled()
+    const callArgs = mockInstallMcpSkills.mock.calls[0]
+    expect(callArgs[0]).toEqual(['reef']) // tools
+    expect(callArgs[5]).toEqual(['jira']) // selectedMcpTools
+
+    // 报告中应包含 MCP skill ID（由 mock 模拟安装）
+    expect(report.syncedSkills).toContain('deepstorm-mcp-jira-read')
+    expect(report.syncedSkills).toContain('reef-gen-code')
+  })
+
+  it('跳过 MCP 技能当 installedMcpTools 为空时', () => {
+    mockInstallMcpSkills.mockReset()
+
+    const cliDir = path.join(tmpDir, 'dist')
+    fs.mkdirSync(cliDir, { recursive: true })
+
+    fs.writeFileSync(
+      path.join(cliDir, 'registry.json'),
+      JSON.stringify({
+        version: '1',
+        tools: { reef: { label: 'Reef', description: '' } },
+        wizards: {
+          reef: {
+            tool: 'reef',
+            label: 'Reef',
+            description: '',
+            mcpSkills: ['deepstorm-mcp-jira-read'],
+            questions: [],
+          },
+        },
+        skills: {
+          'reef-gen-code': { tool: 'reef', configKey: 'x', configValue: 'y' },
+        },
+        toolAssets: {
+          reef: { agents: [], hooks: [] },
+        },
+      }),
+      'utf-8',
+    )
+
+    // 不创建 settings.json → installedMcpTools 默认为 []
+    const report = syncToolAssets(cliDir, tmpDir, ['reef-gen-code'])
+
+    // installMcpSkills 未被调用
+    expect(mockInstallMcpSkills).not.toHaveBeenCalled()
+    // MCP skill ID 不应出现在报告中
+    expect(report.syncedSkills).not.toContain('deepstorm-mcp-jira-read')
   })
 })

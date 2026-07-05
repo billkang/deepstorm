@@ -8,6 +8,7 @@
     "cli": "node packages/cli/dist/cli.js",
     "build:plugin": "pnpm build && pnpm cli plugin build",
     "playground:setup": "bash playground/scripts/setup.sh",
+    "playground:verify": "bash playground/scripts/verify-cli.sh",
     "test": "pnpm -r test"
   },
   "devDependencies": {}

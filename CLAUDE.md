@@ -41,6 +41,15 @@ flowchart LR
 
 每个 OpenSpec change 在**独立的 Claude Code 会话**中完成。
 
+## playground — 测试项目
+
+`playground/` 是 DeepStorm CLI 的**端到端测试项目**，所有 CLI 功能验证在此进行。
+
+- **CLI 验证**：`deepstorm setup`、`deepstorm update`、`deepstorm doctor` 等命令的 E2E 测试（`pnpm playground:verify`）
+- **插件验证**：`playground/.deepstorm/` 为插件目录，插件能力在此验证（待建）
+- **配置格式**：settings.json 使用 `deepstorm.*` 命名空间，MCP server 使用 `deepstorm-*` 前缀
+- **当前配置**：已安装 skills（jira-read、feishu-wiki-read、sweep-init/plan/run）、MCP servers（github、context7、jira、figma、playwright）、reef 配置（frontend: angular, backend: java）
+
 ## gstack
 
 使用 gstack 提供的 `/browse` skill 进行所有网页浏览，**不要使用 `mcp__claude-in-chrome__*` 工具**。

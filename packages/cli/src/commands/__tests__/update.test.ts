@@ -51,7 +51,7 @@ describe('checkNpmVersion', () => {
     expect(result.current).toBe('0.1.2')
     expect(result.latest).toBeNull()
     expect(result.error).toBeDefined()
-    expect(result.error).toContain('connect ECONNREFUSED')
+    expect(result.error).toContain('无法连接 registry')
   })
 
   it('应处理非 200 响应', async () => {
