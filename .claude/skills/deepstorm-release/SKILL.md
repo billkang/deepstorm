@@ -146,6 +146,30 @@ AI 将 git 提交分类汇总为结构化 CHANGELOG 条目：
 - 如果 `CHANGELOG.md` 不存在则新建
 - breaking changes 在文件最顶部突出显示
 
+### Step 4.5: 文档完整性检查
+
+在更新版本号之前，检查对外文档是否与本次发布内容一致：
+
+```bash
+# 列出本次发布涉及的所有变更文件
+git diff --name-only <last-tag>..HEAD
+```
+
+**检查清单（LLM 自行推理）：**
+
+1. **CLI 相关变更**（`packages/cli/`）→ 根 `README.md` 的 CLI 命令表、环境变量表、快速开始是否需更新
+2. **套件变更**（新增/删除 skill / agent / hook）→ 对应 `packages/*/README.md` 组件列表是否需更新
+3. **项目结构变更** → `README.md` 项目结构图和 CLAUDE.md 关键约定是否需更新
+4. **MCP/配置变更** → `README.md` MCP 章节、`packages/cli/README.md` 命令表是否需更新
+
+**处理方式：**
+
+列出需更新的文档路径，让用户选择：
+- **"立即更新"** → 更新对应文档后继续（文档变更会包含在 release commit 中）
+- **"跳过"** → 继续发版流程（不强制，只做记录）
+
+> 此步骤仅作提醒，不阻断发版流程。CHANGELOG 已在 Step 4 中生成，此处重点检查 README 等结构性文档。
+
 ### Step 5: 更新版本号
 
 将所有 `package.json` 的 `version` 更新为确认后的版本号：

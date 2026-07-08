@@ -143,6 +143,29 @@ git diff --stat
 
 如包含 `.env`、凭据、证书或大型二进制文件，让用户确认或排除后再继续。
 
+### 4.5 文档同步检查
+
+审查文件后，检查本次变更是否涉及需要同步 DeepStorm 自身文档的情况：
+
+```bash
+# 获取变更文件列表
+CHANGED=$(git diff --name-only --cached 2>/dev/null || git diff --name-only)
+echo "$CHANGED"
+```
+
+**判断规则（LLM 自行推理）：**
+
+1. **DeepStorm 自身开发需要检查的变更类型：**
+   - 修改了 `packages/*/skills/` / `agents/` / `hooks/` → README.md（根 + 对应 package）组件列表、CLAUDE.md
+   - 修改了 CLI 命令（`packages/cli/src/commands/`）→ 根 README.md CLI 命令表
+   - 修改了 MCP 服务器配置（`packages/cli/mcp/`）→ 根 README.md MCP 章节
+   - 修改了配置格式（`config-schema.json`、`.env.example`、`wizard.json`）→ 项目结构/配置文档
+   - 修改了工作流程或约定（skills/agents/hooks 的行为逻辑）→ CLAUDE.md 关键约定
+
+2. **提醒方式：** 发现未同步的文档时，**提示用户**（非阻断）：「本次变更涉及 XXX，相关文档可能需要同步更新：- path/to/doc.md」。用户可立即更新或跳过。
+
+3. **不需要检查：** 纯 bug 修复、内部重构（不改变对外行为）、测试补充、仅文档变更
+
 ### 5. 运行测试
 
 ```bash
