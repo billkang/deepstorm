@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.3.0] - 2026-07-08
+
+### Features
+
+- deepstorm-commit 同步 reef-commit 分支管理能力，新增分支名检测和自动创建新分支，明确声明继承关系 (6148e5b)
+- reef-commit 新增提交分支自动管理：main/master 自动建分支、临时分支提示、OpenSpec 任务匹配 (729f955)
+
+### Bug Fixes
+
+- 修复 CLI setup 中 hooks.json 目标路径错误，添加 DeepStorm 开发环境 hooks（intent-detect、block-dangerous、protect-files、run-tests）(5049e22)
+
 ## [0.2.4] - 2026-07-05
 
 ### Features
