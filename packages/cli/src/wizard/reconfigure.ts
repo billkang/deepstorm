@@ -44,7 +44,11 @@ export function cleanInstalled(targetDir: string): void {
     }
   }
 
-  // 清理已安装的 hooks（hooks.json + hook 脚本）
+  // 清理已安装的 hooks（.claude/hooks.json 配置 + .claude/hooks/ 脚本）
+  const hooksJson = path.join(targetDir, '.claude', 'hooks.json')
+  if (fs.existsSync(hooksJson)) {
+    fs.rmSync(hooksJson, { force: true })
+  }
   const hooksDir = path.join(targetDir, '.claude', 'hooks')
   if (fs.existsSync(hooksDir)) {
     fs.rmSync(hooksDir, { recursive: true, force: true })

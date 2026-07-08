@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ./tide-session-preload.sh"
+            "command": "bash .claude/hooks/tide-session-preload.sh"
           }
         ]
       }

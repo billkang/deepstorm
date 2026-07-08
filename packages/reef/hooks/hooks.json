@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ./reef-intent-detect.sh"
+            "command": "bash .claude/hooks/reef-intent-detect.sh"
           }
         ]
       }
@@ -16,7 +16,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ./reef-block-dangerous.sh"
+            "command": "bash .claude/hooks/reef-block-dangerous.sh"
           }
         ]
       },
@@ -25,7 +25,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ./reef-protect-files.sh"
+            "command": "bash .claude/hooks/reef-protect-files.sh"
           },
           {
             "type": "prompt",
@@ -41,7 +41,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ./reef-auto-format.sh"
+            "command": "bash .claude/hooks/reef-auto-format.sh"
           }
         ]
       },
@@ -50,7 +50,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ./reef-run-tests.sh",
+            "command": "bash .claude/hooks/reef-run-tests.sh",
             "if": "Edit(*.ts)|Write(*.ts)",
             "async": true,
             "statusMessage": "Running tests..."
@@ -63,7 +63,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ./reef-run-tests.sh"
+            "command": "bash .claude/hooks/reef-run-tests.sh"
           }
         ]
       }
