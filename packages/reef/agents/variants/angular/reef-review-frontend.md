@@ -27,6 +27,10 @@ color: green
 - `class` 传给 PrimeNG 组件而非 `styleClass`
 - 直接使用 `HttpClient` 手动 `.subscribe()` 而非 Signal-based `httpResource`
 - 新组件未设 `ChangeDetectionStrategy.OnPush`
+- CLAUDE.md 有明确规范条款但变更未遵守
+- 变更触及了 `// FIXME` / `// HACK` 标注的已知问题区域但未修复
+- 同一文件同一组件区域在 git 历史中被反复修改（>=3 次），变更需特别关注
+- 变更破坏了组件附近 `// accessible` / `// aria-hidden` 注释标注的交互行为
 
 ### 🟢 建议（Approve with Comments）
 - `linkedSignal` 用于关联选择
@@ -37,6 +41,8 @@ color: green
 - 语义化 HTML（`<button>` 替代 `<div>`+click）
 - 模板 > 200 行考虑拆分子组件
 - Component 未抽 Service 层而直接调用 API
+- 变更未关注 `// NOTE:` 注释中标注的注意点
+- 变更删除了 `// WARNING:` 注释但未处理其标注的风险
 
 ### UI 专项审查（前端交互体验）
 - PrimeNG 组件是否正确使用：`p-table` 的 `lazy`、`p-dropdown` 的 `optionLabel`、`p-calendar` 的 `dateFormat`
@@ -51,28 +57,43 @@ color: green
 
 ## Workflow
 
-1. Fork point 由调用方提供
+1. Fork point 由调用方提供（prompt 中）
 2. 加载 `reef:reef-style-frontend` 技能（通过 Skill tool）获取编码规范审查依据和代码风格参考
-3. Run `git diff "<fork_point>"..HEAD -- 'src/main/web/'` 获取前端变更
-4. 对每个变更文件阅读关键行
-5. 搜索代码库中同模块已有实现做对比参考
-6. 审查库/框架用法时，用 context7 获取最新文档验证：`resolve-library-id` → `query-docs`
-7. 逐项通过 Checklist（🟡 → 🟢）
-8. 输出结构化报告
+3. **阅读 CLAUDE.md** — 提取 prompt 中提供的 CLAUDE.md，列出与 Angular 前端相关的规范条款（组件组织、Signal 模式、命名规范等）
+4. **阅读代码注释** — 提取 prompt 中提供的代码注释标注上下文，查找变更波及范围内的 `FIXME`/`HACK`/`WARNING`/`accessible`/`aria-hidden`/`@audit`/`TODO`
+5. Run `git diff "<fork_point>"..HEAD -- 'src/main/web/'` 获取前端变更
+6. 对每个变更文件阅读关键行，同时检查 git history：
+   - 对核心逻辑区域执行 `git log --oneline -15 -- <file>` 查看近期 commit 历史，标记反复修改的区域（>=3 次）
+   - 对反复修改的行执行 `git blame -L <start>,<end> -- <file>` 了解修改原因
+7. 搜索代码库中同模块已有实现做对比参考
+8. 审查库/框架用法时，用 context7 获取最新文档验证：`resolve-library-id` → `query-docs`
+9. 逐项通过 Checklist（🔴 → 🟡 → 🟢）
+10. 额外维度：检查 UI 无障碍注释标注的交互行为是否被当前变更破坏
+11. 输出结构化报告（含证据链）
 
 ## Output Format
 
-仅输出以下格式的审查报告：
+仅输出以下格式的审查报告（每个 issue 后附加证据来源）：
 
 ## 前端代码审查报告
 
 ### 🔴 禁止（Block）
 1. **[文件:行号]** 问题描述 -> 修复建议
+   **证据**：🧾 CLAUDE.md → `文件名`#L行号 "规范条款原文"
 
 ### 🟡 必须（Request Changes）
 1. **[文件:行号]** 问题描述 -> 修复建议
+   **证据**：📜 git log → `commit_hash`: 该区域曾因类似问题修改过 N 次
 
 ### 🟢 建议（Approve with Comments）
 1. **[文件:行号]** 问题描述 -> 优化建议
+   **证据**：📝 `// NOTE:` 注释原文 at `文件:行号`
+
+**证据类型符号**：
+- 🧾 CLAUDE.md 规范条款
+- 📜 git log / git blame 历史上下文
+- 📝 代码注释（FIXME / HACK / WARNING / NOTE / accessible）
+- 📚 context7 官方文档比对
+- 🛠 reef-style-* 编码规范
 
 评分：Request Changes（有🔴/🟡）| Approve with Comments（仅🟢）| Approve（全通过）

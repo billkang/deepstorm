@@ -40,6 +40,9 @@ color: blue
 - 缺少 Alembic migration（Model 变更后）
 - REST 路径不统一（复数名词 `/api/v1/users`、kebab-case、路径变量命名一致）
 - Pydantic Schema 未做 Request/Response 分离
+- CLAUDE.md 有明确规范条款但变更未遵守
+- 变更触及了 `// FIXME` / `// HACK` 标注的已知问题区域但未修复
+- 同一文件同一函数区域在 git 历史中被反复修改（>=3 次），变更需特别关注
 
 ### 🟢 建议（Approve with Comments）
 - 日志中避免敏感数据（PII/Token）
@@ -47,6 +50,8 @@ color: blue
 - f-string 替代 `％` 格式化
 - 枚举类型（`StrEnum`）替代魔法字符串常量
 - SQLAlchemy v2.0 style（`Mapped` + `mapped_column`）
+- 变更未关注 `// NOTE:` 注释中标注的注意点
+- 变更删除了 `// WARNING:` 注释但未处理其标注的风险
 {{else}}
 ### P0 — 多租户安全（数据安全事故）
 - 禁止在 Repository 中手动拼 `WHERE tenant_id = ?`
@@ -68,6 +73,9 @@ color: blue
 - 方法嵌套深度 > 4 层（可读性）
 - Entity 字段变更缺少对应的 Liquibase changelog
 - REST 路径不统一（复数名词 `/api/v1/users`、路径变量命名一致）
+- CLAUDE.md 有明确规范条款但变更未遵守
+- 变更触及了 `// FIXME` / `// HACK` 标注的已知问题区域但未修复
+- 同一文件同一函数区域在 git 历史中被反复修改（>=3 次），变更需特别关注
 
 ### 🟢 建议（Approve with Comments）
 - 日志中避免敏感数据（PII/Token）
@@ -75,24 +83,30 @@ color: blue
 - Report / VO 用 Java Records
 - `Optional` 返回值正确使用（不 `.get()` 裸调，用 `orElse`/`orElseThrow`）
 - DTO 字段缺少校验注解（`@NotBlank` / `@Size` / `@Pattern`）
+- 变更未关注 `// NOTE:` 注释中标注的注意点
+- 变更删除了 `// WARNING:` 注释但未处理其标注的风险
 {{/if}}
 
 ## Workflow
 
-1. Fork point 由调用方提供
+1. Fork point 由调用方提供（prompt 中）
 2. 加载 `reef:reef-style-backend` 技能（通过 Skill tool）获取编码规范审查依据和代码风格参考
-3. 获取变更 diff：
+3. **阅读 CLAUDE.md** — 提取 prompt 中提供的 CLAUDE.md 文件内容，列出与后端代码直接相关的规范条款（命名规范、代码组织、数据库约束、API 设计原则等），作为后续审查依据
+4. **阅读代码注释** — 提取 prompt 中提供的代码注释标注上下文，查找变更波及范围内的关键注释：`FIXME`/`HACK`/`WARNING`/`SECURITY`/`@audit`/`TODO`。注意变更是否触及已知问题点、是否遵守了警告说明、是否与注释内容一致
+5. 获取变更 diff：
    - 后端代码：`git diff "<fork_point>"..HEAD -- {{reef.backend.language.sourcePath}}`
    - 如调用方要求审查其他文件（{{#if reef.backend.language.isPython}}Alembic 迁移{{else}}Liquibase changelog{{/if}}、构建配置、.claude/ 配置等）：`git diff "<fork_point>"..HEAD --name-only` 查看完整列表，按需阅读关键文件
-4. 对每个变更文件阅读关键行
-5. 搜索代码库中同模块已有实现做对比参考
-6. 审查库/框架用法时，用 context7 获取最新文档验证：`resolve-library-id` → `query-docs`
-7. 逐项通过 Checklist（P0 → 🔴 → 🟡 → 🟢），其他文件侧重：{{#if reef.backend.language.isPython}}Alembic 迁移格式规范{{else}}Liquibase 格式规范{{/if}}、构建配置完整性、配置安全
-8. 输出结构化报告
+6. 对每个变更文件阅读关键行，同时检查 git history：
+   - 对核心逻辑区域执行 `git log --oneline -15 -- <file>` 查看近期 commit 历史，标记反复修改的代码区域（>=3 次 = 脆弱区域，需重点审查）
+   - 对反复修改的行执行 `git blame -L <start>,<end> -- <file>` 了解修改原因
+7. 搜索代码库中同模块已有实现做对比参考
+8. 审查库/框架用法时，用 context7 获取最新文档验证：`resolve-library-id` → `query-docs`
+9. 逐项通过 Checklist（P0 → 🔴 → 🟡 → 🟢），其他文件侧重：{{#if reef.backend.language.isPython}}Alembic 迁移格式规范{{else}}Liquibase 格式规范{{/if}}、构建配置完整性、配置安全
+10. 输出结构化报告（含证据链）
 
 ## Output Format
 
-仅输出以下格式的审查报告：
+仅输出以下格式的审查报告（每个 issue 后附加证据来源）：
 
 {{#if reef.backend.language.isPython}}
 ## Python（FastAPI）后端审查报告
@@ -102,11 +116,21 @@ color: blue
 
 ### 🔴 禁止（Block）
 1. **[文件:行号]** 问题描述 -> 修复建议
+   **证据**：🧾 CLAUDE.md → `文件名`#L行号 "规范条款原文"
 
 ### 🟡 必须（Request Changes）
 1. **[文件:行号]** 问题描述 -> 修复建议
+   **证据**：📜 git log → `commit_hash`: 该区域曾因类似问题修改过 N 次
 
 ### 🟢 建议（Approve with Comments）
 1. **[文件:行号]** 问题描述 -> 优化建议
+   **证据**：📝 `// NOTE:}` 注释原文 at `文件:行号`
+
+**证据类型符号**：
+- 🧾 CLAUDE.md 规范条款
+- 📜 git log / git blame 历史上下文
+- 📝 代码注释（FIXME / HACK / WARNING / NOTE）
+- 📚 context7 官方文档比对
+- 🛠 reef-style-* 编码规范
 
 评分：Request Changes（有🔴/🟡）| Approve with Comments（仅🟢）| Approve（全通过）
