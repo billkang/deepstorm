@@ -35,7 +35,7 @@ describe('cleanInstalled', () => {
   function writeHooksHook(): void {
     const hooksDir = path.join(tmpDir, '.claude', 'hooks')
     fs.mkdirSync(hooksDir, { recursive: true })
-    fs.writeFileSync(path.join(hooksDir, 'hooks.json'), JSON.stringify({ hooks: {} }), 'utf-8')
+    fs.writeFileSync(path.join(tmpDir, '.claude', 'hooks.json'), JSON.stringify({ hooks: {} }), 'utf-8')
     fs.writeFileSync(path.join(hooksDir, 'reef-block-dangerous.sh'), 'echo ok', 'utf-8')
   }
 
@@ -131,7 +131,7 @@ describe('cleanInstalled', () => {
     expect((mcp.mcpServers as any)['user-manual']).toBeDefined()
   })
 
-  it('应清理已安装的 hooks 目录（hooks.json + 脚本）', () => {
+  it('应清理已安装的 hooks（.claude/hooks.json + .claude/hooks/ 脚本）', () => {
     writeSettings({
       deepstorm: {
         installedMcpServers: [],
@@ -142,6 +142,8 @@ describe('cleanInstalled', () => {
 
     cleanInstalled(tmpDir)
 
+    const hooksRootJson = path.join(tmpDir, '.claude', 'hooks.json')
+    expect(fs.existsSync(hooksRootJson)).toBe(false)
     const hooksDir = path.join(tmpDir, '.claude', 'hooks')
     expect(fs.existsSync(hooksDir)).toBe(false)
   })
@@ -163,7 +165,9 @@ describe('cleanInstalled', () => {
 
     cleanInstalled(tmpDir)
 
-    const hooksJson = path.join(tmpDir, '.claude', 'hooks', 'hooks.json')
-    expect(fs.existsSync(hooksJson)).toBe(true)
+    const hooksRootJson = path.join(tmpDir, '.claude', 'hooks.json')
+    expect(fs.existsSync(hooksRootJson)).toBe(true)
+    const hooksDir = path.join(tmpDir, '.claude', 'hooks')
+    expect(fs.existsSync(hooksDir)).toBe(true)
   })
 })

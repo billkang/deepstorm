@@ -321,7 +321,7 @@ function loadRegistryFromCliDir(cliDir: string): Registry | null {
 }
 
 /**
- * 合并 {tool}-hooks.json 到 .claude/hooks/hooks.json。
+ * 合并 {tool}-hooks.json 到 .claude/hooks.json。
  */
 function mergeToolHooksJson(
   toolNames: string[],
@@ -329,13 +329,12 @@ function mergeToolHooksJson(
   targetDir: string,
 ): void {
   const hooksSrcDir = path.join(cliDir, 'hooks')
-  const targetHooksDir = path.join(targetDir, '.claude', 'hooks')
-  const destHooksJson = path.join(targetHooksDir, 'hooks.json')
+  const destHooksJson = path.join(targetDir, '.claude', 'hooks.json')
 
   for (const tool of toolNames) {
     const toolHooksJsonPath = path.join(hooksSrcDir, `${tool}-hooks.json`)
     if (fs.existsSync(toolHooksJsonPath)) {
-      ensureDir(targetHooksDir)
+      ensureDir(path.join(targetDir, '.claude'))
       const incoming = JSON.parse(fs.readFileSync(toolHooksJsonPath, 'utf-8'))
       mergeHooks(destHooksJson, incoming)
     }

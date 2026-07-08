@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ./sweep-mcp-hook.sh"
+            "command": "bash .claude/hooks/sweep-mcp-hook.sh"
           }
         ]
       }

@@ -2,7 +2,7 @@ import * as fs from 'node:fs'
 import { deepMerge } from '../utils/json'
 
 /**
- * 合并 hooks 配置到 .claude/hooks/hooks.json。
+ * 合并 hooks 配置到 .claude/hooks.json。
  * 文件不存在时自动创建，已有 hooks 原样保留。
  */
 export function mergeHooks(

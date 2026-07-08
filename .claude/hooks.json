@@ -1,0 +1,61 @@
+{
+  "UserPromptSubmit": [
+    {
+      "hooks": [
+        {
+          "type": "command",
+          "command": "bash .claude/hooks/deepstorm-intent-detect.sh"
+        }
+      ]
+    }
+  ],
+  "PreToolUse": [
+    {
+      "matcher": "Bash",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "bash .claude/hooks/deepstorm-block-dangerous.sh"
+        }
+      ]
+    },
+    {
+      "matcher": "Write|Edit",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "bash .claude/hooks/deepstorm-protect-files.sh"
+        },
+        {
+          "type": "prompt",
+          "timeout": 5,
+          "prompt": "You are about to write or edit a file in the DeepStorm project. DeepStorm development requires discussing changes before implementing them. Have you gone through /deepstorm-discuss first? The process is non-negotiable for ALL code changes: features, bug fixes, refactors, config changes — every single one. If you are not already in an active deepstorm-discuss workflow, STOP and invoke /deepstorm-discuss first."
+        }
+      ]
+    }
+  ],
+  "PostToolUse": [
+    {
+      "matcher": "Edit|Write",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "bash .claude/hooks/deepstorm-run-tests.sh",
+          "if": "Edit(*.ts)|Write(*.ts)",
+          "async": true,
+          "statusMessage": "Running DeepStorm tests..."
+        }
+      ]
+    }
+  ],
+  "Stop": [
+    {
+      "hooks": [
+        {
+          "type": "command",
+          "command": "bash .claude/hooks/deepstorm-run-tests.sh"
+        }
+      ]
+    }
+  ]
+}

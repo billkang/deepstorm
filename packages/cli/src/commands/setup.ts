@@ -120,13 +120,12 @@ async function runSetup(
   // Step 5: 合并 hooks（hooks.json）— 逐个工具读取 `{tool}-hooks.json`，只合并选中工具的 hooks
   if (shouldInstallGlobalHooks(tools, reader)) {
     const hooksSrcDir = path.join(cliDir, 'hooks')
-    const targetHooksDir = path.join(targetDir, '.claude', 'hooks')
-    const destHooksJson = path.join(targetHooksDir, 'hooks.json')
+    const destHooksJson = path.join(targetDir, '.claude', 'hooks.json')
 
     for (const tool of tools) {
       const toolHooksJsonPath = path.join(hooksSrcDir, `${tool}-hooks.json`)
       if (fs.existsSync(toolHooksJsonPath)) {
-        ensureDir(targetHooksDir)
+        ensureDir(path.join(targetDir, '.claude'))
         const incoming = JSON.parse(fs.readFileSync(toolHooksJsonPath, 'utf-8'))
         mergeHooks(destHooksJson, incoming)
       }
