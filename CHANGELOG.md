@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.1] - 2026-07-08
+
+### Features
+
+- 注入 CLAUDE.md 合规、代码注释合规、git history 上下文三个审查维度到 reef-review 的所有 agent workflow 中 (`0bff708`)
+- 新增 reef-review-security agent，覆盖多租户隔离、OWASP、越权、注入等 P0-P5 安全维度 (`0bff708`)
+- 在 commit 和 release 技能中集成文档同步检查机制 (`6b255cf`)
+
 ## [0.3.0] - 2026-07-08
 
 ### Features

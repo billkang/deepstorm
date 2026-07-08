@@ -146,3 +146,11 @@ MODULE: 2-4 个大写字母标识模块
 - `_100`-`_199`：资源状态错误（不存在、已存在、冲突）
 - `_200`-`_299`：权限错误
 - `_300`-`_399`：系统内部错误
+
+## DTO 多态序列化
+
+当接口中的 DTO 需要根据类型字段分发到不同子类时（如多种图表类型、多种数据源类型），参考 [DTO 多态序列化规范](jackson-polymorphism.md)：
+
+- 后端使用 Jackson `@JsonTypeInfo` + `@JsonSubTypes` 实现多态序列化
+- 前端使用 TypeScript Discriminated Union 对应消费
+- discriminator value 前后端严格一致

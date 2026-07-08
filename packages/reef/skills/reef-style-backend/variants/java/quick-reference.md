@@ -62,6 +62,20 @@
   }
   ```
 
+### Lombok 使用规范
+
+| 组件类型 | 必用注解 | 说明 |
+|---------|---------|------|
+| 领域事件 / POJO | `@Getter @AllArgsConstructor` | `private final` 不可变，不手写 getter/constructor（见下方示例） |
+| JPA Entity | `@Getter @NoArgsConstructor(access = PROTECTED)` + `@SuperBuilder`（按需） | 详见 [Hibernate 规范](hibernate.md) |
+| Service / Controller | `@AllArgsConstructor` / `@RequiredArgsConstructor` | 构造函数注入，不用 `@Autowired` 字段注入 |
+| 只读 DTO / Record 替代 | `@Value` | 不可变对象，自动生成 equals/hashCode/toString。Record 更简洁时优先用 record |
+
+**禁止事项：**
+- `@Data` — 自动生成 `@Setter` 破坏不可变性，且 `@EqualsAndHashCode` 在有 JPA 代理时行为不可预期
+- `@Setter` on Entity — 破坏封装，业务状态变更应通过行为方法表达
+- `@Autowired` 字段注入 — 必须用构造函数注入
+
 ### 控件能力声明模式（Capability Pattern）
 
 当实体层次（如 `FormControl` → `TextControl` / `NumberControl` / ...）需要按子类暴露能力时，在抽象基类中声明抽象方法，各子类返回 `true` / `false`：
