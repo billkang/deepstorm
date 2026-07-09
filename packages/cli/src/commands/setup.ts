@@ -599,6 +599,17 @@ export function copyFragmentsForSkill(
         )
       }
     }
+
+    // 3. 其他 .md 文件（如 jackson-polymorphism.md）直接复制到技能根目录
+    //    quick-reference.md 已由步骤 1 处理，此处跳过避免重复
+    const allFiles = fs.readdirSync(srcPath)
+    for (const file of allFiles) {
+      if (file === '.DS_Store') continue
+      if (file === 'quick-reference.md') continue
+      if (file === 'examples') continue
+      if (!file.endsWith('.md')) continue
+      fs.cpSync(path.join(srcPath, file), path.join(targetDir, file), { force: true })
+    }
   }
 }
 
