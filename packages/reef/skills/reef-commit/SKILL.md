@@ -159,6 +159,38 @@ git status --short
 - 测试全部通过 → 继续
 - 任一测试失败 → 提示用户修复后再提交
 
+### 6.5 OpenSpec 验证与归档检查
+
+> 提交前检查关联的 OpenSpec change 是否已完成验证和归档。如果 `openspec/` 目录不存在或无活跃 change 则跳过本步骤。
+
+**判断流程（LLM 自行推理执行）：**
+
+1. **查找关联的 OpenSpec change：**
+   ```bash
+   BRANCH=$(git branch --show-current)
+   echo "当前分支: $BRANCH"
+
+   for dir in openspec/changes/*/; do
+     CHANGE_NAME=$(basename "$dir")
+     if [ -f "$dir/.openspec.yaml" ] && [ "$CHANGE_NAME" != "archive" ]; then
+       echo "发现活跃 OpenSpec change: $CHANGE_NAME"
+       cat "$dir/.openspec.yaml"
+     fi
+   done
+   ```
+
+2. **匹配规则：** 扫描 `openspec/changes/*/` 下活跃 change（不包含 `archive/`），与当前分支名比对；无匹配则跳过；多匹配则让用户选择。
+
+3. **检查归档状态：** 读取 `.openspec.yaml` 中 `status` 字段。`archived` → 跳过后续检查；否则继续。
+
+4. **运行验证：** 确认 `tasks.md` 全部 checkbox 已完成 → 通过 Skill 工具自动调用 `/opsx:verify`。有 CRITICAL 问题则中止；仅 WARNING/SUGGESTION 则通过。
+
+5. **运行归档：** 验证通过后 → 通过 Skill 工具自动调用 `/opsx:archive`。执行失败则提示用户手动处理。
+
+6. **确认已就绪：** 校验状态并向用户报告。
+
+> **提示：** verify/archive 执行后产生额外文件变更的，后续步骤会重新检测并纳入提交。
+
 ### 7. 收集上下文
 
 ```bash

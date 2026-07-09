@@ -443,6 +443,15 @@ tasks 完成 → 检查 superpowers → /opsx:apply         ✅ 正确
 
 ### 8. TDD 实现（Apply）
 
+> **🔐 启用文件编辑许可：** 在调用 `/opsx:apply` 前，先创建 `.claude/.discuss-apply-active` 标记文件，使 PreToolUse hook 知晓当前处于合法的 apply 阶段，放行 skill 文件的 Write/Edit 操作。
+>
+> ```bash
+> touch .claude/.discuss-apply-active
+> echo "✅ 已创建 .discuss-apply-active 标记，文件编辑已放行"
+> ```
+>
+> Apply 完成后（归档结束后），在 Step 10 中清理此标记。
+
 **命令：**
 
 ```
@@ -585,6 +594,15 @@ flowchart TD
 4. 将 change 目录移至 `openspec/changes/archive/{date}-{change-name}/`
 5. 确认 spec 已同步到 `openspec/specs/{capability}/`
 6. 确认测试全部通过
+
+> **🔐 清理文件编辑许可：** 归档完成后，移除 `.claude/.discuss-apply-active` 标记文件，恢复 PreToolUse hook 对 skill 文件的保护。同时移除 `opsx:archive` 过程中可能残留的任务文件锁（如有）。
+>
+> ```bash
+> if [ -f ".claude/.discuss-apply-active" ]; then
+>   rm .claude/.discuss-apply-active
+>   echo "✅ 已清理 .discuss-apply-active 标记，文件编辑保护已恢复"
+> fi
+> ```
 
 ---
 
