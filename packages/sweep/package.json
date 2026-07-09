@@ -1,6 +1,6 @@
 {
   "name": "@deepstorm/sweep",
-  "version": "0.3.1",
+  "version": "0.3.3",
   "private": true,
   "description": "DeepStorm 测试侧套件 — 测试生成、覆盖率分析、CI 结果解读",
   "license": "MIT",

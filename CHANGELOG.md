@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.3.3] - 2026-07-09
+
+### Code Refactoring
+
+- 合并 code-style-verify 脚本与模板，删除冗余和孤儿 hook 文件，确保 .tmpl 为唯一事实源 (`1961024`)
+
+### Documentation
+
+- 新增 Jackson 多态序列化编码规范文档，整合 Lombok 使用规范 (`ce597b5`)
+
 ## [0.3.1] - 2026-07-08
 
 ### Features
