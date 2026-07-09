@@ -200,6 +200,6 @@ TypeScript union type + `type` literal 可直接利用 `@switch` 的类型窄化
 | `@JsonProperty("xAxisName") private String categoryAxisLabel` | 字段名合规，getter 合规，JSON 输出保留 `xAxisName` | ✅ |
 | 禁用 Checkstyle `ParameterNameCheck` | 全局禁用降低代码规范性 | ❌ |
 
-### 5.6 Decoder 对象保持 record
+### 5.6 DTO 对象保持 record
 
 如 `MetricAnswer` 是 Java record，不能继承。改造方案为直接替换字段类型（`ChartType chartType` → `ChartView chartView`），record 紧凑语法不受影响。构建逻辑从 `determineChartType()` 改为 `buildChartView()` 并返回具体子类。

@@ -21,12 +21,14 @@ DeepStorm 是一套 AI 协同工具集，覆盖产品→开发→测试→运维
 - **sessionId 格式**：`tide-YYYYMMDD-NNN`
 - **流程图约定**：所有流程图必须使用 **Mermaid** 语法（` ```mermaid `），禁止使用 ASCII 字符画流程图（` ```text `）
 - **需求讨论优先**：当用户输入需求、功能描述或变更意图时，必须先通过 `/deepstorm-discuss` 或 BMAD 相关 skill 进入需求讨论环节，将需求讨论清楚后再进入后续开发流程，不得跳过讨论直接进入实现
+- **套件-CLI 联动**：修改 reef/tide/sweep/atoll 套件内容（hooks、templates、skills、agents、wizard.json）时，**必须同步检查并更新 `packages/cli/src/commands/` 下对应的消费命令**（setup、update、doctor、template-upgrade 等），确保 CLI 资产同步逻辑与套件变更一致
 
 ## 开发工作流
 
 DeepStorm 自身套件开发使用 **BMAD → OpenSpec → writing-skills** 三阶段协作。详细规范见 `docs/deepstorm-development.md`。
 
 **产出参考：**
+
 - **BMAD 基线 PRD（示例）：** `openspec/specs/tide-core/spec.md` ← 由 BMAD 需求讨论输出
 
 ```mermaid
@@ -57,7 +59,7 @@ flowchart LR
 gstack 提供的可用 skills（通过 `Skill` 工具调用）：
 
 | 命令 | 用途 |
-|------|------|
+| ---- | ---- |
 | `/office-hours` | Office hours |
 | `/plan-ceo-review` | CEO review plan |
 | `/plan-eng-review` | Engineering review plan |
