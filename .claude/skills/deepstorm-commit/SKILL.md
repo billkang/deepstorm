@@ -181,6 +181,58 @@ pnpm validate
 - 测试全部通过 → 继续
 - 任一测试失败 → 提示用户修复后再提交
 
+### 5.5 OpenSpec 验证与归档检查
+
+> **本步骤继承自 `@reef-commit` 通用框架的 OpenSpec 门禁机制**，在提交前完成验证和归档检查。
+
+**判断流程（LLM 自行推理执行）：**
+
+1. **查找关联的 OpenSpec change：**
+   ```bash
+   BRANCH=$(git branch --show-current)
+   echo "当前分支: $BRANCH"
+
+   # 扫描 openspec/changes/ 下所有活跃 change（非 archive 目录）
+   for dir in openspec/changes/*/; do
+     CHANGE_NAME=$(basename "$dir")
+     if [ -f "$dir/.openspec.yaml" ] && [ "$CHANGE_NAME" != "archive" ]; then
+       echo "发现活跃 OpenSpec change: $CHANGE_NAME"
+       cat "$dir/.openspec.yaml"
+     fi
+   done
+   ```
+
+2. **匹配规则：**
+   - 扫描 `openspec/changes/*/` 下活跃 change（不包含 `archive/` 目录下的）
+   - 与当前分支名比较：分支名包含 change 名 → 匹配
+   - 如果无活跃 change（所有变更已归档或不存在）→ **跳过本步骤**
+   - 如果有多个活跃 change → 让用户选择，不得自动猜测
+
+3. **检查归档状态：**
+   - 读取匹配 change 的 `.openspec.yaml`，检查 `status` 字段
+   - 如果 `status: archived` → 验证与归档均已完成，**跳过后续检查**
+   - 如果 `status` 非 `archived` → 继续下一步
+
+4. **运行验证（仅当尚未验证时）：**
+   - 检查任务完成状态：读取 `tasks.md`，确认所有 checkbox 均为 `[x]`
+   - 如有未完成的任务 → **提示用户**「存在未完成任务，请先完成所有 task 再提交」，中止提交流程
+   - 所有任务已完成但未验证 → **通过 Skill 工具自动调用 `/opsx:verify`**
+   - 根据 verify 结果判断：
+     - 有 **CRITICAL** 问题 → 提示修复后再提交，中止流程
+     - 仅 WARNING/SUGGESTION → 视为验证通过，继续下一步
+
+5. **运行归档（仅当验证通过后）：**
+   - 验证通过后 → **通过 Skill 工具自动调用 `/opsx:archive`**
+   - 归档完成后确认 `openspec/changes/archive/` 下已有对应 change 目录
+   - 如果 archive 执行失败 → 提示用户手动处理，中止提交流程
+
+6. **确认已就绪：**
+   - 确认 `.openspec.yaml` 中 `status: archived`
+   - 确认变更已在 archive 目录中
+   - 向用户报告：「✅ OpenSpec 验证已通过，变更已归档，可以继续提交」
+
+> **提示**：如果 verify 或 archive 执行后产生了额外的文件变更（如归档过程中复制了文件），后续步骤会重新检测变更并纳入提交。
+
 ### 6. 收集上下文
 
 ```bash

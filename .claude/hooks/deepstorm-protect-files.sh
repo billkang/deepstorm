@@ -42,6 +42,30 @@ PROTECTED_DIRS=(
   "dist/"
 )
 
+# ── DeepStorm 开发文件（修改前必须先走 /deepstorm-discuss） ──────
+# 这些文件不能直接修改，必须通过 deepstorm-discuss → OpenSpec → apply 流程
+#
+# 判断规则：
+#   1. 如果是 skill 文件（SKILL.md / SKILL.md.tmpl），且
+#   2. 不在 playground/ 下（playground 是测试项目，不受此限制），且
+#   3. .claude/.discuss-apply-active 标记文件不存在（表示不在合法 apply 阶段）
+#   → 则拦截
+if [[ "$FILE_PATH" != *"/playground/"* ]] && \
+   [[ "$FILE_PATH" == *"/skills/"*"SKILL.md"* || "$FILE_PATH" == *"/skills/"*"SKILL.md.tmpl"* ]]; then
+  if [ ! -f ".claude/.discuss-apply-active" ]; then
+    cat <<EOF
+{
+  "hookSpecificOutput": {
+    "hookEventName": "PreToolUse",
+    "permissionDecision": "deny",
+    "permissionDecisionReason": "DeepStorm skill files require /deepstorm-discuss before modification. Run /deepstorm-discuss first, or if already in a discuss flow, wait until the apply phase."
+  }
+}
+EOF
+    exit 0
+  fi
+fi
+
 for dir in "${PROTECTED_DIRS[@]}"; do
   if [[ "$FILE_PATH" == *"$dir"* ]]; then
     cat <<EOF
