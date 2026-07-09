@@ -18,6 +18,7 @@ import {
   computeFileChecksum,
   computeDirChecksums,
   backupFile,
+  detectToolsFromConfig,
   syncToolAssets,
 } from '../template-upgrade'
 import { installMcpSkills as mockInstallMcpSkills } from '../setup'
@@ -202,6 +203,52 @@ describe('syncToolAssets', () => {
     expect(report.syncedHooks).toEqual([])
   })
 
+  it('从配置中检测 tool 即使 installedSkills 不匹配', () => {
+    const cliDir = path.join(tmpDir, 'dist')
+    fs.mkdirSync(cliDir, { recursive: true })
+
+    // registry 有 reef tool 但 skills 中无 reef skill
+    fs.writeFileSync(
+      path.join(cliDir, 'registry.json'),
+      JSON.stringify({
+        version: '1',
+        tools: { reef: { label: 'Reef', description: '' } },
+        wizards: {
+          reef: {
+            tool: 'reef',
+            label: 'Reef',
+            description: '',
+            questions: [],
+          },
+        },
+        skills: {},
+        toolAssets: {
+          reef: { agents: ['reef-agent.md'], hooks: ['reef-hook.sh'] },
+        },
+      }),
+      'utf-8',
+    )
+
+    // settings.json 有 reef.* 配置但 installedSkills 为空
+    const settingsDir = path.join(tmpDir, '.claude')
+    fs.mkdirSync(settingsDir, { recursive: true })
+    fs.writeFileSync(
+      path.join(settingsDir, 'settings.json'),
+      JSON.stringify({
+        deepstorm: {
+          'reef.techs': 'frontend,backend',
+          'reef.frontend.framework': 'angular',
+        },
+      }),
+      'utf-8',
+    )
+
+    const report = syncToolAssets(cliDir, tmpDir, [])
+    // 应通过配置检测到 reef，并同步其 agent 和 hook
+    expect(report.syncedAgents).toContain('reef-agent.md')
+    expect(report.syncedHooks).toContain('reef-hook.sh')
+  })
+
   it('有效工具应调用 renderToolAssets 并返回报告', async () => {
     const cliDir = path.join(tmpDir, 'dist')
     fs.mkdirSync(cliDir, { recursive: true })
@@ -330,5 +377,66 @@ describe('syncToolAssets', () => {
     expect(mockInstallMcpSkills).not.toHaveBeenCalled()
     // MCP skill ID 不应出现在报告中
     expect(report.syncedSkills).not.toContain('deepstorm-mcp-jira-read')
+  })
+})
+
+// ─── detectToolsFromConfig ──────────────────────────────────────
+
+describe('detectToolsFromConfig', () => {
+  const registry = {
+    version: '1',
+    tools: {
+      tide: { label: 'Tide', description: '' },
+      reef: { label: 'Reef', description: '' },
+      sweep: { label: 'Sweep', description: '' },
+    },
+    wizards: {},
+    skills: {},
+  }
+
+  it('识别配置中已知 tool 前缀', () => {
+    const config = { 'reef.techs': 'frontend,backend', 'reef.frontend.framework': 'angular' }
+    const result = detectToolsFromConfig(config, registry)
+    expect(result).toEqual(['reef'])
+  })
+
+  it('识别多个已知 tool 前缀', () => {
+    const config = { 'reef.techs': 'frontend,backend', 'sweep.test.strategy': 'unit' }
+    const result = detectToolsFromConfig(config, registry)
+    expect(result.sort()).toEqual(['reef', 'sweep'])
+  })
+
+  it('跳过未知前缀的配置 key', () => {
+    const config = { 'unknownTool.setting': 'value', 'other.flag': 'true' }
+    const result = detectToolsFromConfig(config, registry)
+    expect(result).toEqual([])
+  })
+
+  it('跳过不含点的 key（如 installedSkills、installedMcpServers）', () => {
+    const config = { installedSkills: '["sweep-init"]', installedMcpServers: '[]' }
+    const result = detectToolsFromConfig(config, registry)
+    expect(result).toEqual([])
+  })
+
+  it('空配置返回空数组', () => {
+    const result = detectToolsFromConfig({}, registry)
+    expect(result).toEqual([])
+  })
+
+  it('去重：同一个 tool 的多个配置 key 只返回一次', () => {
+    const config = {
+      'reef.techs': 'frontend,backend',
+      'reef.frontend.framework': 'angular',
+      'reef.backend.language': 'java',
+    }
+    const result = detectToolsFromConfig(config, registry)
+    expect(result).toEqual(['reef'])
+  })
+
+  it('registry.tools 为空时不返回任何 tool', () => {
+    const emptyRegistry = { version: '1', tools: {}, wizards: {}, skills: {} }
+    const config = { 'reef.techs': 'frontend,backend' }
+    const result = detectToolsFromConfig(config, emptyRegistry)
+    expect(result).toEqual([])
   })
 })

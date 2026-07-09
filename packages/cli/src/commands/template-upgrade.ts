@@ -258,6 +258,36 @@ function skillIdsToTools(
 }
 
 /**
+ * 从扁平配置中检测已安装的 tool 名称。
+ *
+ * 检查配置键是否以已知 tool 前缀（registry.tools 的 key）开头。
+ * 这覆盖了 setup 时未记录 installedSkills 的场景，
+ * 或者用户手动编辑了 settings.json 的场景。
+ *
+ * @param config - 扁平配置（如 { "reef.techs": "frontend,backend", ... }）
+ * @param registry - Registry 对象，从中读取 tools 列表
+ * @returns 检测到的 tool 名称列表
+ */
+export function detectToolsFromConfig(
+  config: Record<string, string>,
+  registry: Registry,
+): string[] {
+  const knownTools = new Set(Object.keys(registry.tools ?? {}))
+  const found = new Set<string>()
+
+  for (const key of Object.keys(config)) {
+    const dotIdx = key.indexOf('.')
+    if (dotIdx < 0) continue
+    const prefix = key.slice(0, dotIdx)
+    if (knownTools.has(prefix)) {
+      found.add(prefix)
+    }
+  }
+
+  return [...found]
+}
+
+/**
  * 从 settings.json 的 deepstorm.* 中提取嵌套配置，展平为 Record<string, string>。
  * 同时过滤掉非配置的元数据字段（installedSkills、installedMcpServers 等）。
  */
@@ -374,20 +404,25 @@ export function syncToolAssets(
   const reader = new RegistryReader(registry)
   const toolNames = skillIdsToTools(installedSkillIds, registry)
 
-  if (toolNames.length === 0) {
-    console.log('⚠ 无法从已安装 skill 解析工具名称，跳过资产同步')
+  // ── 2. 读取配置 ──
+  const { config, installedMcpTools } = readSettingsConfig(targetDir)
+
+  // 同时从配置中检测 tool（覆盖 installedSkills 不完整或未记录 reef 的场景）
+  const configTools = detectToolsFromConfig(config, registry)
+  const allTools = [...new Set([...toolNames, ...configTools])]
+
+  if (allTools.length === 0) {
+    console.log('⚠ 无法从已安装 skill 或配置解析工具名称，跳过资产同步')
     return { syncedSkills: [], syncedAgents: [], syncedHooks: [], backedUpFiles: [] }
   }
 
-  // ── 2. 读取配置 ──
-  const { config, installedMcpTools } = readSettingsConfig(targetDir)
   const templateVariables = buildTemplateVariables(registry, config, installedMcpTools)
 
   // ── 2b. 计算需要同步的 MCP skill ID 列表 ──
   const mcpSkillSet = new Set<string>()
   if (installedMcpTools.length > 0) {
     const selectedMcpSet = new Set(installedMcpTools)
-    for (const tool of toolNames) {
+    for (const tool of allTools) {
       for (const skillId of reader.getToolMcpSkills(tool)) {
         // 从 skill ID 提取 MCP 服务名（deepstorm-mcp-figma-read → figma）
         const service = skillId.replace(/^deepstorm-mcp-/, '').replace(/-(read|write)$/, '')
@@ -399,7 +434,7 @@ export function syncToolAssets(
 
   // ── 3. 备份用户修改（包含常规 skill + 已安装的 MCP skill） ──
   const allSkillIdsForBackup = [...new Set([...installedSkillIds, ...mcpSkillIds])]
-  const backedUpFiles = backupModifiedAssets(targetDir, allSkillIdsForBackup, toolNames, registry)
+  const backedUpFiles = backupModifiedAssets(targetDir, allSkillIdsForBackup, allTools, registry)
 
   if (backedUpFiles.length > 0) {
     console.log('\n⚠ 检测到用户修改的文件：')
@@ -415,7 +450,7 @@ export function syncToolAssets(
   const syncedHooks: string[] = []
   let hasWarning = false
 
-  for (const tool of toolNames) {
+  for (const tool of allTools) {
     try {
       reader.getToolEntry(tool) // 确认工具存在
     } catch {
@@ -451,15 +486,15 @@ export function syncToolAssets(
   // ── 5. 同步 MCP 技能（仅当用户已配置 MCP 服务时） ──
   const syncedMcpSkillIds: string[] = []
   if (installedMcpTools.length > 0) {
-    installMcpSkills(toolNames, reader, cliDir, targetDir, syncedMcpSkillIds, installedMcpTools)
+    installMcpSkills(allTools, reader, cliDir, targetDir, syncedMcpSkillIds, installedMcpTools)
   }
 
   // ── 6. 合并 hooks.json ──
-  mergeToolHooksJson(toolNames, cliDir, targetDir)
+  mergeToolHooksJson(allTools, cliDir, targetDir)
 
   // ── 7. 存储新的 checksum 快照（包含常规 skill + MCP skill） ──
   const allSkillIds = [...installedSkillIds, ...syncedMcpSkillIds]
-  storeNewChecksums(targetDir, allSkillIds, toolNames, registry)
+  storeNewChecksums(targetDir, allSkillIds, allTools, registry)
 
   if (hasWarning) {
     console.log('\n⚠ 部分工具同步出错，请检查后重试')
