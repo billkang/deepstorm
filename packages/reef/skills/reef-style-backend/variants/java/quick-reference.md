@@ -22,45 +22,17 @@
 | 字段注释 | Model/Entity/Event 加 `/** */`，DTO/Record 不加 |
 | 日志实体 | 继承 `LogEntry`（SINGLE_TABLE），不直接继承基类 |
 | 弃用 API | 编译警告中的 `@Deprecated` API 在同一次 PR 中替换为新 API |
-| 多行字符串 | 用 Text Block `"""..."""` + `formatted()` 嵌入 JSON/SQL/XML，禁止 `+` 拼接；详见 [code-wrapping.md](examples/code-wrapping.md) |
+| 多行字符串 | 用 Text Block `"""..."""` + `formatted()` 嵌入 JSON/SQL/XML，禁止 `+` 拼接 |
 
 ## 代码风格
 
-### 通用约定
+### LLM 常犯错误
 
-- 变量命名有意义，禁止单字母（循环计数器 `i`/`j`/`k` 除外）
-- 局部变量用 `var`
-- 字符串格式化用 `formatted()`，不用 `+` 拼接
-- 多态替代 `instanceof` 链做类型分发
-- 100 列折行，运算符/`.`/`::` 放行首。适用范围如下：
-  - **代码结构**（方法调用、签名、表达式）严格执行 100 列
-  - **Javadoc / 注释文本**以可读性优先，不硬断中文句子；仅单行 `/** ... */` 标记超长时拆成多行
-- **方法调用参数换行**：所有参数能在列宽内一行放完则一行，放不完则每个参数独立一行（不混合分组）；详见 [code-wrapping.md](examples/code-wrapping.md)「方法调用参数换行」
-- 类内字段按用途逻辑分组，组间空行分隔，**禁止使用 `// ======`（或其他重复符号装饰）做视觉分隔线注释**。例如应避免 `// ========== 维度信息 ==========` 这种写法
-- 注释与代码逻辑块之间：相邻的两个 `// 注释 + 代码块` 之间用空行分隔，使每个逻辑块保持独立。
-  ```java
-  // ✅ 正确：逻辑块之间有空行
-  // PROPORTION → 饼图
-  if (queryIntent == QueryIntent.PROPORTION) {
-    return ChartType.PIE_CHART;
-  }
+> 📌 以下规则仅约束 LLM 容易跑偏的地方。LLM 天然写对的内容（命名、代码空行分隔等）不再列出。
 
-  // GROUP_BY → 柱状图
-  if (queryIntent == QueryIntent.GROUP_BY) {
-    return ChartType.BAR_CHART;
-  }
-  ```
-  ```java
-  // ❌ 错误：缺少分隔空行，两个逻辑块粘连
-  // PROPORTION → 饼图
-  if (queryIntent == QueryIntent.PROPORTION) {
-    return ChartType.PIE_CHART;
-  }
-  // GROUP_BY → 柱状图
-  if (queryIntent == QueryIntent.GROUP_BY) {
-    return ChartType.BAR_CHART;
-  }
-  ```
+- 局部变量优先用 `var`，避免冗余的类型声明
+- 字符串格式化用 `formatted()` / Text Block，不用 `+` 拼接
+- 用多态 / Abstract Method 替代 `instanceof` 链做类型分发
 
 ### Lombok 使用规范
 
