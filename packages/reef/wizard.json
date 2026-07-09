@@ -33,7 +33,11 @@
       "label": "前端技术选型",
       "description": "前端技术栈细节配置",
       "type": "group",
-      "dependsOn": { "key": "reef.techs", "value": "frontend", "contains": true },
+      "dependsOn": {
+        "key": "reef.techs",
+        "value": "frontend",
+        "contains": true
+      },
       "questions": [
         {
           "key": "reef.frontend.framework",
@@ -128,7 +132,9 @@
               "affectedTemplates": [
                 "skills/reef-style-frontend/SKILL.md.tmpl"
               ],
-              "fragments": ["ui-lib/primeng"]
+              "fragments": [
+                "ui-lib/primeng"
+              ]
             },
             {
               "value": "antd",
@@ -139,7 +145,9 @@
               "affectedTemplates": [
                 "skills/reef-style-frontend/SKILL.md.tmpl"
               ],
-              "fragments": ["ui-lib/antd"]
+              "fragments": [
+                "ui-lib/antd"
+              ]
             },
             {
               "value": "antd-vue",
@@ -150,12 +158,16 @@
               "affectedTemplates": [
                 "skills/reef-style-frontend/SKILL.md.tmpl"
               ],
-              "fragments": ["ui-lib/antd-vue"]
+              "fragments": [
+                "ui-lib/antd-vue"
+              ]
             },
             {
               "value": "none",
               "label": "不使用 UI 组件库",
-              "template": { "styleRef": "" },
+              "template": {
+                "styleRef": ""
+              },
               "affectedTemplates": [
                 "skills/reef-style-frontend/SKILL.md.tmpl"
               ]
@@ -176,12 +188,16 @@
               "affectedTemplates": [
                 "skills/reef-style-frontend/SKILL.md.tmpl"
               ],
-              "fragments": ["ts-config/strict"]
+              "fragments": [
+                "ts-config/strict"
+              ]
             },
             {
               "value": "standard",
               "label": "标准模式",
-              "template": { "styleRef": "" },
+              "template": {
+                "styleRef": ""
+              },
               "affectedTemplates": [
                 "skills/reef-style-frontend/SKILL.md.tmpl"
               ]
@@ -189,7 +205,9 @@
             {
               "value": "none",
               "label": "不配置",
-              "template": { "styleRef": "" },
+              "template": {
+                "styleRef": ""
+              },
               "affectedTemplates": [
                 "skills/reef-style-frontend/SKILL.md.tmpl"
               ]
@@ -210,12 +228,16 @@
               "affectedTemplates": [
                 "skills/reef-style-frontend/SKILL.md.tmpl"
               ],
-              "fragments": ["css/tailwind"]
+              "fragments": [
+                "css/tailwind"
+              ]
             },
             {
               "value": "none",
               "label": "不使用",
-              "template": { "styleRef": "" },
+              "template": {
+                "styleRef": ""
+              },
               "affectedTemplates": [
                 "skills/reef-style-frontend/SKILL.md.tmpl"
               ]
@@ -236,12 +258,18 @@
               "affectedTemplates": [
                 "skills/reef-style-frontend/SKILL.md.tmpl"
               ],
-              "fragments": ["test/vitest", "test/vitest-react", "test/vitest-vue"]
+              "fragments": [
+                "test/vitest",
+                "test/vitest-react",
+                "test/vitest-vue"
+              ]
             },
             {
               "value": "none",
               "label": "不使用",
-              "template": { "styleRef": "" },
+              "template": {
+                "styleRef": ""
+              },
               "affectedTemplates": [
                 "skills/reef-style-frontend/SKILL.md.tmpl"
               ]
@@ -255,7 +283,11 @@
       "label": "后端语言",
       "description": "项目使用的后端技术栈",
       "type": "select",
-      "dependsOn": { "key": "reef.techs", "value": "backend", "contains": true },
+      "dependsOn": {
+        "key": "reef.techs",
+        "value": "backend",
+        "contains": true
+      },
       "options": [
         {
           "value": "java",
@@ -274,7 +306,12 @@
             "skills/reef-review/SKILL.md.tmpl",
             "skills/reef-gen-backend/SKILL.md.tmpl"
           ],
-          "fragments": ["java/api-spec", "java/dependency-management", "java/exception-handling", "java/security-redlines"]
+          "fragments": [
+            "java/api-spec",
+            "java/dependency-management",
+            "java/exception-handling",
+            "java/security-redlines"
+          ]
         },
         {
           "value": "python",
@@ -294,7 +331,12 @@
             "skills/reef-review/SKILL.md.tmpl",
             "skills/reef-gen-backend/SKILL.md.tmpl"
           ],
-          "fragments": ["python/api-spec", "python/dependency-management", "python/exception-handling", "python/security-redlines"]
+          "fragments": [
+            "python/api-spec",
+            "python/dependency-management",
+            "python/exception-handling",
+            "python/security-redlines"
+          ]
         },
         {
           "value": "none",
@@ -321,7 +363,10 @@
       "label": "Java 框架选型",
       "description": "选择需要使用的 Java 框架和技术",
       "type": "group",
-      "dependsOn": { "key": "reef.backend.language", "value": "java" },
+      "dependsOn": {
+        "key": "reef.backend.language",
+        "value": "java"
+      },
       "questions": [
         {
           "key": "reef.backend.java.framework",
@@ -337,7 +382,11 @@
               "affectedTemplates": [
                 "skills/reef-style-backend/SKILL.md.tmpl"
               ],
-              "fragments": ["java/framework/spring-boot", "java/test/spring-mvc-test", "java/test/spring-service-test"]
+              "fragments": [
+                "java/framework/spring-boot",
+                "java/test/spring-mvc-test",
+                "java/test/spring-service-test"
+              ]
             },
             {
               "value": "none",
@@ -363,7 +412,10 @@
               "affectedTemplates": [
                 "skills/reef-style-backend/SKILL.md.tmpl"
               ],
-              "fragments": ["java/orm/hibernate", "java/test/data-jpa-test"]
+              "fragments": [
+                "java/orm/hibernate",
+                "java/test/data-jpa-test"
+              ]
             },
             {
               "value": "none",
@@ -389,7 +441,9 @@
               "affectedTemplates": [
                 "skills/reef-style-backend/SKILL.md.tmpl"
               ],
-              "fragments": ["java/db-migration/liquibase"]
+              "fragments": [
+                "java/db-migration/liquibase"
+              ]
             },
             {
               "value": "none",
@@ -415,7 +469,9 @@
               "affectedTemplates": [
                 "skills/reef-style-backend/SKILL.md.tmpl"
               ],
-              "fragments": ["java/ai/spring-ai"]
+              "fragments": [
+                "java/ai/spring-ai"
+              ]
             },
             {
               "value": "none",
@@ -441,7 +497,9 @@
               "affectedTemplates": [
                 "skills/reef-style-backend/SKILL.md.tmpl"
               ],
-              "fragments": ["java/test/junit5"]
+              "fragments": [
+                "java/test/junit5"
+              ]
             },
             {
               "value": "none",
@@ -452,6 +510,20 @@
               ]
             }
           ]
+        },
+        {
+          "key": "reef.backend.java.formatTool",
+          "label": "Java 格式化工具",
+          "type": "static",
+          "value": "google-java-format",
+          "template": {
+            "formatCmd": "google-java-format -i",
+            "lintCmd": "checkstyle"
+          },
+          "affectedTemplates": [
+            "hooks/reef-auto-format.sh.tmpl",
+            "hooks/reef-code-style-verify.sh.tmpl"
+          ]
         }
       ]
     },
@@ -460,7 +532,10 @@
       "label": "Python 框架选型",
       "description": "选择需要使用的 Python 框架和技术",
       "type": "group",
-      "dependsOn": { "key": "reef.backend.language", "value": "python" },
+      "dependsOn": {
+        "key": "reef.backend.language",
+        "value": "python"
+      },
       "questions": [
         {
           "key": "reef.backend.python.framework",
@@ -476,7 +551,9 @@
               "affectedTemplates": [
                 "skills/reef-style-backend/SKILL.md.tmpl"
               ],
-              "fragments": ["python/fastapi-quick-reference"]
+              "fragments": [
+                "python/fastapi-quick-reference"
+              ]
             },
             {
               "value": "none",
@@ -502,7 +579,9 @@
               "affectedTemplates": [
                 "skills/reef-style-backend/SKILL.md.tmpl"
               ],
-              "fragments": ["python/sqlalchemy-orm"]
+              "fragments": [
+                "python/sqlalchemy-orm"
+              ]
             },
             {
               "value": "none",
@@ -528,7 +607,9 @@
               "affectedTemplates": [
                 "skills/reef-style-backend/SKILL.md.tmpl"
               ],
-              "fragments": ["python/alembic-migration"]
+              "fragments": [
+                "python/alembic-migration"
+              ]
             },
             {
               "value": "none",
@@ -554,7 +635,9 @@
               "affectedTemplates": [
                 "skills/reef-style-backend/SKILL.md.tmpl"
               ],
-              "fragments": ["python/langchain"]
+              "fragments": [
+                "python/langchain"
+              ]
             },
             {
               "value": "none",
@@ -580,7 +663,9 @@
               "affectedTemplates": [
                 "skills/reef-style-backend/SKILL.md.tmpl"
               ],
-              "fragments": ["python/pytest-testing"]
+              "fragments": [
+                "python/pytest-testing"
+              ]
             },
             {
               "value": "none",
@@ -606,7 +691,9 @@
               "affectedTemplates": [
                 "skills/reef-style-backend/SKILL.md.tmpl"
               ],
-              "fragments": ["python/ruff-mypy-toolchain"]
+              "fragments": [
+                "python/ruff-mypy-toolchain"
+              ]
             },
             {
               "value": "none",
@@ -632,7 +719,9 @@
               "affectedTemplates": [
                 "skills/reef-style-backend/SKILL.md.tmpl"
               ],
-              "fragments": ["python/ruff-mypy-toolchain"]
+              "fragments": [
+                "python/ruff-mypy-toolchain"
+              ]
             },
             {
               "value": "none",

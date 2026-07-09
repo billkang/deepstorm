@@ -53,31 +53,8 @@ DTO 继承基类，写请求用独立 CreateRequest/UpdateRequest record。MapSt
 
 ### 异常处理
 
-| 异常 | HTTP | 场景 |
-| --- | --- | --- |
-| `NotFoundException` | 404 | 资源不存在 |
-| `AlreadyExistsException` | 409 | 重复创建 |
-| `InvalidArgumentException` | 400 | 参数校验失败 |
-| `PermissionDeniedException` | 403 | 无权限 |
-| `FailedPreconditionException` | 400 | 前置条件不满足 |
-
-所有自定义异常通过 `@RestControllerAdvice` `GlobalExceptionHandler` 统一处理，返回 AIP-193 兼容的 `CustomError` 结构：
-
-```java
-@RestControllerAdvice
-public class GlobalExceptionHandler {
-  @ExceptionHandler(ResourceNotFoundException.class)
-  public ResponseEntity<ErrorResponse> handleNotFound(ResourceNotFoundException ex) {
-    return ResponseEntity.status(NOT_FOUND).body(new ErrorResponse(ex.getMessage()));
-  }
-}
-```
+> 异常处理规范（异常继承层次、ErrorCode 枚举、GlobalExceptionHandler）参见 [异常处理规范](../exception-handling/quick-reference.md)。
 
 ### 安全编码规范
 
-- Controller 写操作接口必须加 `@PreAuthorize("hasAuthority('PERMISSION_NAME')")`，禁止在方法内硬编码权限字符串
-- 请求体参数加 `@Valid`，嵌套对象加 `@Valid`
-- DTO 中密码/token 用 `@JsonIgnore` 或从响应 DTO 中排除
-- 密码使用 `BCryptPasswordEncoder`
-- 禁止 `createNativeQuery`（绕过多租户 + SQL 注入风险）
-- `@Query` 始终使用命名参数（`:paramName`），不用 `?1` 位置参数
+> 安全红线（密码存储、SQL 注入、敏感信息脱敏、文件上传等）参见 [安全红线](../security-redlines/quick-reference.md)。

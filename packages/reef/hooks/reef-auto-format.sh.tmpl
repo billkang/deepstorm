@@ -6,7 +6,7 @@
 # 同时支持 $CLAUDE_CODE_TOOL_RESULT_FILEPATH 环境变量作为降级。
 #
 # 性能优先：单文件格式化 > 全项目格式化
-#   Java:   按 reef code-style 人工控制，不自动格式化
+#   Java:   google-java-format（强制，详见 wizard.json）
 #   Python: ruff format > black
 #   TS/JS:  eslint --fix
 
@@ -37,8 +37,18 @@ PROJECT_DIR="${CLAUDE_PROJECT_DIR:-$(pwd)}"
 
 case "$filepath" in
   *.java)
-    # Java: 按 reef code-style 人工控制，不执行自动格式化
-    : # no-op
+    # Java: google-java-format 自动格式化（可配置命令通过 {{reef.backend.java.formatCmd}} 注入）
+    FMT="{{reef.backend.java.formatCmd}}"
+    if [ "$FMT" != "none" ]; then
+      TOOL="${FMT%% *}"
+      if command -v "$TOOL" &>/dev/null; then
+        $FMT "$filepath"
+      elif [ -f "$PROJECT_DIR/$TOOL.jar" ]; then
+        java -jar "$PROJECT_DIR/$TOOL.jar" -i "$filepath"
+      else
+        echo "[auto-format] ⚠ $TOOL not found. Install: brew install google-java-format"
+      fi
+    fi
     ;;
   *.py)
     if command -v ruff &>/dev/null; then
