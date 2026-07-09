@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.4.0] - 2026-07-09
+
+### Features
+
+- deepstorm update 新增配置驱动 tool 检测：`detectToolsFromConfig()` 从 `deepstorm.*` 配置前缀中识别已安装但未注册的 tool，确保资产同步完整 (`2fd9cf7`)
+- deepstorm-commit 技能新增 Step 5.5（提交前自动完成 verify/archive 门禁），reef-commit 同步对齐，deepstorm-discuss 新增 `.discuss-apply-active` 标记生命周期管理 (`2b26d1d`)
+- 新增 skill 文件硬拦截机制（`deepstorm-protect-files.sh`），阻止未经授权的 skill 文件写入 (`2b26d1d`)
+
+### Bug Fixes
+
+- 修复 reef-code-style-verify 脚本中 TS_LINT 空字符串时 npx 执行文件路径的安全问题（`[ -n "$TS_LINT" ]` 守卫 + 双引号）(`2fd9cf7`)
+
+### Documentation
+
+- 修复 Jackson 多态规范中 5.6 节标题 Decoder → DTO 笔误 (`2fd9cf7`)
+- CLAUDE.md 新增套件-CLI 联动约束，修复 MD032/MD060 格式问题 (`2fd9cf7`)
+
 ## [0.3.3] - 2026-07-09
 
 ### Code Refactoring
