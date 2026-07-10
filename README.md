@@ -122,7 +122,50 @@ deepstorm/
 | **uv** | 最新 | Python 包管理器，`curl -LsSf https://astral.sh/uv/install.sh \| sh` |
 | **BMAD Method** | 最新 | AI 敏捷开发框架，Tide 的前置依赖，`npx bmad-method install` |
 
-## 快速开始
+## 安装
+
+```bash
+# 一键安装 DeepStorm 套件（skills / agents / hooks）
+npx @deepstorm/cli setup
+```
+
+安装向导会引导你：
+1. 选择需要安装的工具套件（Tide / Reef / Sweep / Atoll）
+2. 配置各套件所需的凭据（Jira / GitHub / Figma 等）
+3. 自动将 skills、agents、hooks 复制到 `.claude/skills/` 等工作目录
+
+安装完成后，即可在 Claude Code 中使用各套件的 skill 命令。
+
+### 创建新项目
+
+```bash
+npx @deepstorm/cli init
+```
+
+交互式向导选择技术栈，一键生成项目骨架。支持：
+- **前端：** Angular（可选 PrimeNG / Tailwind）
+- **后端：** Java Spring Boot + Gradle（可选 Hibernate / Liquibase / Spring AI）
+
+也可通过命令行参数跳过交互：
+
+```bash
+npx @deepstorm/cli init --name my-app --frontend angular --backend java
+```
+
+### 快速参考
+
+| 场景 | 命令 |
+|------|------|
+| 安装 DeepStorm 套件 | `npx @deepstorm/cli setup` |
+| 重新配置 | `npx @deepstorm/cli setup --reconfigure` |
+| 创建新项目 | `npx @deepstorm/cli init` |
+| 查看全部命令 | `npx @deepstorm/cli --help` |
+
+---
+
+## 开发者 — 本地构建
+
+如果你想参与 DeepStorm 自身开发：
 
 ```bash
 # 1. 安装项目依赖
@@ -138,13 +181,11 @@ cat packages/sweep/README.md
 cat packages/atoll/README.md
 ```
 
-### 套件安装
+### 验证安装
 
 ```bash
-npx @deepstorm/cli setup
+npx @deepstorm/cli doctor
 ```
-
-安装向导会引导选择工具、配置凭据，自动将 skills/agents/hooks 复制到 `.claude/skills/`。
 
 ### CLI 命令一览
 
