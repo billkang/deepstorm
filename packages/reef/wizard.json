@@ -734,6 +734,20 @@
           ]
         }
       ]
+    },
+    {
+      "key": "reef.formatter",
+      "label": "格式化增强配置",
+      "description": "reef-auto-format 增强功能，自动匹配 VS Code format-on-save 行为",
+      "type": "static",
+      "value": "enabled",
+      "template": {
+        "prettier.enabled": "true",
+        "organizeImports.enabled": "true"
+      },
+      "affectedTemplates": [
+        "hooks/reef-auto-format.sh.tmpl"
+      ]
     }
   ]
 }
