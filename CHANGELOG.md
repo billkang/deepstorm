@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.6.1] - 2026-07-10
+
+### Features
+
+- deepstorm-release 新增 release 分支、PR 及 GitHub Release (`152d07b`)
+
+### Documentation
+
+- 将 ASCII 流程图改造成 Mermaid (`5d54396`)
+
 ## [0.6.0] - 2026-07-10
 
 ### Features
