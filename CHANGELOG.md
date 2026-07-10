@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.5.0] - 2026-07-10
+
+### Features
+
+- 新增 `deepstorm init` 项目脚手架命令，支持 Angular + Java Spring Boot 全栈项目骨架一键生成，包含交互式向导和 CLI 参数双模式、PrimeNG/Tailwind 条件集成、Hibernate/Liquibase/Spring AI 条件集成 (`386e16e`)
+- 增强 reef-auto-format，集成 Prettier 自动格式化、TypeScript/TSX organize imports、VS Code 配置检测自动决策格式化策略 (`8a6ef7c`)
+
+### Documentation
+
+- README 适配 npm 全局安装，CLI 命令表从 `npx @deepstorm/cli` 改为 `deepstorm` 前缀，新增全局/按需双列快速参考 (`da295f7`)
+- 重新组织 README 结构，新增「安装」章节和「快速参考」表格，区分普通用户安装流程和开发者构建流程 (`34d441b`)
+
 ## [0.4.1] - 2026-07-10
 
 ### Features
