@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.6.0] - 2026-07-10
+
+### Features
+
+- 新增 @deepstorm/pilot Harness Agent — 自动读取 OpenSpec 并 spawn claude CLI 进程独立完成代码实现，支持 daemon 守护进程后台运行、状态持久化、断点恢复、运行时监控、token 预算控制、自动重试 (`acf4414`)
+- 新增 CLI pilot 子命令组：run（支持 --detach 后台模式）、status、log、stop、resume、list (`acf4414`)
+- 集成 pilot 到 monorepo 构建流水线和 npm 发布流程 (`acf4414`)
+- 新增 playground pilot E2E 测试项目和 setup-pilot.sh (`acf4414`)
+
+### Documentation
+
+- README 和 CLAUDE.md 更新 pilot 套件信息 (`acf4414`)
+
 ## [0.5.0] - 2026-07-10
 
 ### Features
