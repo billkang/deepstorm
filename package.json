@@ -1,6 +1,6 @@
 {
   "name": "deepstorm",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "private": true,
   "description": "DeepStorm — Spec 驱动的 AI 协同软件工程实践工具集",
   "scripts": {

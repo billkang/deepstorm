@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.6.2] - 2026-07-10
+
+### Features
+
+- deepstorm-commit 新增自动推送、PR 创建和 squash merge auto-merge — commit 后自动推送到远程并创建 Pull Request（target: main），启用 auto-merge 等待 CI 通过后自动合并 (`9678819`)
+
 ## [0.6.1] - 2026-07-10
 
 ### Features
