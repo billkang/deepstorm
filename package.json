@@ -4,11 +4,15 @@
   "private": true,
   "description": "DeepStorm — Spec 驱动的 AI 协同软件工程实践工具集",
   "scripts": {
-    "build": "pnpm --filter @deepstorm/cli build",
+    "build": "pnpm -r build",
     "cli": "node packages/cli/dist/cli.js",
     "build:plugin": "pnpm build && pnpm cli plugin build",
     "playground:setup": "bash playground/scripts/setup.sh",
     "playground:verify": "bash playground/scripts/verify-cli.sh",
+    "pilot:run": "bash playground/scripts/setup-pilot.sh && node packages/cli/dist/cli.js pilot run --project playground/pilot-test",
+    "pilot:status": "node packages/cli/dist/cli.js pilot status --project playground/pilot-test",
+    "pilot:log": "node packages/cli/dist/cli.js pilot log --project playground/pilot-test",
+    "pilot:stop": "node packages/cli/dist/cli.js pilot stop --project playground/pilot-test",
     "test": "pnpm -r test"
   },
   "devDependencies": {}

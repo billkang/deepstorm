@@ -49,18 +49,26 @@ export function registerReleaseCommand(program: Command): void {
 }
 
 function doBuild(root: string): void {
+  // Step 0: 编译 @deepstorm/pilot（tsc）
+  console.log('🔧 阶段 0/3: 编译 @deepstorm/pilot...')
+  execSync('pnpm build', {
+    cwd: path.join(root, 'packages', 'pilot'),
+    stdio: 'inherit',
+  })
+
   // Step 1: esbuild 打包 CLI
-  console.log('🔧 阶段 1/2: esbuild 打包 CLI...')
+  console.log('\n🔧 阶段 1/3: esbuild 打包 CLI...')
   execSync('node scripts/build.mjs', {
     cwd: path.join(root, 'packages', 'cli'),
     stdio: 'inherit',
   })
 
   // Step 2: 聚合 registry + 复制源文件
-  console.log('\n📦 阶段 2/2: 聚合 registry + 复制源文件...')
+  console.log('\n📦 阶段 2/3: 聚合 registry + 复制源文件...')
   buildRegistry(path.join(root, 'packages', 'cli'))
 
   console.log('\n✔ 构建完成')
+  console.log('   packages/pilot/dist/ — @deepstorm/pilot 产品')
   console.log('   dist/cli.js — CLI 可执行文件')
   console.log('   dist/registry.json — 技能注册索引')
   console.log('   dist/skills/ — 技能文件')
@@ -69,11 +77,14 @@ function doBuild(root: string): void {
 
 function doPublish(root: string, bump: string, tag: string, dryRun: boolean): void {
   const cliDir = path.join(root, 'packages', 'cli')
-  const pkgPath = path.join(cliDir, 'package.json')
+  const cliPkgPath = path.join(cliDir, 'package.json')
+  const pilotDir = path.join(root, 'packages', 'pilot')
+  const pilotPkgPath = path.join(pilotDir, 'package.json')
 
-  // Step 1: 读取当前版本
-  const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'))
-  const currentVersion = pkg.version
+  // Step 1: 读取当前版本（两个包版本号同步）
+  const cliPkg = JSON.parse(fs.readFileSync(cliPkgPath, 'utf-8'))
+  const pilotPkg = JSON.parse(fs.readFileSync(pilotPkgPath, 'utf-8'))
+  const currentVersion = cliPkg.version
   const [major, minor, patch] = currentVersion.split('.').map(Number)
 
   let newVersion: string
@@ -90,58 +101,76 @@ function doPublish(root: string, bump: string, tag: string, dryRun: boolean): vo
       break
   }
 
-  console.log(`\n📦 @deepstorm/cli v${currentVersion} → v${newVersion} (${bump})`)
+  console.log(`\n📦 @deepstorm/cli + @deepstorm/pilot v${currentVersion} → v${newVersion} (${bump})`)
   console.log(`   标签: ${tag}`)
   if (dryRun) {
     console.log('   模式: --dry-run（不实际发布）')
   }
   console.log('')
 
-  // Step 2: Build
+  // Step 2: Build（含 pilot 编译）
   doBuild(root)
 
-  // Step 3: 更新版本号
+  // Step 3: 更新版本号（两包同步）
   console.log('\n📝 更新版本号...')
-  pkg.version = newVersion
-  fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n', 'utf-8')
-  console.log(`   package.json → ${newVersion}`)
+  cliPkg.version = newVersion
+  pilotPkg.version = newVersion
+  fs.writeFileSync(cliPkgPath, JSON.stringify(cliPkg, null, 2) + '\n', 'utf-8')
+  fs.writeFileSync(pilotPkgPath, JSON.stringify(pilotPkg, null, 2) + '\n', 'utf-8')
+  console.log(`   packages/cli/package.json → ${newVersion}`)
+  console.log(`   packages/pilot/package.json → ${newVersion}`)
 
   if (dryRun) {
     // 试运行：回滚版本号
-    pkg.version = currentVersion
-    fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n', 'utf-8')
+    cliPkg.version = currentVersion
+    pilotPkg.version = currentVersion
+    fs.writeFileSync(cliPkgPath, JSON.stringify(cliPkg, null, 2) + '\n', 'utf-8')
+    fs.writeFileSync(pilotPkgPath, JSON.stringify(pilotPkg, null, 2) + '\n', 'utf-8')
     console.log('\n🏁 试运行完成（版本号已回滚，未发布）')
     return
   }
 
-  // Step 4: Git 提交 + Tag
-  console.log('\n🔖 Git tag...')
+  // Step 4: 发布 @deepstorm/pilot
+  console.log(`\n📤 npm publish @deepstorm/pilot...`)
   try {
-    execSync(`git add packages/cli/package.json packages/cli/registry.json packages/cli/bin/`, {
-      cwd: root,
-      stdio: 'pipe',
+    execSync(`npm publish --tag ${tag}`, {
+      cwd: pilotDir,
+      stdio: 'inherit',
     })
-    execSync(`git commit -m "release @deepstorm/cli@${newVersion}"`, {
-      cwd: root,
-      stdio: 'pipe',
-    })
-    execSync(`git tag "cli-v${newVersion}"`, { cwd: root, stdio: 'pipe' })
-    console.log(`   commit + tag cli-v${newVersion} 已创建`)
+    console.log(`   ✔ @deepstorm/pilot@${newVersion} 已发布`)
   } catch (err) {
-    console.log('   ⚠ Git 操作失败（请手动处理）:', err instanceof Error ? err.message : err)
+    console.log('\n⚠ @deepstorm/pilot 发布失败，请手动执行:')
+    console.log(`   cd ${pilotDir} && npm publish --tag ${tag}`)
   }
 
-  // Step 5: npm publish
-  console.log(`\n📤 npm publish...`)
+  // Step 5: 发布 @deepstorm/cli
+  console.log(`\n📤 npm publish @deepstorm/cli...`)
   try {
     execSync(`npm publish --tag ${tag}`, {
       cwd: cliDir,
       stdio: 'inherit',
     })
-    console.log(`\n✔ @deepstorm/cli@${newVersion} 已发布到 npm`)
+    console.log(`\n✔ @deepstorm/cli@${newVersion} + @deepstorm/pilot@${newVersion} 已发布到 npm`)
     console.log(`   使用: npx @deepstorm/cli setup`)
   } catch (err) {
     console.log('\n⚠ npm publish 失败，请手动执行:')
     console.log(`   cd ${cliDir} && npm publish --tag ${tag}`)
+  }
+
+  // Step 6: Git 提交 + Tag（包含两包）
+  console.log('\n🔖 Git tag...')
+  try {
+    execSync(
+      `git add packages/cli/package.json packages/pilot/package.json packages/cli/registry.json packages/cli/bin/`,
+      { cwd: root, stdio: 'pipe' },
+    )
+    execSync(`git commit -m "RELEASING: Releasing v${newVersion}"`, {
+      cwd: root,
+      stdio: 'pipe',
+    })
+    execSync(`git tag "v${newVersion}"`, { cwd: root, stdio: 'pipe' })
+    console.log(`   commit + tag v${newVersion} 已创建`)
+  } catch (err) {
+    console.log('   ⚠ Git 操作失败（请手动处理）:', err instanceof Error ? err.message : err)
   }
 }

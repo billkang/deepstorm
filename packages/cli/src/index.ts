@@ -7,6 +7,7 @@ import { registerPluginBuildCommand } from './commands/plugin-build'
 import { registerConfigCommand } from './commands/config'
 import { registerTemplateCommand } from './commands/template'
 import { registerUpdateCommand } from './commands/update'
+import { registerPilotCommands } from './commands/pilot'
 import { runDoctor, printDoctorReport } from './commands/doctor'
 import { uninstallDeepStorm } from './commands/uninstall'
 import { getCliVersion } from './utils/version'
@@ -37,6 +38,7 @@ registerPluginBuildCommand(program, registry)
 registerConfigCommand(program, registry)
 registerTemplateCommand(program, registry)
 registerUpdateCommand(program)
+registerPilotCommands(program)
 
 program
   .command('doctor')

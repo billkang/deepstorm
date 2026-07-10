@@ -12,3 +12,5 @@ _bmad/
 tide-data/
 packages/cli/dist/
 packages/cli/coverage/
+packages/pilot/dist/
+packages/pilot/coverage/

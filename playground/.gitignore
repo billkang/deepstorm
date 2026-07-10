@@ -6,6 +6,7 @@
 
 node_modules
 tide-data/
+pilot-test
 
 # app 依赖
 app/node_modules/

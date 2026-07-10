@@ -49,6 +49,12 @@ describe('release action handlers', () => {
       JSON.stringify({ name: '@deepstorm/cli', version: '1.2.3' }),
       'utf-8',
     )
+    fs.mkdirSync(path.join(tmpDir, 'packages', 'pilot'), { recursive: true })
+    fs.writeFileSync(
+      path.join(tmpDir, 'packages', 'pilot', 'package.json'),
+      JSON.stringify({ name: '@deepstorm/pilot', version: '1.2.3' }),
+      'utf-8',
+    )
     cliPkgDir = path.join(tmpDir, 'packages', 'cli')
     vi.clearAllMocks()
   })
