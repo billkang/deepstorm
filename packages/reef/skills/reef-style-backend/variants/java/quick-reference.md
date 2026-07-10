@@ -33,6 +33,9 @@
 - 局部变量优先用 `var`，避免冗余的类型声明
 - 字符串格式化用 `formatted()` / Text Block，不用 `+` 拼接
 - 用多态 / Abstract Method 替代 `instanceof` 链做类型分发
+- 所有控制流语句（`if`/`else`/`for`/`while`/`do`）必须使用大括号 `{}`，禁止省略大括号的单行体（对应 Checkstyle `NeedBraces` 规则）
+- 不声明未被使用的局部变量；switch 模式匹配中未被使用的模式变量用 `_`（匿名模式变量）替代命名变量（如 `case UserMessage _ ->`）
+- 局部变量声明必须靠近首次使用处（相距 ≤ 3 行）；从方法调用返回值赋值的局部变量用 `final var` 修饰（如 `final var axisDimList = buildAxisDimMapping(...)`），禁止在调用前提前声明可变变量
 
 ### Lombok 使用规范
 
