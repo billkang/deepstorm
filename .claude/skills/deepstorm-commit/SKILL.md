@@ -16,9 +16,11 @@ allowed-tools: Bash(git:*), Bash(pnpm:*)
 > | 测试命令 | `./gradlew test` + `pnpm test` | `pnpm validate`（DeepStorm 统一验证） |
 > | 分支范围检查 | scope-gate hook | ❌ 跳过 — DeepStorm 为 monorepo，跨 package 变更是常态 |
 > | JIRA 引用 | 自动提取 | ✅ 同步支持 |
+> | PR 自动创建 | ❌ 无 | ✅ commit 后自动创建 PR，target: main |
+> | 自动合并 | ❌ 无 | ✅ squash merge auto-merge |
 > | 受众 | 下游用户项目 | DeepStorm 自身开发 |
 >
-> 当 `reef-commit` 更新通用工作流逻辑时，本技能应同步更新。以下工作流步骤编号与 `reef-commit` 对齐。
+> 当 `reef-commit` 更新通用工作流逻辑时，本技能应同步更新。工作流步骤 1-9 与 `reef-commit` 对齐；步骤 10-12（自动推送、PR 创建、自动合并）为 `deepstorm-commit` 独有。
 
 ## 提交信息风格规范
 
@@ -300,33 +302,117 @@ git diff --name-only | grep -oP '^packages/[^/]+' | sort -u
 git add -A
 git commit -m "<完整提交信息>"
 ```
+→ 提交完成后自动进入第 10 步（推送）、第 11 步（PR）、第 12 步（自动合并）
 
 **Amend 模式：**
 ```bash
 git add -A
 git commit --amend -m "<完整提交信息>"
 ```
+→ 提交完成后进入 Amend 推送逻辑（仅推送，跳过 PR 和自动合并）
 
-### 10. 推送（仅在用户明确要求时）
+### 10. 自动推送到远程
+
+Commit 执行后自动推送当前分支到远程仓库。此步骤不再需要用户确认——推送是 PR 流程的前置条件。
+
+**默认模式（新提交）：**
+```bash
+git push -u origin $(git branch --show-current)
+```
 
 **已有远程跟踪分支：**
 ```bash
 git push
 ```
 
-**Amend 场景（需 force）：**
+> **注意**：`-u` 仅在首次推送时添加。后续推送不需要。
+
+**错误处理：**
+- 如果 push 失败（网络错误、权限不足等），提示用户手动处理并中止流程
+- 用户处理完毕后可重新执行 `/deepstorm-commit` 继续
+
+### 11. 创建 Pull Request
+
+推送成功后自动创建 Pull Request。目标分支固定为 `main`。
+
+```bash
+# 获取 commit 信息
+COMMIT_TITLE=$(git log -1 --pretty=%s)
+COMMIT_BODY=$(git log -1 --pretty=%B | tail -n +2 | sed '/^$/d' | head -5)
+
+# 检查 gh 是否可用
+if ! command -v gh &> /dev/null; then
+  echo "⚠️ gh CLI 未安装，跳过 PR 创建"
+  echo "请手动创建 PR：https://github.com/billkang/deepstorm/compare/$(git branch --show-current)"
+  exit 0
+fi
+
+# 检查是否已有对应 PR
+EXISTING_PR=$(gh pr list --head "$(git branch --show-current)" --json number,title --jq '.[0].number' 2>/dev/null)
+
+if [ -n "$EXISTING_PR" ]; then
+  echo "🔍 检测到当前分支已有 PR (#$EXISTING_PR)"
+  echo "是否继续对该 PR 启用自动合并？(y/n)"
+  read -r CONTINUE_MERGE
+  if [ "$CONTINUE_MERGE" != "y" ]; then
+    echo "🛑 跳过自动合并，请手动处理 PR"
+    exit 0
+  fi
+else
+  # 构建 PR body
+  PR_BODY="${COMMIT_BODY}"
+  if ls openspec/changes/*/proposal.md 2>/dev/null; then
+    PR_BODY="${PR_BODY}\n\n---\nOpenSpec Change: openspec/changes/$(git branch --show-current)/"
+  fi
+
+  # 创建 PR
+  PR_URL=$(gh pr create \
+    --base main \
+    --title "$COMMIT_TITLE" \
+    --body "$PR_BODY" 2>&1)
+  echo "✅ PR 已创建：$PR_URL"
+fi
+```
+
+**失败处理：**
+- `gh` 未安装 → 提示手动创建，显示分支名
+- `gh` 未认证（`gh auth status` 失败）→ 提示运行 `gh auth login`
+- 创建失败 → 显示错误信息，提示手动处理
+
+### 12. 启用自动合并（Squash Merge）
+
+PR 创建成功后启用 auto-merge，等待 CI 通过后自动合并。
+
+```bash
+# 获取 PR 号
+PR_NUMBER=$(gh pr list --head "$(git branch --show-current)" --json number --jq '.[0].number' 2>/dev/null)
+
+if [ -n "$PR_NUMBER" ]; then
+  gh pr merge "$PR_NUMBER" --auto --squash
+  PR_URL="https://github.com/billkang/deepstorm/pull/$PR_NUMBER"
+  echo "✅ Auto-merge (squash) 已启用：$PR_URL"
+  echo "CI 通过后 PR 将自动合并到 main"
+else
+  echo "⚠️ 找不到 PR，请手动合并"
+fi
+```
+
+## Amend 场景的推送逻辑
+
+当用户在第 8 步选择了 `--amend` 模式时，commit 完成后直接进入推送，**跳过第 11 步和第 12 步**（不创建 PR、不启用自动合并），因为 amend 通常发生在已有 PR 需要微调的场景：
+
 ```bash
 git push --force-with-lease
 ```
 
-**首次推送：**
-```bash
-git push -u origin $(git branch --show-current)
-```
+推送完成后提示用户：
+- PR 无需重新创建，amend 后的变更会自动反映到已关联的 PR 中
+- 如果之前未创建 PR，请手动创建
 
 ## 约束规则
 
-- 默认新提交，用户要求才 `--amend`
+- 默认新提交，用户要求才 `--amend`（amend 会跳过 PR 流程）
 - 每行 ≤ 70 视觉宽度（中文 2 列 / ASCII 1 列）
 - 无变更则退出
 - 提交前必须通过 `pnpm validate`
+- 需要 `gh` CLI 可用（PR 创建和自动合并必需，push 不需要）
