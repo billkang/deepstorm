@@ -40,7 +40,9 @@ flowchart TD
     S7 --> G2{"⚡ 门禁 #2<br>发布确认"}
     G2 -->|"确认"| S8["Step 8: npm publish + git push"]
     G2 -->|"取消"| HOLD["保留版本变更<br>提示手动发布"]
-    S8 --> S9["Step 9: 完成摘要"]
+    S8 --> S9["Step 9: Release 分支 & PR"]
+    S9 --> S10["Step 10: 创建 GitHub Release"]
+    S10 --> S11["Step 11: 完成摘要"]
     FAIL --> RETRY["修复后重新开始"]
 ```
 
@@ -254,7 +256,75 @@ git tag v{version}
 
 **跳过私有包：** `"private": true` 的包不会发布。
 
-### Step 9: 完成摘要
+### Step 9: Release 分支 & PR
+
+在 npm 发布和 git push 成功之后，自动创建 release 分支并提交 Pull Request。
+
+> **注意：** 本步骤的失败**不阻断**后续流程。即使是创建分支或 PR 失败，已完成的 npm publish 不受影响。
+
+**执行流程：**
+
+1. **创建 release 分支：** 从 `main` 分支创建 `release/v{version}` 并推送到远程
+   ```bash
+   git branch release/v{version} main
+   git push origin release/v{version}
+   ```
+
+2. **创建 Pull Request：** 从 `release/v{version}` 向 `main` 提交 PR
+   ```bash
+   gh pr create \
+     --base main \
+     --head release/v{version} \
+     --title "Release v{version}" \
+     --body "$CHANGELOG_CONTENT"
+   ```
+   - PR 标题格式：`Release v{version}`
+   - PR 描述包含本次发布的 CHANGELOG 内容
+
+3. **Auto-merge 启用：**
+   ```bash
+   gh pr merge --auto --squash --subject "Release v{version}"
+   ```
+   - 使用 squash merge 策略，保持 main 历史整洁
+
+**异常处理：**
+
+| 异常 | 处理方式 |
+|------|---------|
+| release 分支已存在 | 提示并跳过，不阻断流程 |
+| PR 创建失败 | 输出错误信息，提示用户手动创建 |
+| auto-merge 失败 | 输出错误信息，提示用户手动合并 |
+| `gh` CLI 不可用 | 提示用户安装 gh CLI 或手动操作 |
+
+### Step 10: 创建 GitHub Release
+
+在 PR 合并完成后，自动在 GitHub 仓库创建对应版本的 Release。
+
+> **注意：** 本步骤的失败**不阻断**后续流程。Release 创建失败不影响已完成的 npm publish 和 git push。
+
+**执行流程：**
+
+1. **获取 CHANGELOG 内容：** 读取当前版本的 CHANGELOG 条目（已在 Step 4 中生成）
+2. **创建 Release：**
+   ```bash
+   gh release create v{version} \
+     --title "v{version}" \
+     --notes "$(cat CHANGELOG.md | head -50)" \
+     --target main
+   ```
+   - Release 名称：`v{version}`
+   - Release 描述：使用 Step 4 生成的 CHANGELOG 内容
+   - 目标 commit：main 分支的最新 commit
+
+**异常处理：**
+
+| 异常 | 处理方式 |
+|------|---------|
+| Release 已存在（同名 tag） | 跳过创建，提示用户已有同名 Release |
+| GitHub API 失败 | 输出错误信息，提示用户手动创建 Release |
+| `gh` CLI 不可用 | 提示用户手动创建 |
+
+### Step 11: 完成摘要
 
 ```
 ✅ 发布完成
@@ -262,10 +332,15 @@ git tag v{version}
    版本: v0.1.2 → v0.2.0
    Tag: v0.2.0
    发布 @deepstorm/cli@0.2.0 ✅
+   Release 分支: release/v0.2.0 ✅
+   PR: #<number> (auto-merged) ✅
+   GitHub Release: v0.2.0 ✅
    CHANGELOG 已更新
 
    验证: npm view @deepstorm/cli
 ```
+
+如果某些步骤失败（如 PR 或 Release 创建失败），在摘要中分别标注 ❌ 并提示用户手动处理。
 
 ## 命令速查
 
@@ -279,6 +354,11 @@ git tag v{version}
 | 获取 NPM_TOKEN | `grep NPM_TOKEN .env \| cut -d'=' -f2-` |
 | 验证 npm 登录 | `npm whoami`（可能因 token 认证方式不工作） |
 | 推送 | `git push origin main --tags` |
+| 创建 release 分支 | `git branch release/v{version} main && git push origin release/v{version}` |
+| 创建 PR | `gh pr create --base main --head release/v{version} --title "Release v{version}" --body "$CHANGELOG"` |
+| PR auto-merge | `gh pr merge --auto --squash --subject "Release v{version}"` |
+| 创建 GitHub Release | `gh release create v{version} --title "v{version}" --notes "CHANGELOG" --target main` |
+| 查看 GitHub Release | `gh release view v{version}` |
 
 ## 常见错误
 
@@ -293,3 +373,8 @@ git tag v{version}
 | **git push 失败** | Step 8 提示用户手动 `git push origin main --tags` |
 | **npm publish 失败（认证错误）** | 版本已 commit + tag，提示用户 `cd packages/cli && NPM_TOKEN=$(grep NPM_TOKEN .env \| cut -d'=' -f2-) npm publish --ignore-scripts` |
 | **用户取消发布** | 版本变更和 CHANGELOG 已写入但未 publish。提示后续手动 publish 或 git push |
+| **Release 分支已存在** | Step 9 跳过创建，提示用户已有同名分支。不影响已发布的版本 |
+| **PR 创建失败** | Step 9 输出错误信息，提示用户手动 `gh pr create`。不影响已发布的版本 |
+| **PR auto-merge 失败** | Step 9 输出错误信息，提示用户手动合并 PR |
+| **GitHub Release 已存在** | Step 10 跳过创建，提示用户已有同名 Release。不影响已发布的版本 |
+| **GitHub Release 创建失败** | Step 10 输出错误信息，提示用户手动 `gh release create` |
