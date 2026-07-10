@@ -1,0 +1,12 @@
+changeName: release-auto-pr
+schemaName: spec-driven
+artifacts:
+  - id: proposal
+    status: done
+  - id: design
+    status: done
+  - id: specs
+    status: done
+  - id: tasks
+    status: done
+status: archived
