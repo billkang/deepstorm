@@ -1,6 +1,6 @@
 # DeepStorm
 
-DeepStorm 是一套 AI 协同工具集，覆盖产品→开发→测试→运维全链路，包含四个套件和一个 CLI：
+DeepStorm 是一套 AI 协同工具集，覆盖产品→开发→测试→运维全链路，包含五个套件、一个 CLI 和一个 Harness Agent：
 
 | 套件 | 定位 | 类型 |
 | --- | --- | --- |
@@ -8,6 +8,7 @@ DeepStorm 是一套 AI 协同工具集，覆盖产品→开发→测试→运维
 | `@deepstorm/reef` | 开发侧 — 规范生成、代码实现 | 套件（skills + agents + hooks） |
 | `@deepstorm/sweep` | 测试侧 — 测试生成、覆盖率、CI | 套件（skills） |
 | `@deepstorm/atoll` | 运维侧 — 部署辅助、监控、故障排查 | 套件（skills） |
+| `@deepstorm/pilot` | 领航 — OpenSpec 自动实现 Harness Agent | 套件（daemon + CLI） |
 | `@deepstorm/cli` | 安装入口 — 安装向导、配置、模板、诊断 | npm 包 |
 
 ## 关键约定

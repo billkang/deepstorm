@@ -52,6 +52,8 @@ bash "$SCRIPT_DIR/setup-atoll.sh"
 echo ""
 bash "$SCRIPT_DIR/setup-sweep.sh"
 echo ""
+bash "$SCRIPT_DIR/setup-pilot.sh"
+echo ""
 
 echo "✅ 各套件安装完成"
 echo ""

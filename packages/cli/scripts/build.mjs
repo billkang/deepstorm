@@ -12,7 +12,7 @@ await esbuild.build({
   banner: {
     js: '#!/usr/bin/env node',
   },
-  external: ['@clack/prompts', 'commander', 'js-yaml'],
+  external: ['@clack/prompts', '@deepstorm/pilot', 'commander', 'js-yaml'],
 })
 
 // Step 2: 编译 registry 构建工具（unbundled，供 npm run build 后续步骤调用）
