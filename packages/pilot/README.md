@@ -389,22 +389,30 @@ src/
 
 ### 与其他 DeepStorm 组件的关系
 
-```
-Openspec                        Pilot                           Claude Code
-┌──────────┐     spec + tasks    ┌──────────┐     prompt + tool   ┌──────────┐
-│ proposal  │ ────────────────── │ Orchestr.│ ────────────────── │ Claude   │
-│ specs/*   │  (readSpecs)       │          │   (spawn CLI)      │ Process  │
-│ design.md │                    │          │                    │          │
-│ tasks.md  │                    │          │ ◄───────────────── │          │
-└──────────┘                     │          │   output + tokens  └──────────┘
-                                 └──────────┘
-                                      │
-                                      │ writes
-                                      ▼
-                               ┌──────────┐
-                               │ State    │
-                               │ store    │
-                               └──────────┘
+```mermaid
+flowchart LR
+    subgraph OS["OpenSpec"]
+        direction TB
+        A1["proposal.md"]
+        A2["specs/*"]
+        A3["design.md"]
+        A4["tasks.md"]
+    end
+
+    subgraph P["Pilot"]
+        B["Orchestrator"]
+    end
+
+    subgraph CC["Claude Code"]
+        C["Claude Process"]
+    end
+
+    D["State Store<br/>pilot-state.json / pilot-summary.md / logs"]
+
+    OS -->|"spec + tasks<br/>(readSpecs)"| B
+    B -->|"prompt + tool<br/>(spawn CLI)"| C
+    C -->|"output + tokens"| B
+    B -->|"writes"| D
 ```
 
 - `@deepstorm/pilot` 被 `@deepstorm/cli` 通过 `registerPilotCommands()` 注册
