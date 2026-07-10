@@ -144,25 +144,27 @@ scope-check:
 
 ## 架构
 
-```
-┌──────────────────────────────────────────────┐
-│          用户交互层 (SKILL.md)                │
-│  reef scope 系列命令入口                      │
-├──────────────────────────────────────────────┤
-│         CLI 核心层 (shell scripts)            │
-│  ┌─────────────────────────────────────────┐ │
-│  │ reef-scope-check.sh: AI 语义分析 + JSON  │ │
-│  │ reef-scope-gate.sh: 门禁判定 + 阻断报告   │ │
-│  │ reef-scope-split.sh: 分支拆分执行        │ │
-│  │ reef-scope-ci.sh: CI 门禁适配            │ │
-│  └─────────────────────────────────────────┘ │
-├──────────────────────────────────────────────┤
-│           执行层                              │
-│  ┌──────────┐  ┌──────────┐  ┌────────────┐ │
-│  │ git hook │  │ CI 脚本  │  │  手动调用  │ │
-│  │ pre-commit│  │ 门禁步骤 │  │  命令行    │ │
-│  └──────────┘  └──────────┘  └────────────┘ │
-└──────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    subgraph UI["用户交互层 (SKILL.md)"]
+        A["reef scope 系列命令入口"]
+    end
+
+    subgraph CLI["CLI 核心层 (shell scripts)"]
+        B1["reef-scope-check.sh<br/>AI 语义分析 + JSON"]
+        B2["reef-scope-gate.sh<br/>门禁判定 + 阻断报告"]
+        B3["reef-scope-split.sh<br/>分支拆分执行"]
+        B4["reef-scope-ci.sh<br/>CI 门禁适配"]
+    end
+
+    subgraph EXEC["执行层"]
+        C1["git hook<br/>pre-commit"]
+        C2["CI 脚本<br/>门禁步骤"]
+        C3["手动调用<br/>命令行"]
+    end
+
+    A --> CLI
+    CLI --> EXEC
 ```
 
 ## API Key 配置
