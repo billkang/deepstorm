@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.4.1] - 2026-07-10
+
+### Features
+
+- reef-style-backend Java quick-reference.md 新增三条 LLM 编码风格规则：控制流必须使用大括号、禁止未使用的局部变量、变量声明靠近首次使用且使用 final var (`c72ba89`)
+
 ## [0.4.0] - 2026-07-09
 
 ### Features
