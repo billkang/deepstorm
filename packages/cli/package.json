@@ -1,6 +1,6 @@
 {
   "name": "@deepstorm/cli",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "DeepStorm CLI — 一键配置项目开发环境",
   "license": "MIT",
   "author": "billkang",
