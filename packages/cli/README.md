@@ -60,6 +60,7 @@ npm install ./@deepstorm/cli-0.1.0.tgz
 
 | 命令 | 说明 |
 |------|------|
+| `init` | 项目脚手架初始化 |
 | `setup` | 安装向导，自动安装 skills/agents/hooks |
 | `config` | 配置管理 |
 | `template` | 模板管理 |

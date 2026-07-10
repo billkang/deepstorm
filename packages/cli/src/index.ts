@@ -2,6 +2,7 @@ import { Command } from 'commander'
 import * as fs from 'node:fs'
 import * as path from 'node:path'
 import { registerSetupCommand } from './commands/setup'
+import { registerInitCommand } from './commands/init'
 import { registerPluginBuildCommand } from './commands/plugin-build'
 import { registerConfigCommand } from './commands/config'
 import { registerTemplateCommand } from './commands/template'
@@ -31,6 +32,7 @@ function loadRegistry(): Registry {
 
 const registry = loadRegistry()
 registerSetupCommand(program, registry)
+registerInitCommand(program)
 registerPluginBuildCommand(program, registry)
 registerConfigCommand(program, registry)
 registerTemplateCommand(program, registry)

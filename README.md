@@ -150,6 +150,7 @@ npx @deepstorm/cli setup
 
 | 命令 | 用途 | 说明 |
 |------|------|------|
+| `npx @deepstorm/cli init` | 项目脚手架 | 初始化项目骨架 |
 | `npx @deepstorm/cli setup` | 安装向导 | 交互式配置 + 复制 skills/agents/hooks |
 | `npx @deepstorm/cli setup --reconfigure` | 重新配置 | 清空旧配置后重新运行向导 |
 | `npx @deepstorm/cli setup --non-interactive` | 静默安装 | 通过 `--tools`/`--set` 参数传递配置 |

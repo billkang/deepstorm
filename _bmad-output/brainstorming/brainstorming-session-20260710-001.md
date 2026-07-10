@@ -1,64 +1,48 @@
-# Brainstorming Session — reef-style-backend 缺失 LLM 代码风格规则
+# Brainstorming Session
 
-- **日期：** 2026-07-10
-- **主题：** Checkstyle NeedBraces 与未使用变量警告，LLM 生成代码反复触发
-- **参与角色：** User (Dev) / Claude (AI)
+- **Date:** 2026-07-10
+- **Session:** 001
+- **Source:** DeepStorm Flow — Step 1 BMAD 需求讨论
 
-## 讨论内容
+## 参与者
 
-### 问题描述
+- 用户（产品/开发）
+- Claude (DeepStorm Flow 引导)
 
-ChatBI 项目（使用 reef 脚手架 + Java 后端）的 Checkstyle 构建检查中反复出现两类警告：
+## 讨论主题
 
-1. **`'if' 结构必须使用大括号 '{}'`**（`NeedBraces`）
-   - Checkstyle 配置了 `NeedBraces`（`LITERAL_DO, LITERAL_ELSE, LITERAL_FOR, LITERAL_IF, LITERAL_WHILE`）
-   - LLM 生成的代码常省略单行 `if` 的大括号，如 `if (text == null) return type + " <null>";`
-   - 人工修复后，下次 LLM 写出同样的模式
+为 `@deepstorm/cli` 新增 `init` 命令，提供独立于 `setup` 的项目脚手架初始化能力。
 
-2. **`The value of the local variable ignored is not used`**
-   - Java 编译器警告未使用的局部变量
-   - switch pattern 中 LLM 写上命名变量（如 `case UserMessage ignored ->`）但未使用
-   - Java 21+ 提供了匿名模式变量 `_`，LLM 不主动使用
+## 关键对话
 
-### 根因分析
+### 背景
 
-`reef-style-backend` 的 `quick-reference.md`（LLM 编码规范速查）的「LLM 常犯错误」章节覆盖了 `var` 声明、字符串格式化、多态替代 `instanceof`，但**没有包含 NeedBraces 和未使用变量规则**。
+目前 `setup` 命令只负责安装 DeepStorm 插件环境（skills、agents、hooks、MCP 配置到 `.claude/`），不涉及用户应用项目的创建。需要一个 `init` 命令来填补「项目脚手架搭建」这个空白。
 
-LLM 加载技能后，按规则写代码时看不到这两条约束，自然回退到默认行为（省略大括号、用命名变量而非 `_`）。
+### 决策过程
 
-### 需要补充的规则
+**Q1：`init` 生成的脚手架是否同时安装 DeepStorm 插件？**
+- 结论：**只初始化项目**。`init` 和 `setup` 保持独立，用户如果需要 DeepStorm 插件可以后续运行 `deepstorm setup`。
 
-#### 规则一：所有控制流语句必须使用大括号
+**Q2：脚手架模板的来源？**
+- 结论：**内置在 CLI 包中**。类似 `create-react-app` 模式，模板文件放在 `packages/cli/` 下。
 
-```
-所有 if / else / for / while / do 必须使用大括号 {}
-禁止省略大括号的单行体
-对应 Checkstyle NeedBraces 规则
-```
+**Q3：首批支持的框架范围？**
+- 结论：**沿用 reef 现有框架选项**。
+  - 前端：Angular / React / Vue（带 UI 库、CSS、测试、TS 配置等子选项）
+  - 后端：Java (Spring Boot) / Python (FastAPI)（带 ORM、迁移、测试等子选项）
 
-覆盖：`if`、`else`、`for`、`while`、`do` 的所有分支体。
+### 未解决的问题
 
-#### 规则二：禁止声明未被使用的局部变量
+- 具体脚手架目录结构（`frontend/` + `backend/` 还是同层混放？）
+- 模板文件的具体内容（每种组合的最小骨架）
+- 前端+后端是否必须同时选，还是可以只选一个？
 
-```
-不要声明未被使用的局部变量
-switch pattern 中用 _（匿名模式变量）代替命名变量
-对应 Eclipse JDT 未使用变量警告
-```
+## 产出物
 
-覆盖：未使用的局部变量、未使用的 switch 模式变量。
+- `packages/cli/src/commands/init.ts` — 新命令入口
+- `packages/cli/src/templates/init/` — 项目脚手架模板目录
 
-### 影响范围
+## 下一步
 
-| 项目 | 影响 |
-|------|------|
-| `packages/reef/skills/reef-style-backend/variants/java/quick-reference.md` | Java 变体的 LLM 常犯错误章节 |
-| `packages/reef/skills/reef-style-backend/variants/python/quick-reference.md` | Python 变体（如果适用） |
-| `CLI 同步` | `deepstorm update` 需将变更传播到安装副本和 playground |
-
-### 后续步骤
-
-1. 在 `reef-style-backend` 走 OpenSpec 流程，创建一个 change
-2. 更新 `variants/java/quick-reference.md` 的「LLM 常犯错误」章节
-3. 同步更新 `.deepstorm` 和 `playground` 的安装副本
-4. 验证：加载技能后 LLM 生成代码不再触发 NeedBraces 和未使用变量警告
+→ Step 2: `/opsx:new` 创建 OpenSpec change
