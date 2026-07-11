@@ -126,6 +126,7 @@
             {
               "value": "primeng",
               "label": "PrimeNG",
+              "dependsOn": "angular",
               "template": {
                 "styleRef": "→ 参考 [PrimeNG 规范](primeng.md)"
               },
@@ -139,6 +140,7 @@
             {
               "value": "antd",
               "label": "Ant Design (React)",
+              "dependsOn": "react",
               "template": {
                 "styleRef": "→ 参考 [Ant Design 规范](antd.md)"
               },
@@ -152,6 +154,7 @@
             {
               "value": "antd-vue",
               "label": "Ant Design Vue",
+              "dependsOn": "vue",
               "template": {
                 "styleRef": "→ 参考 [Ant Design Vue 规范](antd-vue.md)"
               },
