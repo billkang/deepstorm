@@ -25,9 +25,9 @@ try {
   //   - packages/cli/ 自己有 package.json，所以根目录 .npmrc 不会被加载
   //   因此需要用 --userconfig 显式指定根目录 .npmrc，并 --registry 指向 npmjs.org
   execSync(
-    'npm publish' +
-    ' --userconfig "' + resolve(rootDir, '.npmrc') + '"' +
-    ' --registry https://registry.npmjs.org/',
+    'pnpm publish' +
+    ' --registry https://registry.npmjs.org/' +
+    ' --no-git-checks',
     {
       cwd: cliDir,
       stdio: 'inherit',
@@ -38,6 +38,6 @@ try {
     },
   )
 } catch {
-  console.error('❌ npm publish 失败')
+  console.error('❌ pnpm publish 失败')
   process.exit(1)
 }
