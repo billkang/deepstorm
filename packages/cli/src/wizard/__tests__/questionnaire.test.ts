@@ -430,6 +430,78 @@ describe('runQuestionnaire', () => {
     })
   })
 
+  describe('option-level dependsOn filtering in hasTabs flow', () => {
+    const wizard = makeWizard([
+      {
+        key: 'reef.techs',
+        label: '技术选型',
+        type: 'multiselect',
+        options: [
+          { value: 'frontend', label: '前端', template: {} },
+        ],
+      },
+      {
+        key: 'reef.frontend.details',
+        label: '前端详情',
+        type: 'group',
+        dependsOn: { key: 'reef.techs', value: 'frontend', contains: true },
+        questions: [
+          {
+            key: 'reef.frontend.framework',
+            label: '框架',
+            type: 'select',
+            options: [
+              { value: 'angular', label: 'Angular', template: {} },
+              { value: 'react', label: 'React', template: {} },
+              { value: 'vue', label: 'Vue', template: {} },
+            ],
+          },
+          {
+            key: 'reef.frontend.uiLibrary',
+            label: 'UI 组件库',
+            type: 'select',
+            options: [
+              { value: 'primeng', label: 'PrimeNG', dependsOn: 'angular' },
+              { value: 'antd', label: 'Ant Design (React)', dependsOn: 'react' },
+              { value: 'antd-vue', label: 'Ant Design Vue', dependsOn: 'vue' },
+              { value: 'none', label: '不使用 UI 组件库' },
+            ],
+          },
+        ],
+      },
+    ])
+
+    it('filters UI library options to only matching framework + unrestricted', async () => {
+      vi.mocked(p.multiselect).mockResolvedValue(['frontend'])
+
+      // Capture the prompt functions for inspection
+      let capturedPrompts: Record<string, any> = {}
+      vi.mocked(p.group).mockImplementation(async (prompts: any, _opts?: any) => {
+        capturedPrompts = prompts
+        return { 'reef.frontend.framework': 'react', 'reef.frontend.uiLibrary': 'antd' }
+      })
+
+      await runQuestionnaire(makeReader(wizard), ['test'], configuredKeys)
+
+      // Get the uiLibrary prompt function and call it with react results
+      const uiLibFn = capturedPrompts['reef.frontend.uiLibrary']
+      expect(uiLibFn).toBeDefined()
+      expect(typeof uiLibFn).toBe('function')
+
+      // Mock p.select to return its input so we can inspect options
+      vi.mocked(p.select).mockImplementation((opts: any) => Promise.resolve(opts))
+
+      const reactPrompt = await uiLibFn({ results: { 'reef.frontend.framework': 'react' } })
+      expect(reactPrompt.options.map((o: any) => o.value)).toEqual(['antd', 'none'])
+
+      const angularPrompt = await uiLibFn({ results: { 'reef.frontend.framework': 'angular' } })
+      expect(angularPrompt.options.map((o: any) => o.value)).toEqual(['primeng', 'none'])
+
+      const vuePrompt = await uiLibFn({ results: { 'reef.frontend.framework': 'vue' } })
+      expect(vuePrompt.options.map((o: any) => o.value)).toEqual(['antd-vue', 'none'])
+    })
+  })
+
   describe('wizard not found', () => {
     it('skips tool when no wizard exists', async () => {
       const reader = { getWizard: vi.fn(() => undefined) } as unknown as RegistryReader

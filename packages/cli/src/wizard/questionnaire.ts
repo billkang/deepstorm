@@ -162,14 +162,32 @@ async function renderAsSingleGroup(
         if (configuredKeys.has(sub.key)) continue
         if (sub.type === 'select' && sub.options) {
           const opts = sub.options
-          groupPrompts[sub.key] = () =>
-            p.select({
-              message: sub.label,
-              options: opts.map((o) => ({
-                value: o.value,
-                label: o.label,
-              })),
-            })
+          const hasOptionDependsOn = opts.some((o) => o.dependsOn)
+
+          if (hasOptionDependsOn) {
+            // 选项级 dependsOn：根据当前表单已选值动态过滤选项
+            groupPrompts[sub.key] = ({ results }: { results: Record<string, string> }) => {
+              const filtered = opts.filter(
+                (o) => !o.dependsOn || Object.values(results).includes(o.dependsOn),
+              )
+              return p.select({
+                message: sub.label,
+                options: filtered.map((o) => ({
+                  value: o.value,
+                  label: o.label,
+                })),
+              })
+            }
+          } else {
+            groupPrompts[sub.key] = () =>
+              p.select({
+                message: sub.label,
+                options: opts.map((o) => ({
+                  value: o.value,
+                  label: o.label,
+                })),
+              })
+          }
         }
       }
     } else if (root.type === 'select' && root.options) {

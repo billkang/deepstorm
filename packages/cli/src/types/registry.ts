@@ -59,6 +59,8 @@ export interface WizardOption {
   label: string
   /** 选项分组（用于 groupMultiselect 展示分类标题） */
   group?: string
+  /** 选项过滤条件 — 仅当同一 group 表单中存在匹配该值的已选结果时展示此选项 */
+  dependsOn?: string
   /** 该选项对应的模板变量映射（如 { label: "Angular 21", buildTool: "pnpm:*" }） */
   template?: Record<string, string>
   /** 该选项变更时需要重新渲染的模板路径列表（相对于 dist/） */
