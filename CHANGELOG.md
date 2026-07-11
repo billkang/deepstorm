@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.3] - 2026-07-11
+
+### Bug Fixes
+
+- 修复 CLI setup 前端框架选择时组件库未过滤的问题 — 选择 React/Vue/Angular 框架后，组件库列表现在会根据框架类型自动过滤 (`16f7a59`, `19c0ba5`)
+- 适配 OpenSpec change 目录结构变更并新增归档能力 (`3d0cd8b`)
+
 ## [0.6.2] - 2026-07-10
 
 ### Features
