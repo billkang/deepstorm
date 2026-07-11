@@ -6,12 +6,19 @@ The system SHALL provide a `pilot run` CLI subcommand under `@deepstorm/cli` tha
 
 #### Scenario: Basic run invocation
 - **WHEN** user runs `pilot run --project /path/to/project`
-- **THEN** system SHALL read the project's OpenSpec artifacts (tasks.md, specs/, design.md) from the standard OpenSpec structure
+- **THEN** system SHALL find the first active change via `findFirstActiveChange()`
+- **THEN** system SHALL read the change's OpenSpec artifacts (tasks.md, specs/, design.md) from `openspec/changes/<name>/`
 - **THEN** system SHALL start executing tasks in serial order
 
-#### Scenario: Run with explicit tasks file
-- **WHEN** user runs `pilot run --project /path/to/project --tasks /path/to/tasks.md`
-- **THEN** system SHALL use the specified tasks file instead of default `tasks.md`
+#### Scenario: Run with explicit change name
+- **WHEN** user runs `pilot run --project /path/to/project --tasks my-feature`
+- **THEN** system SHALL look up the change via `findChangeByName(projectDir, "my-feature")`
+- **THEN** system SHALL use that change's artifacts instead of auto-discovering
+
+#### Scenario: Change not found
+- **WHEN** user runs `pilot run --tasks nonexistent` and no matching change exists
+- **THEN** system SHALL print an error indicating the change was not found
+- **THEN** system SHALL exit with non-zero code
 
 #### Scenario: Run from current directory
 - **WHEN** user runs `pilot run` without `--project`

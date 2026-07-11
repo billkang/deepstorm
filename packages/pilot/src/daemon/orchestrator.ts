@@ -16,6 +16,8 @@ export interface PilotRunOptions {
   projectDir: string
   /** 可选的 task 过滤(仅运行指定 task) */
   taskFilter?: string[]
+  /** 指定 change 名称(目录名), 不指定则自动取第一个 */
+  changeName?: string
   /** 前台模式(默认 false,fork 后运行) */
   foreground?: boolean
 }
@@ -29,83 +31,177 @@ export interface ExecuteTaskResult {
 }
 
 /**
- * 读取 OpenSpec tasks.md 文件内容.
+ * OpenSpec change 目录及其 artifacts.
  */
-function readTasksMd(projectDir: string): string | null {
-  const candidates = [
-    path.join(projectDir, 'tasks.md'),
-    path.join(projectDir, 'openspec', 'changes', 'archive', 'tasks.md'),
-  ]
-  for (const candidate of candidates) {
-    try {
-      return fs.readFileSync(candidate, 'utf-8')
-    } catch {
-      continue
+export interface ActiveChange {
+  /** Change 名称(目录名) */
+  name: string
+  /** Change 目录完整路径 */
+  dir: string
+  /** tasks.md 路径 */
+  tasksPath: string
+  /** specs/ 目录路径(可能不存在) */
+  specsDir: string
+  /** design.md 路径(可能不存在) */
+  designPath: string
+}
+
+/**
+ * 查找第一个未完成的 OpenSpec change.
+ *
+ * 仅扫描 openspec/changes/<change-name>/ (active changes, 排除 archive).
+ * 不处理已归档的 change, 不 fallback 到项目根目录.
+ *
+ * 多个 active change 时按名称排序取第一个.
+ * 每完成一个 change 后应 archive, 然后进入下一次循环处理下一个.
+ */
+export function findFirstActiveChange(projectDir: string): ActiveChange | null {
+  const changesDir = path.join(projectDir, 'openspec', 'changes')
+
+  try {
+    const entries = fs.readdirSync(changesDir, { withFileTypes: true })
+    const activeNames = entries
+      .filter(e => e.isDirectory() && e.name !== 'archive')
+      .map(e => e.name)
+      .sort()
+
+    for (const name of activeNames) {
+      const dir = path.join(changesDir, name)
+      const tasksPath = path.join(dir, 'tasks.md')
+      if (fs.existsSync(tasksPath)) {
+        return {
+          name,
+          dir,
+          tasksPath,
+          specsDir: path.join(dir, 'specs'),
+          designPath: path.join(dir, 'design.md'),
+        }
+      }
     }
+  } catch {
+    // changes 目录不存在
   }
+
   return null
 }
 
 /**
- * 读取 OpenSpec spec 文件内容(同时扫描 openspec/changes/<name>/specs/).
+ * 按名称查找指定的 OpenSpec change.
+ *
+ * 仅查找 openspec/changes/<name>/ (active change).
+ * 不处理已归档的 change.
  */
-function readSpecs(projectDir: string): string {
-  const searchPaths: string[] = [
-    path.join(projectDir, 'specs'),
-  ]
-  // 扫描 openspec/changes/<name>/specs/
+export function findChangeByName(projectDir: string, changeName: string): ActiveChange | null {
   const changesDir = path.join(projectDir, 'openspec', 'changes')
+
+  const activeDir = path.join(changesDir, changeName)
+  const activeTasksPath = path.join(activeDir, 'tasks.md')
+  if (fs.existsSync(activeTasksPath)) {
+    return {
+      name: changeName,
+      dir: activeDir,
+      tasksPath: activeTasksPath,
+      specsDir: path.join(activeDir, 'specs'),
+      designPath: path.join(activeDir, 'design.md'),
+    }
+  }
+
+  return null
+}
+
+/**
+ * 读取 tasks.md 文件内容.
+ */
+function readTasksMd(change: ActiveChange): string | null {
   try {
-    const entries = fs.readdirSync(changesDir, { recursive: true })
-    for (const entry of entries) {
-      const entryStr = String(entry)
-      const entryPath = path.join(changesDir, entryStr)
-      if (entryPath.includes('/specs/') && entryPath.endsWith('.md') && fs.statSync(entryPath).isFile()) {
-        searchPaths.push(path.dirname(entryPath))
+    return fs.readFileSync(change.tasksPath, 'utf-8')
+  } catch {
+    return null
+  }
+}
+
+/**
+ * 读取 change 下的 spec 文件内容.
+ */
+function readSpecs(change: ActiveChange): string {
+  let content = ''
+
+  // 读取 change 自身的 specs/
+  try {
+    const files = fs.readdirSync(change.specsDir, { recursive: true })
+    for (const file of files) {
+      const fileName = String(file)
+      const filePath = path.join(change.specsDir, fileName)
+      if (fileName.endsWith('.md') && fs.statSync(filePath).isFile()) {
+        content += `\n---\n${fs.readFileSync(filePath, 'utf-8')}\n`
       }
     }
   } catch {
-    // changes 目录可能不存在
+    // specs/ 可能不存在
   }
 
-  // 去重
-  const uniquePaths = [...new Set(searchPaths)]
-  let content = ''
-  for (const specsPath of uniquePaths) {
-    try {
-      const files = fs.readdirSync(specsPath, { recursive: true })
-      for (const file of files) {
-        const fileName = String(file)
-        const filePath = path.join(specsPath, fileName)
-        if (filePath.endsWith('spec.md') && fs.statSync(filePath).isFile()) {
-          content += `\n---\n${fs.readFileSync(filePath, 'utf-8')}\n`
-        }
-      }
-    } catch {
-      continue
-    }
-  }
   return content
 }
 
 /**
- * 查找 openspec/changes 下的 design.md 文件.
+ * 读取 change 下的 design.md 文件内容.
  */
-function readDesignMd(projectDir: string): string {
-  const changesDir = path.join(projectDir, 'openspec', 'changes')
+function readDesignMd(change: ActiveChange): string {
   try {
-    const entries = fs.readdirSync(changesDir, { recursive: true })
-    for (const entry of entries) {
-      const entryStr = String(entry)
-      const entryPath = path.join(changesDir, entryStr)
-      if (entryStr.endsWith('design.md') && fs.statSync(entryPath).isFile()) {
-        return fs.readFileSync(entryPath, 'utf-8')
-      }
-    }
+    return fs.readFileSync(change.designPath, 'utf-8')
   } catch {
-    // ignore
+    return ''
   }
-  return ''
+}
+
+/**
+ * 归档已完成的 change.
+ *
+ * 当所有 tasks 状态均为 completed 时, 将 change 目录移至
+ * openspec/changes/archive/<YYYY-MM-DD>-<name>/.
+ * 存在 failed/skipped 时跳过归档.
+ *
+ * @returns true 表示归档成功, false 表示跳过或失败
+ */
+export function archiveChange(projectDir: string, change: ActiveChange, state: PilotState): boolean {
+  const allCompleted = state.tasks.every(t => t.status === 'completed')
+  if (!allCompleted) {
+    const failedCount = state.tasks.filter(t => t.status === 'failed' || t.status === 'skipped').length
+    console.log(`[Pilot] ${failedCount} task(s) failed/skipped, skipping archive.`)
+    return false
+  }
+
+  if (state.tasks.length === 0) {
+    console.log('[Pilot] No tasks to archive, skipping.')
+    return false
+  }
+
+  const dateStr = new Date().toISOString().slice(0, 10)
+  const archiveDir = path.join(projectDir, 'openspec', 'changes', 'archive', `${dateStr}-${change.name}`)
+
+  try {
+    // 确保 archive 父目录存在
+    const archiveParent = path.dirname(archiveDir)
+    if (!fs.existsSync(archiveParent)) {
+      fs.mkdirSync(archiveParent, { recursive: true })
+    }
+
+    // 如果目标已存在, 追加序号
+    let finalPath = archiveDir
+    let counter = 1
+    while (fs.existsSync(finalPath)) {
+      finalPath = path.join(projectDir, 'openspec', 'changes', 'archive', `${dateStr}-${change.name}-${counter}`)
+      counter++
+    }
+
+    fs.renameSync(change.dir, finalPath)
+    console.log(`[Pilot] Archived change: ${change.name} → archive/${path.basename(finalPath)}`)
+    return true
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err)
+    console.error(`[Pilot] Failed to archive change: ${msg}`)
+    return false
+  }
 }
 
 /**
@@ -332,16 +428,35 @@ export async function runPilot(options: PilotRunOptions): Promise<void> {
     }
   }
 
-  // 读取 tasks
-  const tasksMdContent = readTasksMd(projectDir)
-  if (!tasksMdContent) {
-    console.error('No tasks.md found in project.')
+  // 查找 change: --tasks 指定名称 → 自动取第一个
+  const change = options.changeName
+    ? findChangeByName(projectDir, options.changeName)
+    : findFirstActiveChange(projectDir)
+
+  if (!change) {
+    if (options.changeName) {
+      console.error(`Change not found: ${options.changeName}`)
+      console.error(`Looked in openspec/changes/${options.changeName}/`)
+    } else {
+      console.error('No active change found in project.')
+      console.error('Run pilot from an OpenSpec project with active changes, or use --tasks to specify a change name.')
+    }
     releaseLock(projectDir)
     process.exit(1)
   }
 
-  const specContent = readSpecs(projectDir)
-  const designContent = readDesignMd(projectDir)
+  console.log(`[Pilot] Active change: ${change.name}`)
+
+  // 读取 change 的所有 artifacts
+  const tasksMdContent = readTasksMd(change)
+  if (!tasksMdContent) {
+    console.error('No tasks.md found in change.')
+    releaseLock(projectDir)
+    process.exit(1)
+  }
+
+  const specContent = readSpecs(change)
+  const designContent = readDesignMd(change)
 
   const parsedTasks = parseTasksMd(tasksMdContent)
 
@@ -464,6 +579,9 @@ export async function runPilot(options: PilotRunOptions): Promise<void> {
   }
 
   saveState(projectDir, state)
+
+  // 归档已完成的 change
+  archiveChange(projectDir, change, state)
 
   // 写入摘要报告
   writeSummary(projectDir, state)

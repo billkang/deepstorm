@@ -1,8 +1,7 @@
 import { Command } from 'commander'
 import * as path from 'node:path'
-import * as fs from 'node:fs'
 import * as cp from 'node:child_process'
-import { checkClaudeCli } from '../daemon/orchestrator'
+import { checkClaudeCli, findFirstActiveChange, findChangeByName } from '../daemon/orchestrator'
 import { isLockActive } from '../daemon/lock'
 
 export interface RunOptions {
@@ -20,7 +19,7 @@ export function registerRunCommand(program: Command): void {
     .description('启动 OpenSpec tasks 自动执行')
     .option('-p, --project <dir>', '项目目录')
     .option('-d, --detach', '后台 daemon 模式运行')
-    .option('--tasks <file>', '指定 tasks.md 文件路径')
+    .option('--tasks <name>', '指定 change 名称（openspec/changes/ 下的目录名）')
     .action(async (options: RunOptions) => {
       const projectDir = options.project ? path.resolve(options.project) : process.cwd()
 
@@ -31,19 +30,25 @@ export function registerRunCommand(program: Command): void {
         process.exit(1)
       }
 
-      // 前置检查：OpenSpec 是否存在
-      const tasksPath = options.tasks
-        ? path.resolve(options.tasks)
-        : path.join(projectDir, 'tasks.md')
-
-      if (!fs.existsSync(tasksPath)) {
-        if (options.tasks) {
-          console.error(`Error: specified tasks file not found: ${tasksPath}`)
-        } else {
-          console.error(`Error: no tasks.md found in ${projectDir}`)
-          console.error('Run pilot from an OpenSpec project, or use --tasks to specify a file.')
+      // 前置检查：查找 change
+      if (options.tasks) {
+        // 按名称查找指定 change
+        const change = findChangeByName(projectDir, options.tasks)
+        if (!change) {
+          console.error(`Error: change "${options.tasks}" not found.`)
+          console.error(`Looked in openspec/changes/${options.tasks}/`)
+          process.exit(1)
         }
-        process.exit(1)
+        console.log(`[Pilot] Using specified change: ${change.name}`)
+      } else {
+        // 自动取第一个 active change
+        const change = findFirstActiveChange(projectDir)
+        if (!change) {
+          console.error(`Error: no active change found in ${projectDir}`)
+          console.error('Run pilot from an OpenSpec project with active changes, or use --tasks to specify a change name.')
+          process.exit(1)
+        }
+        console.log(`[Pilot] Found active change: ${change.name}`)
       }
 
       // 锁检查
@@ -85,7 +90,7 @@ export function registerRunCommand(program: Command): void {
       } else {
         // 前台模式：直接运行
         const { runPilot } = await import('../daemon/orchestrator')
-        await runPilot({ projectDir })
+        await runPilot({ projectDir, changeName: options.tasks })
       }
     })
 }
