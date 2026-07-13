@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import * as fs from 'node:fs'
 import * as path from 'node:path'
 import * as os from 'node:os'
-import { printGuide } from '../guide'
+import { printGuide, printMcpEnvStatus } from '../guide'
 
 vi.mock('@clack/prompts', () => ({
   confirm: vi.fn().mockResolvedValue(false),
@@ -102,6 +102,68 @@ describe('printGuide', () => {
     })
     const output = logs.join(' ')
     expect(output).not.toContain('Docker')
+  })
+
+  describe('printMcpEnvStatus', () => {
+    let examplesDir: string
+
+    beforeEach(() => {
+      examplesDir = path.join(tmpDir, 'env-examples')
+      fs.mkdirSync(examplesDir, { recursive: true })
+    })
+
+    it('所有 MCP 已配置时显示 ✅', () => {
+      fs.writeFileSync(path.join(examplesDir, 'github.env-example'), 'GITHUB_TOKEN=ghp_xxx\n', 'utf-8')
+      fs.writeFileSync(path.join(tmpDir, '.env'), 'GITHUB_TOKEN=ghp_my_real_token\n', 'utf-8')
+
+      printMcpEnvStatus(['github'], [], examplesDir, tmpDir)
+      const output = logs.join('\n')
+      expect(output).toContain('✅')
+      expect(output).toContain('github')
+      expect(output).toContain('已配置')
+    })
+
+    it('某 key 缺失时显示 ⚠️', () => {
+      fs.writeFileSync(
+        path.join(examplesDir, 'jira.env-example'),
+        'JIRA_URL=url\nJIRA_TOKEN=token\n',
+        'utf-8',
+      )
+      fs.writeFileSync(path.join(tmpDir, '.env'), 'JIRA_URL=https://my.atlassian.net\n', 'utf-8')
+
+      printMcpEnvStatus(['jira'], [], examplesDir, tmpDir)
+      const output = logs.join('\n')
+      expect(output).toContain('⚠')
+      expect(output).toContain('JIRA_TOKEN')
+    })
+
+    it('无 env-example 时显示 ℹ', () => {
+      printMcpEnvStatus(['no-env-service'], [], examplesDir, tmpDir)
+      const output = logs.join('\n')
+      expect(output).toContain('ℹ')
+      expect(output).toContain('无需环境变量配置')
+    })
+
+    it('同时包含 mcpTools 和 installedMcpServices', () => {
+      fs.writeFileSync(
+        path.join(examplesDir, 'github.env-example'),
+        'GITHUB_TOKEN=ghp_xxx\n',
+        'utf-8',
+      )
+      fs.writeFileSync(path.join(examplesDir, 'jira.env-example'), 'JIRA_TOKEN=token\n', 'utf-8')
+      fs.writeFileSync(path.join(tmpDir, '.env'), 'GITHUB_TOKEN=real\nJIRA_TOKEN=real\n', 'utf-8')
+
+      printMcpEnvStatus(['github'], ['jira'], examplesDir, tmpDir)
+      const output = logs.join('\n')
+      expect(output).toContain('github')
+      expect(output).toContain('jira')
+    })
+
+    it('无 MCP 时无输出', () => {
+      printMcpEnvStatus([], [], examplesDir, tmpDir)
+      const output = logs.join('\n')
+      expect(output).toBe('')
+    })
   })
 
   describe('git prompt', () => {

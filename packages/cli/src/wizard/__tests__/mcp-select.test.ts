@@ -228,4 +228,55 @@ describe('selectMcpTools', () => {
       expect(vi.mocked(p.multiselect).mock.calls[0][0].initialValues).toEqual(['context7'])
     })
   })
+
+  describe('installedMcpServices filtering', () => {
+    it('隐藏已安装的 MCP 服务', async () => {
+      const reader = createMockReader({
+        github: { domain: 'code-hosting', label: 'GitHub', description: '' },
+        jira: { domain: 'project-management', label: 'Jira', description: '' },
+      })
+      vi.mocked(p.multiselect).mockResolvedValue(['jira'])
+      await selectMcpTools(reader, [], [], ['github'])
+      const opts = vi.mocked(p.multiselect).mock.calls[0][0].options as Array<{ value: string }>
+      const values = opts.map((o) => o.value)
+      expect(values).not.toContain('github')
+      expect(values).toContain('jira')
+    })
+
+    it('打印已安装服务的过滤日志', async () => {
+      const reader = createMockReader({
+        github: { domain: 'code-hosting', label: 'GitHub', description: '' },
+      })
+      vi.mocked(p.multiselect).mockResolvedValue([])
+      const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+
+      await selectMcpTools(reader, [], [], ['github'])
+      expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('github 已安装'))
+      logSpy.mockRestore()
+    })
+
+    it('所有 MCP 都已装时返回初始值 + 已装服务', async () => {
+      const reader = createMockReader({
+        github: { domain: 'code-hosting', label: 'GitHub', description: '' },
+      })
+      vi.mocked(p.multiselect).mockResolvedValue([])
+      const result = await selectMcpTools(reader, [], ['context7'], ['github'])
+      expect(result).toEqual(['context7', 'github'])
+    })
+
+    it('所有 MCP 都已装且无初始值时返回已装服务', async () => {
+      const reader = createMockReader({
+        github: { domain: 'code-hosting', label: 'GitHub', description: '' },
+      })
+      vi.mocked(p.multiselect).mockResolvedValue([])
+      const result = await selectMcpTools(reader, [], [], ['github'])
+      expect(result).toEqual(['github'])
+    })
+
+    it('已装服务无对应 MCP 工具（empty reader）时不崩溃', async () => {
+      const reader = createMockReader({})
+      const result = await selectMcpTools(reader, [], [], ['nonexistent'])
+      expect(result).toEqual([])
+    })
+  })
 })
