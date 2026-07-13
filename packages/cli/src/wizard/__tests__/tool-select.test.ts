@@ -76,4 +76,38 @@ describe('selectTools', () => {
 
     expect(result).toEqual([])
   })
+
+  describe('initialValues', () => {
+    it('传入 initialValues 时传递给 multiselect', async () => {
+      vi.mocked(p.multiselect).mockResolvedValue(['reef', 'tide'])
+
+      await selectTools(mockReader, ['reef'])
+
+      expect(vi.mocked(p.multiselect).mock.calls[0][0].initialValues).toEqual(['reef'])
+    })
+
+    it('使用含 initialValues 的提示信息', async () => {
+      vi.mocked(p.multiselect).mockResolvedValue(['reef'])
+
+      await selectTools(mockReader, ['reef'])
+
+      expect(vi.mocked(p.multiselect).mock.calls[0][0].message).toContain('已有工具默认勾选')
+    })
+
+    it('使用不含 initialValues 的提示信息', async () => {
+      vi.mocked(p.multiselect).mockResolvedValue(['reef'])
+
+      await selectTools(mockReader)
+
+      expect(vi.mocked(p.multiselect).mock.calls[0][0].message).toContain('空格选中')
+    })
+
+    it('过滤无效的 initialValues', async () => {
+      vi.mocked(p.multiselect).mockResolvedValue(['reef'])
+
+      await selectTools(mockReader, ['invalid-tool', 'reef'])
+
+      expect(vi.mocked(p.multiselect).mock.calls[0][0].initialValues).toEqual(['reef'])
+    })
+  })
 })

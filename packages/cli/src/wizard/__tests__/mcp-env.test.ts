@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import * as fs from 'node:fs'
 import * as path from 'node:path'
 import * as os from 'node:os'
-import { getMcpEnvStubs, collectEnvSections } from '../mcp-env'
+import { getMcpEnvStubs, collectEnvSections, isMcpFullyConfigured, parseEnvExampleFile } from '../mcp-env'
 
 const GITHUB_EXAMPLE = [
   '# ═══════════════════════════',
@@ -73,6 +73,108 @@ describe('getMcpEnvStubs', () => {
   it('returns empty array for empty input', () => {
     const stubs = getMcpEnvStubs([], tmpDir)
     expect(stubs).toEqual([])
+  })
+})
+
+describe('parseEnvExampleFile (exported)', () => {
+  let tmpDir: string
+
+  beforeEach(() => {
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'deepstorm-parse-env-'))
+  })
+
+  afterEach(() => {
+    fs.rmSync(tmpDir, { recursive: true, force: true })
+  })
+
+  it('解析 .env-example 文件返回 key 和 comment', () => {
+    const filePath = path.join(tmpDir, 'test.env-example')
+    fs.writeFileSync(filePath, [
+      '# 测试服务',
+      'TEST_KEY=value1',
+      '# 另一项配置',
+      'ANOTHER_KEY=value2',
+    ].join('\n'), 'utf-8')
+
+    const entries = parseEnvExampleFile(filePath)
+    expect(entries).toHaveLength(2)
+    expect(entries[0].key).toBe('TEST_KEY')
+    expect(entries[0].comment).toBe('测试服务')
+    expect(entries[1].key).toBe('ANOTHER_KEY')
+    expect(entries[1].comment).toBe('另一项配置')
+  })
+
+  it('文件不存在时返回空数组', () => {
+    const entries = parseEnvExampleFile('/nonexistent/path')
+    expect(entries).toEqual([])
+  })
+})
+
+describe('isMcpFullyConfigured', () => {
+  let tmpDir: string
+  let examplesDir: string
+  let dotEnvPath: string
+
+  beforeEach(() => {
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'deepstorm-mcp-check-'))
+    examplesDir = path.join(tmpDir, 'env-examples')
+    dotEnvPath = path.join(tmpDir, '.env')
+    fs.mkdirSync(examplesDir, { recursive: true })
+  })
+
+  afterEach(() => {
+    fs.rmSync(tmpDir, { recursive: true, force: true })
+  })
+
+  it('所有 key 在 .env 中有非默认值时返回 true', () => {
+    fs.writeFileSync(
+      path.join(examplesDir, 'test.env-example'),
+      'TEST_API_KEY=your_key_here\nTEST_URL=https://default.example.com\n',
+      'utf-8',
+    )
+    fs.writeFileSync(dotEnvPath, 'TEST_API_KEY=real_key_123\nTEST_URL=https://my.company.com\n', 'utf-8')
+
+    expect(isMcpFullyConfigured('test', examplesDir, dotEnvPath)).toBe(true)
+  })
+
+  it('某 key 仍是默认值时返回 false', () => {
+    fs.writeFileSync(
+      path.join(examplesDir, 'test.env-example'),
+      'TEST_API_KEY=your_key_here\n',
+      'utf-8',
+    )
+    fs.writeFileSync(dotEnvPath, 'TEST_API_KEY=your_key_here\n', 'utf-8')
+
+    expect(isMcpFullyConfigured('test', examplesDir, dotEnvPath)).toBe(false)
+  })
+
+  it('某 key 在 .env 中不存在时返回 false', () => {
+    fs.writeFileSync(
+      path.join(examplesDir, 'test.env-example'),
+      'TEST_API_KEY=your_key_here\nTEST_URL=https://default.com\n',
+      'utf-8',
+    )
+    fs.writeFileSync(dotEnvPath, 'TEST_API_KEY=my_real_key\n', 'utf-8')
+
+    expect(isMcpFullyConfigured('test', examplesDir, dotEnvPath)).toBe(false)
+  })
+
+  it('无 .env-example 文件时返回 true（无需配置）', () => {
+    expect(isMcpFullyConfigured('nonexistent', examplesDir, dotEnvPath)).toBe(true)
+  })
+
+  it('空 .env-example 文件时返回 true', () => {
+    fs.writeFileSync(path.join(examplesDir, 'test.env-example'), '', 'utf-8')
+    expect(isMcpFullyConfigured('test', examplesDir, dotEnvPath)).toBe(true)
+  })
+
+  it('无 .env 文件且 env-example 有 key 时返回 false', () => {
+    fs.writeFileSync(
+      path.join(examplesDir, 'test.env-example'),
+      'TEST_API_KEY=your_key_here\n',
+      'utf-8',
+    )
+    expect(isMcpFullyConfigured('test', examplesDir, dotEnvPath)).toBe(false)
   })
 })
 

@@ -33,7 +33,7 @@ function loadRegistry(): Registry {
 
 const registry = loadRegistry()
 registerSetupCommand(program, registry)
-registerInitCommand(program)
+registerInitCommand(program, registry)
 registerPluginBuildCommand(program, registry)
 registerConfigCommand(program, registry)
 registerTemplateCommand(program, registry)

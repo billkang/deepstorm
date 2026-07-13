@@ -11,7 +11,7 @@ import { getMcpEnvStubs, collectEnvSections } from '../wizard/mcp-env'
 import { runWizardFlow } from '../wizard/wizard-flow'
 import { cleanInstalled } from '../wizard/reconfigure'
 import { parseNonInteractiveArgs } from '../wizard/non-interactive'
-import { printGuide } from '../wizard/guide'
+import { printGuide, printMcpEnvStatus } from '../wizard/guide'
 import { renderTemplate, copyVariants } from '../template/renderer'
 import { buildTemplateVariables, injectSkillCapabilities, buildMcpCapabilities } from '../template/registry'
 import { parseFrontmatter } from '../utils/frontmatter'
@@ -92,7 +92,7 @@ async function runSetup(
     templateVariables = buildTemplateVariables(registry, config, selectedMcpTools)
   } else {
     // Step 2a-2c: 共享向导流程（工具选择 → MCP选择 → 问答 → 模板变量）
-    const wizardResult = await runWizardFlow(reader, registry, [])
+    const wizardResult = await runWizardFlow(reader, registry, [], targetDir)
     tools = wizardResult.tools
     selectedMcpTools = wizardResult.selectedMcpTools
     config = wizardResult.config
@@ -146,9 +146,9 @@ async function runSetup(
   }
 
   // 记录 MCP 安装（去重）
+  const settingsPath = path.join(targetDir, '.claude', 'settings.json')
+  let existingMcp: string[] = []
   if (selectedMcpTools.length > 0) {
-    const settingsPath = path.join(targetDir, '.claude', 'settings.json')
-    let existingMcp: string[] = []
     try {
       const existing = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'))
       existingMcp = (existing.deepstorm?.installedMcpServers as string[]) ?? []
@@ -158,7 +158,6 @@ async function runSetup(
     deepstormConfig.installedMcpServers = [...new Set([...existingMcp, ...selectedMcpTools])]
   }
 
-  const settingsPath = path.join(targetDir, '.claude', 'settings.json')
   mergeDeepStormConfig(settingsPath, deepstormConfig as DeepStormConfig)
 
   // 将 enabledMcpjsonServers 写入 settings.json 顶层 — 与 .mcp.json 中的 deepstorm-{name} 名称一致
@@ -205,6 +204,12 @@ async function runSetup(
 
   // 构建 guide 用的 mcpEnvStubs
   const mcpEnvStubs = getMcpEnvStubs(selectedMcpTools, examplesDir)
+
+  // Step 7b: 输出环境变量配置状态
+  const allMcpTools = [...new Set([...selectedMcpTools, ...existingMcp])]
+  if (allMcpTools.length > 0) {
+    printMcpEnvStatus(selectedMcpTools, existingMcp, examplesDir, targetDir)
+  }
 
   // Step 8: 输出引导
   await printGuide({

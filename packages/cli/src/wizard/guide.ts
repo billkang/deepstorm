@@ -1,6 +1,7 @@
 import * as fs from 'node:fs'
 import * as path from 'node:path'
 import { confirm, isCancel } from '@clack/prompts'
+import { parseEnvExampleFile } from './mcp-env'
 
 export interface GuideOptions {
   targetDir: string
@@ -10,6 +11,93 @@ export interface GuideOptions {
   mcpTools?: string[]
   /** MCP 服务的环境变量 stub 列表 */
   mcpEnvStubs?: Array<{ key: string; comment: string }>
+  /** 本次安装前已安装的 MCP 服务名列表（用于 env status 展示） */
+  previouslyInstalledMcp?: string[]
+  /** env-examples 目录路径（用于 env status 展示） */
+  mcpExamplesDir?: string
+}
+
+/**
+ * 输出 MCP 环境变量配置状态。
+ * 遍历所有 MCP 服务（含新装和之前安装的），检查 .env 中 key 是否已配置。
+ *
+ * @param mcpTools - 本次新选的 MCP 服务名列表
+ * @param installedMcpServices - 之前已安装的 MCP 服务名列表
+ * @param examplesDir - env-examples 目录路径
+ * @param targetDir - 项目根目录（用于读取 .env）
+ */
+export function printMcpEnvStatus(
+  mcpTools: string[],
+  installedMcpServices: string[],
+  examplesDir: string,
+  targetDir: string,
+): void {
+  const allMcp = [...new Set([...mcpTools, ...installedMcpServices])]
+  if (allMcp.length === 0) return
+
+  console.log('')
+  console.log('  环境变量配置状态：')
+
+  for (const mcp of allMcp) {
+    const filePath = path.join(examplesDir, `${mcp}.env-example`)
+    if (!fs.existsSync(filePath)) {
+      console.log(`  ℹ ${mcp}: 无需环境变量配置`)
+      continue
+    }
+
+    const entries = parseEnvExampleFile(filePath)
+    if (entries.length === 0) {
+      console.log(`  ℹ ${mcp}: 无需环境变量配置`)
+      continue
+    }
+
+    // 读取 .env 中的实际值
+    const dotEnvPath = path.join(targetDir, '.env')
+    const dotEnvMap = new Map<string, string>()
+    if (fs.existsSync(dotEnvPath)) {
+      const content = fs.readFileSync(dotEnvPath, 'utf-8')
+      for (const line of content.split('\n')) {
+        const trimmed = line.trim()
+        if (trimmed.includes('=') && !trimmed.startsWith('#')) {
+          const eqIdx = trimmed.indexOf('=')
+          const key = trimmed.slice(0, eqIdx).trim()
+          const value = trimmed.slice(eqIdx + 1).trim()
+          if (key && /^[A-Z][A-Z0-9_]*$/.test(key)) {
+            dotEnvMap.set(key, value)
+          }
+        }
+      }
+    }
+
+    // 检查缺少的 key 或仍为默认值的 key
+    const envDefaultContent = fs.readFileSync(filePath, 'utf-8')
+    const defaults = new Map<string, string>()
+    for (const line of envDefaultContent.split('\n')) {
+      const trimmed = line.trim()
+      if (trimmed.includes('=') && !trimmed.startsWith('#')) {
+        const eqIdx = trimmed.indexOf('=')
+        const key = trimmed.slice(0, eqIdx).trim()
+        const value = trimmed.slice(eqIdx + 1).trim()
+        if (key && /^[A-Z][A-Z0-9_]*$/.test(key)) {
+          defaults.set(key, value)
+        }
+      }
+    }
+
+    const missingKeys: string[] = []
+    for (const [key, defaultValue] of defaults) {
+      const actualValue = dotEnvMap.get(key)
+      if (!actualValue || actualValue === defaultValue) {
+        missingKeys.push(key)
+      }
+    }
+
+    if (missingKeys.length === 0) {
+      console.log(`  ✅ ${mcp}: 环境变量已配置`)
+    } else {
+      console.log(`  ⚠ ${mcp}: 缺少 ${missingKeys.join('、')}`)
+    }
+  }
 }
 
 /**

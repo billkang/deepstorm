@@ -2,6 +2,9 @@ import { Command } from 'commander'
 import * as fs from 'node:fs'
 import * as path from 'node:path'
 import Handlebars from 'handlebars'
+import { mergeDeepStormConfig } from '../merger/settings'
+import { RegistryReader } from '../engine/registry'
+import type { Registry } from '../types/registry'
 
 /**
  * 初始化项目的选项接口。
@@ -50,9 +53,61 @@ export function parseInitArgs(raw: Record<string, unknown>): Partial<InitOptions
 }
 
 /**
+ * 将 init 选择的技术方案写入 .claude/settings.json 的 deepstorm.reef.* 命名空间。
+ * 仅写入 init 问过的字段，不覆盖无关字段。
+ */
+export function writeInitTechStack(baseDir: string, opts: InitOptions): void {
+  const config: Record<string, string> = {}
+
+  if (opts.frontend) {
+    config['reef.techs'] = opts.backend ? 'frontend,backend' : 'frontend'
+    config['reef.frontend.framework'] = opts.frontend
+    if (opts.uiLib) config['reef.frontend.uiLibrary'] = opts.uiLib
+    if (opts.cssFramework) config['reef.frontend.css'] = opts.cssFramework
+  }
+
+  if (opts.backend) {
+    config['reef.techs'] = opts.frontend ? 'frontend,backend' : 'backend'
+    config['reef.backend.language'] = opts.backend
+    if (opts.orm) config['reef.backend.java.orm'] = opts.orm
+    if (opts.migration) config['reef.backend.java.dbMigration'] = opts.migration
+    if (opts.ai) config['reef.backend.java.ai'] = opts.ai
+  }
+
+  if (Object.keys(config).length === 0) return
+
+  const nested = buildInitNestedConfig(config)
+  const claudeDir = path.join(baseDir, '.claude')
+  ensureDir(claudeDir)
+  const settingsPath = path.join(claudeDir, 'settings.json')
+  mergeDeepStormConfig(settingsPath, nested)
+}
+
+function buildInitNestedConfig(flat: Record<string, string>): Record<string, any> {
+  const result: Record<string, any> = { reef: {} }
+
+  for (const [key, value] of Object.entries(flat)) {
+    const parts = key.split('.')
+    let current = result
+    for (let i = 0; i < parts.length; i++) {
+      if (i === parts.length - 1) {
+        current[parts[i]] = value
+      } else {
+        if (!current[parts[i]] || typeof current[parts[i]] !== 'object') {
+          current[parts[i]] = {}
+        }
+        current = current[parts[i]]
+      }
+    }
+  }
+
+  return result
+}
+
+/**
  * 注册 init 子命令。
  */
-export function registerInitCommand(program: Command): void {
+export function registerInitCommand(program: Command, registry?: Registry): void {
   program
     .command('init')
     .description('初始化项目脚手架 — 选择技术栈，生成项目骨架')
@@ -72,11 +127,46 @@ export function registerInitCommand(program: Command): void {
       if (args.projectName && (args.frontend || args.backend)) {
         // 完整参数 → 直接生成
         await runInit(targetDir, args as InitOptions)
+        if (args.projectName) {
+          writeInitTechStack(targetDir, args as InitOptions)
+          await promptContinueSetup(targetDir, args.projectName, registry)
+        }
       } else {
         // 参数不全 → 交互模式
-        await runInteractiveMode(targetDir)
+        const opts = await runInteractiveMode(targetDir)
+        if (opts) {
+          writeInitTechStack(targetDir, opts)
+          if (opts.projectName) {
+            await promptContinueSetup(targetDir, opts.projectName, registry)
+          }
+        }
       }
     })
+}
+
+async function promptContinueSetup(targetDir: string, projectName: string, registry?: Registry): Promise<void> {
+  // 没有 registry 时跳过引导（如：非交互测试或未传入 registry）
+  if (!registry) return
+  if (!registry.tools || Object.keys(registry.tools).length === 0) return
+
+  const { confirm, isCancel, outro } = await import('@clack/prompts')
+
+  const projectPath = path.join(targetDir, projectName)
+  const shouldContinue = await confirm({
+    message: `是否继续安装 DeepStorm 开发环境（skills + MCP 服务）？`,
+    initialValue: true,
+  })
+
+  if (isCancel(shouldContinue)) {
+    outro('已取消')
+    return
+  }
+
+  if (shouldContinue) {
+    console.log(`\n✔ 请运行以下命令继续安装:\n    cd ${projectName} && deepstorm setup\n`)
+  } else {
+    console.log(`\nℹ 你可以稍后运行以下命令来安装开发环境:\n    cd ${projectName} && deepstorm setup\n`)
+  }
 }
 
 // ──────────────────────────────────────
@@ -118,7 +208,7 @@ function buildContext(opts: InitOptions): TemplateContext {
 /**
  * 运行 init 交互模式。
  */
-export async function runInteractiveMode(targetDir: string): Promise<void> {
+export async function runInteractiveMode(targetDir: string): Promise<InitOptions | undefined> {
   // Dynamic import of @clack/prompts for interactive mode
   // This avoids requiring it when using CLI args
   const { intro, outro, text, select, isCancel, confirm } = await import('@clack/prompts')
@@ -223,7 +313,7 @@ export async function runInteractiveMode(targetDir: string): Promise<void> {
     return
   }
 
-  await runInit(targetDir, {
+  const opts: InitOptions = {
     projectName,
     frontend: frontendChoice === 'none' ? undefined : frontendChoice as string,
     backend: backendChoice === 'none' ? undefined : backendChoice as string,
@@ -232,9 +322,12 @@ export async function runInteractiveMode(targetDir: string): Promise<void> {
     orm: orm && orm !== 'none' ? orm : undefined,
     migration: migration && migration !== 'none' ? migration : undefined,
     ai: aiChoice && aiChoice !== 'none' ? aiChoice : undefined,
-  })
+  }
+
+  await runInit(targetDir, opts)
 
   outro('✅ 项目已生成！')
+  return opts
 }
 
 /**

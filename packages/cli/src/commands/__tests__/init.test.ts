@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import * as fs from 'node:fs'
 import * as path from 'node:path'
-import { parseInitArgs, runInit } from '../init'
+import { parseInitArgs, runInit, writeInitTechStack } from '../init'
 
 function tmpDir(): string {
   return path.join(process.env.TMPDIR || '/tmp', `.init-test-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`)
@@ -242,6 +242,75 @@ describe('runInit', () => {
     await expect(
       runInit(testDir, { projectName: 'my/project', frontend: 'angular' }),
     ).rejects.toThrow(/非法/)
+  })
+
+  it('writeInitTechStack 应当写入完整的全栈配置', () => {
+    writeInitTechStack(testDir, {
+      projectName: 'test',
+      frontend: 'angular',
+      backend: 'java',
+      uiLib: 'primeng',
+      cssFramework: 'tailwind',
+      orm: 'hibernate',
+      migration: 'liquibase',
+      ai: 'spring-ai',
+    })
+    const settingsPath = path.join(testDir, '.claude', 'settings.json')
+    expect(fileExists(settingsPath)).toBe(true)
+    const cfg = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'))
+    expect(cfg.deepstorm.reef.techs).toBe('frontend,backend')
+    expect(cfg.deepstorm.reef.frontend.framework).toBe('angular')
+    expect(cfg.deepstorm.reef.frontend.uiLibrary).toBe('primeng')
+    expect(cfg.deepstorm.reef.frontend.css).toBe('tailwind')
+    expect(cfg.deepstorm.reef.backend.language).toBe('java')
+    expect(cfg.deepstorm.reef.backend.java.orm).toBe('hibernate')
+    expect(cfg.deepstorm.reef.backend.java.dbMigration).toBe('liquibase')
+    expect(cfg.deepstorm.reef.backend.java.ai).toBe('spring-ai')
+  })
+
+  it('writeInitTechStack 只写前端时不应包含后端字段', () => {
+    writeInitTechStack(testDir, {
+      projectName: 'fe-only',
+      frontend: 'angular',
+      uiLib: 'primeng',
+    })
+    const settingsPath = path.join(testDir, '.claude', 'settings.json')
+    const cfg = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'))
+    expect(cfg.deepstorm.reef.techs).toBe('frontend')
+    expect(cfg.deepstorm.reef.frontend.framework).toBe('angular')
+    expect(cfg.deepstorm.reef.backend).toBeUndefined()
+  })
+
+  it('writeInitTechStack 只写后端时不应包含前端字段', () => {
+    writeInitTechStack(testDir, {
+      projectName: 'be-only',
+      backend: 'java',
+      orm: 'hibernate',
+    })
+    const settingsPath = path.join(testDir, '.claude', 'settings.json')
+    const cfg = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'))
+    expect(cfg.deepstorm.reef.techs).toBe('backend')
+    expect(cfg.deepstorm.reef.backend.language).toBe('java')
+    expect(cfg.deepstorm.reef.backend.java.orm).toBe('hibernate')
+    expect(cfg.deepstorm.reef.frontend).toBeUndefined()
+  })
+
+  it('writeInitTechStack 应当保留 settings.json 中的已有字段', () => {
+    // 先写入一个已有的 tide 配置
+    const settingsDir = path.join(testDir, '.claude')
+    fs.mkdirSync(settingsDir, { recursive: true })
+    fs.writeFileSync(path.join(settingsDir, 'settings.json'), JSON.stringify({
+      deepstorm: { tide: { issueTracker: 'jira' } },
+    }), 'utf-8')
+
+    writeInitTechStack(testDir, {
+      projectName: 'test',
+      frontend: 'angular',
+    })
+
+    const cfg = JSON.parse(fs.readFileSync(path.join(settingsDir, 'settings.json'), 'utf-8'))
+    expect(cfg.deepstorm.reef.techs).toBe('frontend')
+    expect(cfg.deepstorm.tide.issueTracker).toBe('jira') // 保留
   })
 
   it('生成的 Angular + Java 项目结构应与 chatbi 风格一致', async () => {

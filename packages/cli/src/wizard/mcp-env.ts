@@ -21,7 +21,7 @@ const ENV_EXAMPLES_DIR = 'env-examples'
  * 解析 .env-example 文件，提取 KEY= 条目和前一条有意义的注释。
  * 跳过纯装饰线（═、━ 等重复字符组成的注释行）。
  */
-function parseEnvExampleFile(filePath: string): EnvStubEntry[] {
+export function parseEnvExampleFile(filePath: string): EnvStubEntry[] {
   if (!fs.existsSync(filePath)) return []
 
   const content = fs.readFileSync(filePath, 'utf-8')
@@ -140,4 +140,63 @@ function filterExistingKeys(
   }
 
   return result.join('\n').trimEnd()
+}
+
+/**
+ * 判断指定 MCP 服务的环境变量是否已完整配置。
+ * 读取 .env-example 文件获取所需 KEY 及其默认值，
+ * 对照 .env 中的实际值判断：所有 key 都存在且值不等于示例中的默认值时返回 true。
+ *
+ * @param mcpName - MCP 服务名称（如 'github', 'jira'）
+ * @param examplesDir - env-examples 目录路径
+ * @param dotEnvPath - .env 文件路径
+ */
+export function isMcpFullyConfigured(
+  mcpName: string,
+  examplesDir: string,
+  dotEnvPath: string,
+): boolean {
+  const filePath = path.join(examplesDir, `${mcpName}.env-example`)
+  if (!fs.existsSync(filePath)) return true
+
+  // 解析 .env-example 获取 key → default value 映射
+  const defaults = new Map<string, string>()
+  const content = fs.readFileSync(filePath, 'utf-8')
+  for (const line of content.split('\n')) {
+    const trimmed = line.trim()
+    if (trimmed.includes('=') && !trimmed.startsWith('#')) {
+      const eqIdx = trimmed.indexOf('=')
+      const key = trimmed.slice(0, eqIdx).trim()
+      const value = trimmed.slice(eqIdx + 1).trim()
+      if (key && /^[A-Z][A-Z0-9_]*$/.test(key)) {
+        defaults.set(key, value)
+      }
+    }
+  }
+  if (defaults.size === 0) return true
+
+  // 读取 .env 中的实际值
+  const dotEnvMap = new Map<string, string>()
+  if (fs.existsSync(dotEnvPath)) {
+    const dotEnvContent = fs.readFileSync(dotEnvPath, 'utf-8')
+    for (const line of dotEnvContent.split('\n')) {
+      const trimmed = line.trim()
+      if (trimmed.includes('=') && !trimmed.startsWith('#')) {
+        const eqIdx = trimmed.indexOf('=')
+        const key = trimmed.slice(0, eqIdx).trim()
+        const value = trimmed.slice(eqIdx + 1).trim()
+        if (key && /^[A-Z][A-Z0-9_]*$/.test(key)) {
+          dotEnvMap.set(key, value)
+        }
+      }
+    }
+  }
+
+  // 检查每个 key：必须在 .env 中存在且值不等于默认值
+  for (const [key, defaultValue] of defaults) {
+    const actualValue = dotEnvMap.get(key)
+    if (!actualValue || actualValue === defaultValue) return false
+  }
+
+  return true
 }

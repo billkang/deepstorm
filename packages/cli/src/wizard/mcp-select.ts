@@ -21,11 +21,13 @@ const DOMAIN_LABELS: Record<string, string> = {
  * @param reader - RegistryReader 实例
  * @param selectedTools - 用户已选的工具套件名称列表
  * @param initialValues - 默认勾选的服务名列表（默认全不选，仅当出现在过滤后列表中时生效）
+ * @param installedMcpServices - 已安装且 key 完整的 MCP 服务列表（将完全隐藏）
  */
 export async function selectMcpTools(
   reader: RegistryReader,
   selectedTools: string[] = [],
   initialValues: string[] = [],
+  installedMcpServices: string[] = [],
 ): Promise<string[]> {
   // 构建 MCP 服务 → 依赖工具的反向映射
   const mcpToTools = buildMcpToToolsMap(reader)
@@ -52,6 +54,18 @@ export async function selectMcpTools(
   if (tools.length === 0) {
     p.note('没有可用的 MCP 工具', '提示')
     return []
+  }
+
+  // 移除已安装且 key 完整的 MCP 服务（隐藏已装）
+  const hiddenMcpServices = tools.filter((t) => installedMcpServices.includes(t))
+  if (hiddenMcpServices.length > 0) {
+    console.log(`ℹ ${hiddenMcpServices.join('、')} 已安装，跳过选择`)
+    tools = tools.filter((t) => !installedMcpServices.includes(t))
+  }
+
+  if (tools.length === 0) {
+    p.note('所有相关 MCP 服务已安装，无需额外选择', '提示')
+    return [...new Set([...initialValues, ...installedMcpServices])]
   }
 
   // Context7 放最后，其余按字母序
