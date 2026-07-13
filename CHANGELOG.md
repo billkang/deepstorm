@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.6.4] - 2026-07-13
+
+### Features
+
+- CLI 安装 UX 优化 —— init↔setup 配置共享与增量感知：init 结束时将技术方案写入 settings.json；init 完成后引导用户继续 setup 流程；setup 启动时读取已有配置跳过已配问卷；MCP 选择流程隐藏已安装且 key 完整的服务；selectTools 支持 initialValues 默认勾选已有工具；guide 按 MCP 服务分组展示环境变量配置状态（`5782d4a`）
+
 ## [0.6.3] - 2026-07-11
 
 ### Bug Fixes
