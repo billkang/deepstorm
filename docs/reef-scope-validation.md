@@ -21,6 +21,13 @@ bash packages/reef/hooks/reef-scope-setup.sh install
 bash packages/reef/hooks/reef-scope-setup.sh status
 ```
 
+> **路径说明**：上述命令中的 `packages/reef/hooks/` 路径适用于 DeepStorm 自身开发环境。
+> 如果你是 DeepStorm 的**最终用户**（已通过 `npx @deepstorm/cli setup` 安装），脚本位于插件安装目录：
+> - `node_modules/@deepstorm/reef/hooks/`（npm 安装）
+> - 或 `$DEEPSTORM_PLUGIN_ROOT/hooks/`（自定义插件目录）
+>
+> 安装脚本会自动搜索这些路径，无需手动指定。
+
 安装后在 `.deepstorm/scope-config.json` 生成配置文件：
 
 ```json
@@ -88,6 +95,8 @@ bash packages/reef/hooks/reef-scope-split.sh
 # 2. 审阅方案后确认，自动创建分支
 # 系统会创建 feat/order-xxx 和 feat/payment-xxx 两个分支
 
+# 最终用户请将 packages/reef/hooks/ 替换为实际路径
+
 # 3. 切换到子分支继续工作
 git checkout feat/order-xxx
 ```
@@ -104,6 +113,8 @@ bash packages/reef/hooks/reef-scope-check.sh --diff-from develop
 # 原始 JSON 输出（供程序使用）
 bash packages/reef/hooks/reef-scope-check.sh --raw
 ```
+
+> 最终用户请将 `packages/reef/hooks/` 替换为实际插件安装目录（见安装章节说明）。
 
 ## CI 集成
 
@@ -127,6 +138,8 @@ jobs:
         run: |
           bash packages/reef/hooks/reef-scope-ci.sh \
             --diff-from ${{ github.base_ref }}
+
+> 在 CI 环境中，`packages/reef/hooks/` 需替换为脚本在项目中的实际位置（例如通过 npm 安装时为 `node_modules/@deepstorm/reef/hooks/`）。也可将脚本复制到仓库的 `.github/scripts/` 目录中管理。
 ```
 
 ### GitLab CI
@@ -140,6 +153,8 @@ scope-check:
       --diff-from $CI_MERGE_REQUEST_TARGET_BRANCH_NAME
   only:
     - merge_requests
+
+> 同上，CI 中请根据实际部署方式调整脚本路径。
 ```
 
 ## 架构
@@ -184,8 +199,8 @@ OPENAI_API_KEY=sk-...
 ## 排障
 
 | 问题 | 原因 | 解决 |
-|------|------|------|
+| --- | --- | --- |
 | "API 调用失败" | 未配置 API Key 或网络不可用 | 配置 `.env` 中的 API Key |
 | 误阻断 | AI 分类不准 | 在配置中设置 `domains` 领域对齐列表 |
 | 不想检查 | 临时需要跳过 | 配置 `enabled: false` 或 `git commit --no-verify` |
-| hook 不生效 | 未安装或已卸载 | 运行 `scope-setup.sh install` |
+| hook 不生效 | 未安装或已卸载 | 运行 `reef-scope-setup.sh install`（找到脚本位置后执行） |

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DeepStorm — Spec 驱动的 AI 协同软件工程实践</title>
+<title>DeepStorm 深澜 — Spec 驱动的 AI 协同软件工程实践</title>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Noto+Sans+SC:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -11,7 +11,6 @@
   --bg:#faf8f6;
   --bg-alt:#f5f2ef;
   --surface:#ffffff;
-  --surface-hover:#fefcfb;
   --deepstorm-600:#e85a3a;
   --deepstorm-500:#ff6b4a;
   --deepstorm-400:#ff7f5e;
@@ -19,14 +18,17 @@
   --deepstorm-200:#ffc8b8;
   --deepstorm-100:#ffe8e0;
   --deepstorm-50:#fff5f0;
+  --teal-600:#0d9488;
   --teal-500:#14b8a6;
   --teal-400:#2dd4bf;
   --teal-100:#ccfbf1;
   --teal-50:#f0fdfa;
+  --gold-600:#b45309;
   --gold-500:#d97706;
   --gold-400:#f59e0b;
   --gold-100:#fef3c7;
   --gold-50:#fffbeb;
+  --indigo-600:#4f46e5;
   --indigo-500:#6366f1;
   --indigo-400:#818cf8;
   --indigo-100:#e0e7ff;
@@ -44,55 +46,41 @@
   --radius-inner:calc(2rem - 0.375rem);
   --bezier-smooth:cubic-bezier(0.32,0.72,0,1);
 }
-html{scroll-behavior:smooth}
+html,body{height:100%;overflow:hidden}
 body{
   font-family:'Plus Jakarta Sans','Noto Sans SC',sans-serif;
   background:var(--bg);
   color:var(--text);
-  overflow-x:hidden;
   -webkit-font-smoothing:antialiased;
 }
 ::selection{background:var(--deepstorm-200);color:var(--text)}
 
-/* Nav */
-nav{
-  position:fixed;top:1.5rem;left:50%;transform:translateX(-50%);
-  z-index:100;padding:0.375rem;
-  background:rgba(255,255,255,0.75);
-  backdrop-filter:blur(48px);
-  -webkit-backdrop-filter:blur(48px);
-  border-radius:999px;
-  border:1px solid var(--text-10);
-  box-shadow:0 4px 24px rgba(28,25,23,0.06);
-  display:flex;align-items:center;
-  transition:all 0.5s var(--bezier-smooth);
-}
-nav .nav-inner{display:flex;align-items:center;gap:0.25rem;padding:0.25rem 0.5rem}
-nav a{
-  padding:0.5rem 1rem;border-radius:999px;
-  font-size:0.75rem;font-weight:500;letter-spacing:0.02em;
-  color:var(--text-60);text-decoration:none;
-  transition:all 0.4s var(--bezier-smooth);white-space:nowrap;
-}
-nav a:hover,nav a.active{color:var(--text);background:var(--text-10)}
-nav .logo{font-weight:700;font-size:0.85rem;color:var(--deepstorm-500);padding:0.5rem 0.75rem 0.5rem 1rem;letter-spacing:0.04em}
-nav .hamburger{display:none;background:none;border:none;color:var(--text);cursor:pointer;width:36px;height:36px;position:relative}
-
-/* Hero */
-.hero{
-  min-height:100dvh;
+/* === SLIDE CONTAINER === */
+.slides{position:relative;height:100vh;width:100vw}
+.slide{
+  position:absolute;inset:0;
   display:flex;flex-direction:column;align-items:center;justify-content:center;
-  text-align:center;position:relative;padding:2rem;
+  padding:4rem 3rem;
+  opacity:0;visibility:hidden;
+  transition:opacity 0.6s var(--bezier-smooth), visibility 0s 0.6s;
+  overflow-y:auto;
+}
+.slide.active{opacity:1;visibility:visible;transition:opacity 0.6s var(--bezier-smooth), visibility 0s 0s;z-index:2}
+.slide.exit{opacity:0;visibility:hidden;transition:opacity 0.4s var(--bezier-smooth), visibility 0s 0.4s;z-index:1}
+
+.slide-inner{max-width:1100px;width:100%;margin:auto}
+
+/* === SLIDE SPECIFICS === */
+/* Title Slide */
+.slide-title{
+  text-align:center;
   background:
     radial-gradient(ellipse 80% 60% at 50% -10%, var(--deepstorm-100) 0%, transparent 60%),
     radial-gradient(ellipse 50% 50% at 20% 80%, var(--teal-50) 0%, transparent 50%),
     radial-gradient(ellipse 50% 50% at 80% 80%, var(--deepstorm-50) 0%, transparent 50%),
     var(--bg);
 }
-.hero .orb{position:absolute;border-radius:50%;filter:blur(100px);pointer-events:none}
-.hero .orb-1{width:500px;height:500px;background:var(--deepstorm-100);top:-150px;right:-80px}
-.hero .orb-2{width:400px;height:400px;background:var(--teal-50);bottom:-150px;left:-80px}
-.hero .badge{
+.slide-title .badge{
   display:inline-flex;align-items:center;gap:0.5rem;
   padding:0.375rem 1rem 0.375rem 0.5rem;border-radius:999px;
   background:var(--surface);border:1px solid var(--text-10);
@@ -100,702 +88,772 @@ nav .hamburger{display:none;background:none;border:none;color:var(--text);cursor
   color:var(--text-60);margin-bottom:2rem;
   box-shadow:0 2px 8px rgba(28,25,23,0.04);
 }
-.hero .badge .dot{width:6px;height:6px;border-radius:50%;background:var(--deepstorm-500);animation:pulse-dot 2s ease-in-out infinite}
+.slide-title .badge .dot{width:6px;height:6px;border-radius:50%;background:var(--deepstorm-500);animation:pulse-dot 2s ease-in-out infinite}
 @keyframes pulse-dot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.5;transform:scale(0.8)}}
-.hero h1{
-  font-size:clamp(4rem,14vw,9rem);font-weight:800;
+.slide-title h1{
+  font-size:clamp(3.5rem,10vw,7rem);font-weight:800;
   letter-spacing:-0.04em;line-height:0.92;
   background:linear-gradient(135deg,var(--text)25%,var(--deepstorm-500)50%,var(--teal-500)75%);
   -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
-  margin-bottom:1.5rem;position:relative;
+  margin-bottom:1.2rem;
 }
-.hero p{
-  font-size:clamp(1rem,2vw,1.25rem);color:var(--text-60);
-  max-width:540px;line-height:1.7;font-weight:400;letter-spacing:0.01em;
+.slide-title .tagline{
+  font-size:clamp(0.95rem,1.8vw,1.2rem);color:var(--text-60);
+  max-width:600px;line-height:1.7;font-weight:400;letter-spacing:0.01em;
+  text-align:center;margin:0 auto;
 }
-.hero .cta-row{margin-top:2.5rem;display:flex;gap:1rem;flex-wrap:wrap;justify-content:center}
-.hero .scroll-hint{
-  position:absolute;bottom:2.5rem;
-  display:flex;flex-direction:column;align-items:center;gap:0.5rem;
-  color:var(--text-40);font-size:0.65rem;letter-spacing:0.15em;text-transform:uppercase;
-  animation:float-down 2.5s ease-in-out infinite;
+.slide-title .ecosystem-meta{
+  margin-top:2.5rem;padding-top:1.5rem;border-top:1px solid var(--text-10);
+  display:flex;gap:2.5rem;flex-wrap:wrap;justify-content:center;
 }
-@keyframes float-down{0%,100%{transform:translateY(0)}50%{transform:translateY(8px)}}
+.slide-title .eco-item{text-align:center}
+.slide-title .eco-item .num{font-size:1.8rem;font-weight:700;color:var(--deepstorm-500);line-height:1}
+.slide-title .eco-item .label{font-size:0.7rem;color:var(--text-60);margin-top:0.25rem;letter-spacing:0.05em}
 
-/* Buttons */
-.btn{
+/* Mission Banner */
+.mission-banner{
   display:inline-flex;align-items:center;gap:0.75rem;
-  padding:0.75rem 1.75rem;border-radius:999px;
-  font-size:0.85rem;font-weight:600;text-decoration:none;
-  transition:all 0.5s var(--bezier-smooth);cursor:pointer;border:none;
-}
-.btn-primary{
-  background:linear-gradient(135deg,var(--deepstorm-500),var(--deepstorm-600));color:#fff;
-  box-shadow:0 4px 20px rgba(255,107,74,0.25);
-}
-.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(255,107,74,0.35)}
-.btn-primary:active{transform:scale(0.97)}
-.btn-ghost{
-  background:var(--surface);color:var(--text-80);
+  padding:1rem 1.75rem;margin:1.5rem auto;
+  border-radius:1rem;
+  background:linear-gradient(135deg,var(--deepstorm-50),var(--teal-50),var(--gold-50));
   border:1px solid var(--text-10);
+  text-align:left;max-width:640px;
 }
-.btn-ghost:hover{background:var(--bg-alt);color:var(--text);transform:translateY(-2px)}
-.btn .icon-wrap{
-  width:1.75rem;height:1.75rem;border-radius:50%;
-  background:rgba(0,0,0,0.15);color:#fff;
-  display:flex;align-items:center;justify-content:center;
-  font-size:0.75rem;transition:all 0.4s var(--bezier-smooth);
+.mission-banner .mission-icon{
+  font-size:1.4rem;color:var(--deepstorm-500);flex-shrink:0;
+  animation:mission-pulse 3s ease-in-out infinite;
 }
-.btn:hover .icon-wrap{transform:translateX(2px) scale(1.05)}
+@keyframes mission-pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.6;transform:scale(1.1)}}
+.mission-banner .mission-text{
+  font-size:clamp(0.78rem,1.1vw,0.9rem);color:var(--text-80);line-height:1.7;font-weight:500;
+}
+.mission-banner .mission-text .highlight{
+  color:var(--deepstorm-500);font-weight:700;
+}
 
-/* Sections */
-section{padding:6rem 1.5rem;position:relative}
-@media(min-width:768px){section{padding:6rem 2rem}}
-.section-inner{max-width:1200px;margin:0 auto}
+/* Section slides */
 .eyebrow{
   display:inline-flex;align-items:center;gap:0.5rem;
   padding:0.25rem 0.75rem 0.25rem 0.5rem;border-radius:999px;
   background:var(--surface);border:1px solid var(--text-10);
   font-size:0.65rem;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;
-  color:var(--deepstorm-500);margin-bottom:1rem;
+  color:var(--deepstorm-500);margin-bottom:0.75rem;
 }
 .eyebrow .dash{width:1.5rem;height:1px;background:var(--deepstorm-400);opacity:0.5}
-.section-title{
-  font-size:clamp(2rem,5vw,3.2rem);font-weight:700;
-  letter-spacing:-0.03em;line-height:1.1;margin-bottom:1rem;color:var(--text);
+.slide-title-h2{
+  font-size:clamp(1.6rem,3.5vw,2.6rem);font-weight:700;
+  letter-spacing:-0.03em;line-height:1.15;margin-bottom:0.6rem;color:var(--text);
 }
-.section-sub{
-  font-size:1rem;color:var(--text-60);line-height:1.7;max-width:600px;margin-bottom:3rem;font-weight:400;
+.slide-sub{
+  font-size:clamp(0.8rem,1.2vw,0.95rem);color:var(--text-60);
+  line-height:1.6;max-width:900px;margin-bottom:2rem;font-weight:400;
 }
-
-/* Glass Card */
-.glass-card-outer{
-  background:var(--text-05);border:1px solid var(--text-10);
-  border-radius:var(--radius-outer);padding:0.375rem;
-  box-shadow:inset 0 1px 1px rgba(255,255,255,0.5);
-}
-.glass-card-inner{
-  background:var(--surface);border-radius:var(--radius-inner);
-  padding:2rem;height:100%;transition:all 0.6s var(--bezier-smooth);
-}
-.glass-card-inner:hover{background:var(--surface-hover)}
 
 /* Problem Grid */
-.problem-grid{display:grid;grid-template-columns:1fr;gap:1rem}
-@media(min-width:768px){.problem-grid{grid-template-columns:repeat(3,1fr)}}
-.problem-card{display:flex;flex-direction:column;padding:2rem;min-height:220px}
-.problem-card .icon-box{
-  width:2.5rem;height:2.5rem;border-radius:0.75rem;
-  background:var(--deepstorm-50);display:flex;align-items:center;justify-content:center;
-  font-size:1.2rem;margin-bottom:1rem;flex-shrink:0;
-}
-.problem-card h3{font-size:1rem;font-weight:600;margin-bottom:0.5rem;color:var(--text)}
-.problem-card p{font-size:0.85rem;color:var(--text-60);line-height:1.6;flex:1}
-
-/* Goal Banner */
-.goal-banner{
-  margin-top:2rem;border-radius:var(--radius-outer);
-  background:linear-gradient(135deg,var(--deepstorm-50),var(--teal-50),var(--gold-50));
-  border:1px solid var(--text-10);padding:0.375rem;
-}
-.goal-banner-inner{
-  background:var(--surface);border-radius:var(--radius-inner);padding:2rem 2.5rem;
-}
-.goal-banner-inner h3{
-  font-size:0.85rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;
-  color:var(--text-40);margin-bottom:1rem;
-}
-.goal-banner-inner .goal-items{display:flex;flex-wrap:wrap;gap:1.5rem}
-.goal-banner-inner .goal-item{flex:1;min-width:180px;display:flex;align-items:flex-start;gap:0.75rem}
-.goal-banner-inner .goal-num{
-  width:1.5rem;height:1.5rem;border-radius:50%;
-  display:flex;align-items:center;justify-content:center;
-  font-size:0.65rem;font-weight:700;flex-shrink:0;margin-top:0.15rem;
-}
-.goal-banner-inner .goal-num.g1{background:var(--deepstorm-100);color:var(--deepstorm-600)}
-.goal-banner-inner .goal-num.g2{background:var(--teal-50);color:var(--teal-600)}
-.goal-banner-inner .goal-num.g3{background:var(--gold-50);color:var(--gold-600)}
-.goal-banner-inner .goal-text strong{display:block;font-size:0.9rem;margin-bottom:0.15rem}
-.goal-banner-inner .goal-text strong.g1{color:var(--deepstorm-500)}
-.goal-banner-inner .goal-text strong.g2{color:var(--teal-500)}
-.goal-banner-inner .goal-text strong.g3{color:var(--gold-500)}
-.goal-banner-inner .goal-text span{font-size:0.8rem;color:var(--text-60);line-height:1.5}
-
-/* Principles */
-.principles-grid{display:grid;gap:1.5rem}
-@media(min-width:768px){.principles-grid{grid-template-columns:repeat(3,1fr)}}
-.principle-card{text-align:center;padding:2.5rem 2rem}
-.principle-card .num{
-  font-size:3rem;font-weight:800;
-  background:linear-gradient(135deg,var(--deepstorm-500),var(--teal-500));
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
-  line-height:1;margin-bottom:0.75rem;
-}
-.principle-card h3{font-size:1.05rem;font-weight:600;margin-bottom:0.5rem}
-.principle-card p{font-size:0.85rem;color:var(--text-60);line-height:1.6}
-
-/* Quote */
-.quote-block{margin:2rem auto;max-width:700px;text-align:center;padding:3rem 2rem}
-.quote-block blockquote{
-  font-size:clamp(1.05rem,2vw,1.3rem);font-weight:400;
-  line-height:1.8;color:var(--text-80);font-style:normal;letter-spacing:0.01em;
-}
-.quote-block blockquote::before{content:'\201C';font-size:3rem;display:block;color:var(--deepstorm-400);line-height:0.8;margin-bottom:0.5rem;font-weight:300}
-
-/* Three-Layer Spec */
-.spec-visual{display:flex;flex-direction:column;gap:0}
-.spec-layer-wrap{display:flex;flex-direction:column;align-items:stretch}
-.spec-layer{
-  display:flex;flex-direction:column;padding:2.5rem 2rem;
-  border-radius:1.25rem;flex:1;min-height:260px;
+.p-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem}
+.p-card{
+  padding:2rem 1.5rem;border-radius:1.5rem;
+  background:var(--surface);border:1px solid var(--text-10);
+  display:flex;flex-direction:column;align-items:flex-start;
   transition:all 0.5s var(--bezier-smooth);
 }
-.spec-layer:hover{transform:translateY(-2px)}
+.p-card:hover{transform:translateY(-3px);border-color:var(--deepstorm-200);box-shadow:0 8px 32px rgba(28,25,23,0.06)}
+.p-card .icon-box{
+  width:2.5rem;height:2.5rem;border-radius:0.75rem;
+  background:var(--deepstorm-50);display:flex;align-items:center;justify-content:center;
+  font-size:1.1rem;margin-bottom:0.8rem;flex-shrink:0;
+}
+.p-card h3{font-size:0.95rem;font-weight:600;margin-bottom:0.4rem;color:var(--text)}
+.p-card p{font-size:0.82rem;color:var(--text-60);line-height:1.6}
+
+/* Principles */
+.principles-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem}
+.principle-card{text-align:center;padding:2rem 1.5rem;border-radius:1.5rem;background:var(--surface);border:1px solid var(--text-10);transition:all 0.5s var(--bezier-smooth)}
+.principle-card:hover{transform:translateY(-3px);border-color:var(--teal-200);box-shadow:0 8px 32px rgba(28,25,23,0.06)}
+.principle-card .num{
+  font-size:2.5rem;font-weight:800;
+  background:linear-gradient(135deg,var(--deepstorm-500),var(--teal-500));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  line-height:1;margin-bottom:0.5rem;
+}
+.principle-card h3{font-size:1rem;font-weight:600;margin-bottom:0.4rem}
+.principle-card p{font-size:0.82rem;color:var(--text-60);line-height:1.6}
+
+/* Three-Layer Spec */
+.spec-flow{display:grid;grid-template-columns:1fr auto 1fr auto 1fr;align-items:stretch;gap:0;margin:1rem 0}
+.spec-layer{padding:1.8rem 1.5rem;border-radius:1.25rem;display:flex;flex-direction:column}
 .spec-layer.business{background:linear-gradient(135deg,var(--deepstorm-50),var(--surface));border:1px solid var(--deepstorm-200)}
 .spec-layer.technical{background:linear-gradient(135deg,var(--teal-50),var(--surface));border:1px solid rgba(45,212,191,0.25)}
 .spec-layer.verification{background:linear-gradient(135deg,var(--gold-50),var(--surface));border:1px solid rgba(245,158,11,0.25)}
-.spec-layer .layer-label{font-size:0.65rem;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;margin-bottom:0.5rem}
+.spec-layer .layer-label{font-size:0.6rem;font-weight:600;letter-spacing:0.18em;text-transform:uppercase;margin-bottom:0.35rem}
 .spec-layer.business .layer-label{color:var(--deepstorm-500)}
 .spec-layer.technical .layer-label{color:var(--teal-500)}
 .spec-layer.verification .layer-label{color:var(--gold-500)}
-.spec-layer h3{font-size:1.2rem;font-weight:700;margin-bottom:0.75rem}
-.spec-layer .layer-desc{font-size:0.85rem;color:var(--text-60);line-height:1.7;flex:1}
+.spec-layer h3{font-size:1.05rem;font-weight:700;margin-bottom:0.4rem}
+.spec-layer .layer-desc{font-size:0.78rem;color:var(--text-60);line-height:1.6;flex:1}
 .spec-layer .tool-tag{
-  display:inline-block;padding:0.3rem 0.75rem;border-radius:6px;
-  font-size:0.7rem;font-weight:600;letter-spacing:0.05em;
-  margin-top:1rem;align-self:flex-start;
+  display:inline-block;padding:0.25rem 0.6rem;border-radius:6px;
+  font-size:0.65rem;font-weight:600;margin-top:0.6rem;align-self:flex-start;
 }
 .business .tool-tag{background:var(--deepstorm-100);color:var(--deepstorm-600)}
 .technical .tool-tag{background:var(--teal-50);color:var(--teal-500)}
 .verification .tool-tag{background:var(--gold-50);color:var(--gold-500)}
-.spec-arrow-h{
-  display:flex;align-items:center;justify-content:center;
-  padding:0.5rem 0;color:var(--text-40);font-size:1rem;gap:0.35rem;flex-shrink:0;
-}
-.spec-arrow-h span{font-size:0.6rem;letter-spacing:0.08em;text-transform:uppercase}
-.spec-layer .consumer-list{display:flex;flex-wrap:wrap;gap:0.5rem;margin-top:0.75rem}
-.spec-layer .consumer-tag{
-  font-size:0.65rem;padding:0.2rem 0.55rem;border-radius:4px;
-  background:var(--text-05);color:var(--text-60);
-}
-@media(max-width:1023px){.spec-layer-wrap:not(:last-child) .spec-arrow-h{padding:0.35rem 0}}
-@media(min-width:1024px){
-  .spec-visual{flex-direction:row;align-items:stretch;gap:0}
-  .spec-layer-wrap{flex-direction:row;align-items:center;flex:1}
-  .spec-layer{min-height:280px}
-  .spec-arrow-h{flex-direction:column;padding:0 0.75rem;min-width:2.5rem}
-  .spec-arrow-h span{display:block}
-}
+.spec-arrow{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 0.6rem;color:var(--text-40);font-size:0.85rem;gap:0.2rem}
+.spec-arrow span{font-size:0.55rem;letter-spacing:0.08em;text-transform:uppercase;white-space:nowrap}
+.spec-arrow .arrow-icon{font-size:1.5rem;line-height:1}
 
-/* Feature ID */
-.feature-id-demo{
-  margin-top:2rem;padding:1.5rem;border-radius:1rem;
+/* Feature ID demo */
+.fid-demo{
+  margin-top:1rem;padding:1rem 1.25rem;border-radius:1rem;
   background:var(--bg-alt);border:1px solid var(--text-10);
-  font-family:monospace;font-size:0.8rem;line-height:1.8;color:var(--text-80);
+  font-family:monospace;font-size:0.75rem;line-height:1.8;color:var(--text-80);
 }
-.feature-id-demo .fid{color:var(--deepstorm-500);font-weight:600}
-.feature-id-demo .indent{padding-left:1.5rem}
-.feature-id-demo .indent-2{padding-left:3rem}
-.feature-id-demo .bullet{color:var(--text-40)}
+.fid-demo .fid{color:var(--deepstorm-500);font-weight:600}
+.fid-demo .indent{padding-left:1.2rem}
+.fid-demo .indent-2{padding-left:2.4rem}
+.fid-demo .bullet{color:var(--text-40)}
+
+/* === SUITE USAGE SLIDES === */
+.usage-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;align-items:start}
+.usage-flow,.usage-scenario{
+  padding:1.5rem;border-radius:1.25rem;
+  background:var(--surface);border:1px solid var(--text-10);
+}
+.usage-flow h4,.usage-scenario h4{
+  font-size:0.6rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;
+  color:var(--text-40);margin-bottom:1rem;padding-bottom:0.5rem;border-bottom:1px solid var(--text-10);
+}
+.usage-steps{display:flex;flex-direction:column;gap:0}
+.u-step{
+  display:flex;align-items:flex-start;gap:0.75rem;
+  position:relative;padding-bottom:1rem;
+}
+.u-step:last-child{padding-bottom:0}
+.u-step::before{
+  content:'';position:absolute;left:0.65rem;top:1.5rem;
+  width:1px;height:calc(100% - 1.5rem);background:var(--text-10);
+}
+.u-step:last-child::before{display:none}
+.u-step .u-num{
+  width:1.35rem;height:1.35rem;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:0.6rem;font-weight:700;flex-shrink:0;position:relative;z-index:1;
+}
+.u-step .u-num.tide-n{background:var(--teal-50);color:var(--teal-500)}
+.u-step .u-num.reef-n{background:var(--deepstorm-50);color:var(--deepstorm-600)}
+.u-step .u-num.sweep-n{background:var(--gold-50);color:var(--gold-500)}
+.u-step .u-num.atoll-n{background:var(--indigo-50);color:var(--indigo-500)}
+.u-step .u-text{flex:1;padding-top:0.1rem}
+.u-step .u-text .u-title{font-size:0.82rem;font-weight:600;color:var(--text);margin-bottom:0.1rem}
+.u-step .u-text .u-desc{font-size:0.72rem;color:var(--text-60);line-height:1.5}
+.usage-scenario .u-story{
+  font-size:0.78rem;color:var(--text-70);line-height:1.7;
+  padding:0.75rem;border-radius:0.75rem;background:var(--text-05);border:1px solid var(--text-10);
+}
+.usage-scenario .u-story .tag{
+  display:inline-block;padding:0.15rem 0.45rem;border-radius:4px;
+  font-size:0.6rem;font-weight:600;margin:0 0.15rem;
+}
+.usage-scenario .u-story .tag.tide-tag{background:var(--teal-50);color:var(--teal-600)}
+.usage-scenario .u-story .tag.reef-tag{background:var(--deepstorm-50);color:var(--deepstorm-600)}
+.usage-scenario .u-story .tag.sweep-tag{background:var(--gold-50);color:var(--gold-600)}
+.usage-scenario .u-story .tag.atoll-tag{background:var(--indigo-50);color:var(--indigo-600)}
+.usage-scenario .u-story .hl{color:var(--deepstorm-500);font-weight:600}
+.usage-scenario .u-story .hl-t{color:var(--teal-500);font-weight:600}
+.usage-scenario .u-story .hl-g{color:var(--gold-500);font-weight:600}
+.usage-scenario .u-story .hl-i{color:var(--indigo-500);font-weight:600}
+
+/* Atoll planning placeholder */
+.u-planning{
+  padding:0.75rem;border-radius:0.75rem;background:var(--text-05);
+  border:1px dashed var(--text-20);text-align:center;
+}
+.u-planning .u-plan-icon{font-size:1.4rem;margin-bottom:0.4rem;opacity:0.5}
+.u-planning p{font-size:0.75rem;color:var(--text-40);line-height:1.6;margin:0}
+
+/* Suite identity badge */
+.suite-identity{display:flex;align-items:center;gap:0.75rem;margin-bottom:0.5rem}
+.suite-identity .si-icon{
+  width:2.6rem;height:2.6rem;border-radius:0.85rem;display:flex;align-items:center;justify-content:center;
+  font-size:1.2rem;font-weight:700;flex-shrink:0;
+}
+.suite-identity .si-icon.tide-si{background:linear-gradient(135deg,var(--teal-50),var(--surface));color:var(--teal-500)}
+.suite-identity .si-icon.reef-si{background:linear-gradient(135deg,var(--deepstorm-50),var(--surface));color:var(--deepstorm-500)}
+.suite-identity .si-icon.sweep-si{background:linear-gradient(135deg,var(--gold-50),var(--surface));color:var(--gold-500)}
+.suite-identity .si-icon.atoll-si{background:linear-gradient(135deg,var(--indigo-50),var(--surface));color:var(--indigo-400)}
+.suite-identity .si-text{flex:1}
+.suite-identity .si-text h3{font-size:1.2rem;font-weight:700;line-height:1.2}
+.suite-identity .si-text h3 .zh-name{font-weight:400;font-size:0.8rem;color:var(--text-40);margin-left:0.3rem}
+.suite-identity .si-text .si-role{
+  font-size:0.6rem;color:var(--text-40);letter-spacing:0.06em;margin-top:0.05rem;
+}
+.s-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1rem}
+.s-card{
+  padding:1.6rem 1.4rem;border-radius:1.25rem;
+  background:var(--surface);border:1px solid var(--text-10);
+  transition:all 0.5s var(--bezier-smooth);
+  display:flex;flex-direction:column;text-align:left;
+}
+.s-card:hover{transform:translateY(-3px);box-shadow:0 10px 40px rgba(28,25,23,0.08);border-color:var(--text-20)}
+.sd-header{display:flex;align-items:center;gap:0.75rem;margin-bottom:0.75rem}
+.suite-icon{
+  width:2.8rem;height:2.8rem;border-radius:0.9rem;display:flex;align-items:center;justify-content:center;
+  font-size:1.3rem;font-weight:700;flex-shrink:0;
+}
+.suite-icon.tide{background:linear-gradient(135deg,var(--teal-50),var(--surface));color:var(--teal-500)}
+.suite-icon.reef{background:linear-gradient(135deg,var(--deepstorm-50),var(--surface));color:var(--deepstorm-500)}
+.suite-icon.sweep{background:linear-gradient(135deg,var(--gold-50),var(--surface));color:var(--gold-500)}
+.suite-icon.atoll{background:linear-gradient(135deg,var(--indigo-50),var(--surface));color:var(--indigo-400)}
+.sd-header h3{font-size:1.1rem;font-weight:700;line-height:1.2}
+.sd-header h3 .zh-name{font-weight:400;font-size:0.75rem;color:var(--text-40);margin-left:0.3rem}
+.sd-header .stitle{font-size:0.6rem;color:var(--text-40);letter-spacing:0.06em}
+.sd-body{flex:1;display:flex;flex-direction:column;gap:0.7rem}
+.sd-features h4{font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-40);margin-bottom:0.35rem}
+.sd-features ul{list-style:none;padding:0;display:flex;flex-wrap:wrap;gap:0.25rem}
+.sd-features li{
+  display:inline-flex;align-items:center;gap:0.3rem;
+  padding:0.2rem 0.5rem;border-radius:5px;
+  font-size:0.7rem;color:var(--text-70);line-height:1.4;
+}
+.sd-features li .f-icon{font-size:0.6rem;opacity:0.6;flex-shrink:0}
+.sd-features li.tide-f{background:var(--teal-50);color:var(--teal-600)}
+.sd-features li.reef-f{background:var(--deepstorm-50);color:var(--deepstorm-600)}
+.sd-features li.sweep-f{background:var(--gold-50);color:var(--gold-600)}
+.sd-features li.atoll-f{background:var(--indigo-50);color:var(--indigo-600)}
+.sd-scenario{
+  padding:0.65rem 0.75rem;border-radius:0.75rem;
+  background:var(--text-05);border:1px solid var(--text-10);
+}
+.sd-scenario .slabel{font-size:0.6rem;font-weight:700;color:var(--text-40);margin-bottom:0.2rem;letter-spacing:0.05em}
+.sd-scenario p{font-size:0.72rem;color:var(--text-60);line-height:1.6;margin:0}
+.sd-scenario p .hl{color:var(--deepstorm-500);font-weight:600}
+.sd-scenario p .hl-t{color:var(--teal-500);font-weight:600}
+.sd-scenario p .hl-g{color:var(--gold-500);font-weight:600}
+.sd-scenario p .hl-i{color:var(--indigo-500);font-weight:600}
+
+/* Pipeline Key Slide */
+.pipeline-visual{margin-top:0.5rem}
+.phase-row{
+  display:grid;grid-template-columns:repeat(5,1fr);gap:0.75rem;
+  margin-bottom:0.5rem;
+}
+.phase-box{
+  padding:1.2rem 0.8rem;border-radius:1rem;text-align:center;
+  transition:all 0.4s var(--bezier-smooth);
+  border:1px solid transparent;
+}
+.phase-box:hover{transform:translateY(-2px)}
+.phase-box.phase-product{
+  background:linear-gradient(135deg,rgba(20,184,166,0.10),rgba(20,184,166,0.03));
+  border-color:rgba(20,184,166,0.18);
+}
+.phase-box.phase-dev{
+  background:linear-gradient(135deg,rgba(99,102,241,0.08),rgba(99,102,241,0.02));
+  border-color:rgba(99,102,241,0.12);
+}
+.phase-box.phase-ai{
+  background:linear-gradient(135deg,rgba(255,107,74,0.10),rgba(255,107,74,0.03));
+  border-color:rgba(255,107,74,0.15);
+}
+.phase-box.phase-ci{
+  background:linear-gradient(135deg,rgba(22,163,74,0.08),rgba(22,163,74,0.02));
+  border-color:rgba(22,163,74,0.10);
+}
+.phase-box.phase-manual{
+  background:linear-gradient(135deg,rgba(217,119,6,0.08),rgba(217,119,6,0.02));
+  border-color:rgba(217,119,6,0.12);
+}
+.phase-box .phase-label{
+  font-size:0.6rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;
+  margin-bottom:0.35rem;
+}
+.phase-product .phase-label{color:var(--teal-500)}
+.phase-dev .phase-label{color:var(--indigo-500)}
+.phase-ai .phase-label{color:var(--deepstorm-500)}
+.phase-ci .phase-label{color:var(--green-600)}
+.phase-manual .phase-label{color:var(--gold-500)}
+.phase-box .phase-icon{font-size:1.6rem;margin-bottom:0.35rem}
+.phase-box .phase-steps{font-size:0.7rem;color:var(--text-60);line-height:1.5;text-align:left;padding:0 0.25rem}
+.phase-box .phase-steps .s{display:flex;align-items:flex-start;gap:0.3rem;padding:0.2rem 0}
+.phase-box .phase-steps .s .d{
+  width:1.1rem;height:1.1rem;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:0.5rem;font-weight:700;flex-shrink:0;margin-top:0.05rem;
+}
+.phase-product .d{background:var(--teal-50);color:var(--teal-500)}
+.phase-dev .d{background:var(--indigo-50);color:var(--indigo-500)}
+.phase-ai .d{background:var(--deepstorm-50);color:var(--deepstorm-600)}
+.phase-ci .d{background:var(--green-100);color:var(--green-600)}
+.phase-manual .d{background:var(--gold-50);color:var(--gold-500)}
+.phase-box .phase-steps .s .t{font-size:0.7rem;color:var(--text-70);line-height:1.35}
+.phase-arrow-row{
+  display:grid;grid-template-columns:repeat(5,1fr);gap:0.75rem;
+  margin-bottom:0.25rem;
+}
+.phase-arrow{text-align:center;color:var(--text-30);font-size:0.75rem}
+.phase-footer{
+  margin-top:1rem;padding:0.75rem 1.25rem;
+  background:var(--bg-alt);border-radius:1rem;border:1px solid var(--text-10);
+  font-size:0.72rem;color:var(--text-60);line-height:1.6;text-align:center;
+}
+.phase-footer strong{color:var(--text-80)}
 
 /* Comparison Table */
-.table-wrap{overflow-x:auto;border-radius:var(--radius-outer);border:1px solid var(--text-10);background:var(--surface)}
-.table-wrap table{width:100%;border-collapse:collapse;font-size:0.82rem}
+.table-wrap{overflow-x:auto;border-radius:1.25rem;border:1px solid var(--text-10);background:var(--surface)}
+.table-wrap table{width:100%;border-collapse:collapse;font-size:0.78rem}
 .table-wrap th{
-  text-align:left;padding:1rem 1.25rem;
-  font-weight:600;font-size:0.7rem;letter-spacing:0.08em;text-transform:uppercase;
+  text-align:left;padding:0.75rem 1rem;
+  font-weight:600;font-size:0.65rem;letter-spacing:0.06em;text-transform:uppercase;
   color:var(--text-60);background:var(--text-05);border-bottom:1px solid var(--text-10);white-space:nowrap;
 }
-.table-wrap td{
-  padding:1rem 1.25rem;border-bottom:1px solid var(--text-10);
-  color:var(--text-60);line-height:1.5;vertical-align:top;
-}
+.table-wrap td{padding:0.65rem 1rem;border-bottom:1px solid var(--text-10);color:var(--text-60);line-height:1.5;vertical-align:top}
 .table-wrap tr:last-child td{border-bottom:none}
 .table-wrap td:first-child{font-weight:600;color:var(--text);white-space:nowrap}
 .table-wrap .highlight-col{color:var(--deepstorm-500)}
+.table-wrap .ds{color:var(--deepstorm-500);font-weight:600}
 
-/* Suites Grid */
-.suites-grid{display:grid;gap:1rem}
-@media(min-width:640px){.suites-grid{grid-template-columns:repeat(2,1fr)}}
-.suite-card{text-align:center;padding:2.5rem 1.5rem;position:relative;overflow:hidden}
-.suite-card .suite-icon{
-  width:3.5rem;height:3.5rem;border-radius:1rem;
-  display:flex;align-items:center;justify-content:center;
-  margin:0 auto 1rem;font-size:1.5rem;font-weight:700;
-}
-.suite-card .suite-icon.tide{background:linear-gradient(135deg,var(--teal-50),var(--surface));color:var(--teal-500)}
-.suite-card .suite-icon.reef{background:linear-gradient(135deg,var(--deepstorm-50),var(--surface));color:var(--deepstorm-500)}
-.suite-card .suite-icon.sweep{background:linear-gradient(135deg,var(--gold-50),var(--surface));color:var(--gold-500)}
-.suite-card .suite-icon.atoll{background:linear-gradient(135deg,var(--indigo-50),var(--surface));color:var(--indigo-400)}
-.suite-card h3{font-size:1.1rem;font-weight:700;margin-bottom:0.25rem}
-.suite-card .role{font-size:0.7rem;color:var(--text-40);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:0.75rem}
-.suite-card .desc{font-size:0.82rem;color:var(--text-60);line-height:1.6}
-.suite-card .eco-meta{margin-top:1rem;padding-top:1rem;border-top:1px solid var(--text-10);font-size:0.72rem;color:var(--text-40);line-height:1.5}
-.suite-card .eco-meta strong{color:var(--text-60)}
-
-/* Pipeline - Role Groups (New Design) */
-.pipeline{display:flex;flex-direction:column;gap:0}
-.pgroup{
-  border-radius:1.25rem;padding:0.375rem;margin-bottom:0;
+/* Summary Slide */
+.summary-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1rem}
+.summary-item{
+  padding:1.5rem;border-radius:1.25rem;
+  background:var(--surface);border:1px solid var(--text-10);
+  display:flex;align-items:flex-start;gap:0.75rem;
   transition:all 0.4s var(--bezier-smooth);
 }
-.pgroup-product{background:linear-gradient(135deg,rgba(20,184,166,0.12),rgba(20,184,166,0.03));border:1px solid rgba(20,184,166,0.15)}
-.pgroup-dev{background:linear-gradient(135deg,rgba(99,102,241,0.1),rgba(99,102,241,0.02));border:1px solid rgba(99,102,241,0.12)}
-.pgroup-ai{background:linear-gradient(135deg,rgba(255,107,74,0.12),rgba(255,107,74,0.03));border:1px solid rgba(255,107,74,0.15)}
-.pgroup-ci{background:linear-gradient(135deg,rgba(22,163,74,0.08),rgba(22,163,74,0.02));border:1px solid rgba(22,163,74,0.1)}
-.pgroup-manual{background:linear-gradient(135deg,rgba(217,119,6,0.1),rgba(217,119,6,0.02));border:1px solid rgba(217,119,6,0.12)}
-.pgroup-header{
-  display:flex;align-items:center;gap:0.5rem;
-  padding:0.75rem 1.25rem;margin-bottom:0.25rem;
-  border-radius:calc(1.25rem - 0.375rem) calc(1.25rem - 0.375rem) 0 0;
-}
-.pgroup-header .pgroup-icon{font-size:1.1rem}
-.pgroup-header .pgroup-title{font-size:0.75rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase}
-.pgroup-product .pgroup-header{background:rgba(20,184,166,0.06);color:var(--teal-500)}
-.pgroup-dev .pgroup-header{background:rgba(99,102,241,0.06);color:var(--indigo-500)}
-.pgroup-ai .pgroup-header{background:rgba(255,107,74,0.06);color:var(--deepstorm-500)}
-.pgroup-ci .pgroup-header{background:rgba(22,163,74,0.06);color:var(--green-600)}
-.pgroup-manual .pgroup-header{background:rgba(217,119,6,0.06);color:var(--gold-500)}
-.pgroup-steps{padding:0.5rem 1.25rem 1rem}
-.pg-step{display:flex;align-items:flex-start;gap:0.75rem}
-.pg-step-dot{
-  width:1.75rem;height:1.75rem;border-radius:50%;
-  display:flex;align-items:center;justify-content:center;
+.summary-item:hover{transform:translateY(-2px);border-color:var(--deepstorm-200)}
+.summary-item .si-num{
+  width:1.75rem;height:1.75rem;border-radius:50%;display:flex;align-items:center;justify-content:center;
   font-size:0.65rem;font-weight:700;flex-shrink:0;margin-top:0.1rem;
-  background:var(--text-10);color:var(--text-60);
 }
-.pg-step-dot.ai{background:var(--deepstorm-100);color:var(--deepstorm-600)}
-.pg-step-dot.doc{background:var(--gold-100);color:var(--gold-600)}
-.pg-step-dot.ci{background:var(--green-100);color:var(--green-600)}
-.pg-step-body{flex:1;min-width:0}
-.pg-step-head{
-  font-size:0.88rem;font-weight:600;color:var(--text);
-  display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;
+.summary-item .si-num.g1{background:var(--deepstorm-100);color:var(--deepstorm-600)}
+.summary-item .si-num.g2{background:var(--teal-50);color:var(--teal-500)}
+.summary-item .si-num.g3{background:var(--gold-50);color:var(--gold-500)}
+.summary-item .si-num.g4{background:var(--indigo-50);color:var(--indigo-500)}
+.summary-item .si-text strong{display:block;font-size:0.85rem;margin-bottom:0.15rem;color:var(--text)}
+.summary-item .si-text span{font-size:0.75rem;color:var(--text-60);line-height:1.5}
+
+/* === NAVIGATION === */
+.slide-nav{
+  position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);
+  display:flex;align-items:center;gap:1rem;
+  padding:0.5rem 1.25rem;border-radius:999px;
+  background:rgba(255,255,255,0.85);backdrop-filter:blur(24px);
+  -webkit-backdrop-filter:blur(24px);
+  border:1px solid var(--text-10);
+  box-shadow:0 4px 24px rgba(28,25,23,0.06);
+  z-index:100;
+  transition:all 0.3s var(--bezier-smooth);
 }
-.pg-actor{
-  font-size:0.6rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;
-  padding:0.15rem 0.4rem;border-radius:3px;
+.slide-nav .dots{display:flex;gap:0.35rem}
+.slide-nav .dot{
+  width:7px;height:7px;border-radius:50%;background:var(--text-20);
+  cursor:pointer;transition:all 0.4s var(--bezier-smooth);border:none;padding:0;
 }
-.pg-actor.product{background:var(--teal-50);color:var(--teal-500)}
-.pg-actor.dev{background:var(--indigo-50);color:var(--indigo-500)}
-.pg-actor.ai{background:var(--deepstorm-50);color:var(--deepstorm-600)}
-.pg-actor.test{background:var(--gold-50);color:var(--gold-500)}
-.pg-actor.ci{background:var(--green-100);color:var(--green-600)}
-.pg-step-desc{font-size:0.78rem;color:var(--text-60);line-height:1.6;margin-top:0.15rem}
-.pg-meta{display:flex;flex-wrap:wrap;gap:0.35rem;margin-top:0.5rem}
-.pg-tag{
-  display:inline-block;padding:0.15rem 0.5rem;border-radius:4px;
-  font-size:0.62rem;font-weight:600;
-  background:var(--text-05);color:var(--text-60);
+.slide-nav .dot.active{background:var(--deepstorm-500);width:20px;border-radius:4px}
+.slide-nav .dot:hover{background:var(--text-40)}
+.slide-nav .nav-btn{
+  background:none;border:none;color:var(--text-60);cursor:pointer;
+  padding:0.25rem;display:flex;align-items:center;justify-content:center;
+  transition:all 0.3s var(--bezier-smooth);font-size:0.65rem;
 }
-.pg-tag.warn{background:rgba(239,68,68,0.08);color:#dc2626}
-.pg-tag.ok{background:var(--green-100);color:var(--green-600)}
-.pg-conn{
+.slide-nav .nav-btn:hover{color:var(--text);transform:scale(1.15)}
+.slide-nav .counter{font-size:0.65rem;color:var(--text-40);font-weight:500;letter-spacing:0.05em;min-width:3rem;text-align:center;user-select:none}
+.slide-nav .nav-btn.hidden{visibility:hidden;pointer-events:none}
+
+/* Responsive */
+@media(max-width:900px){
+  .slide{padding:3rem 1.5rem}
+  .p-grid{grid-template-columns:1fr;gap:0.75rem}
+  .principles-grid{grid-template-columns:1fr;gap:0.75rem}
+  .spec-flow{grid-template-columns:1fr;gap:0.5rem}
+  .spec-arrow{flex-direction:row;padding:0.3rem 0}
+  .spec-arrow span{display:none}
+  .s-grid{grid-template-columns:1fr;gap:0.75rem}
+  .usage-grid{grid-template-columns:1fr;gap:1rem}
+  .phase-row{grid-template-columns:1fr;gap:0.5rem}
+  .phase-arrow-row{display:none}
+  .summary-grid{grid-template-columns:1fr;gap:0.75rem}
+  .table-wrap table{font-size:0.7rem}
+  .table-wrap th,.table-wrap td{padding:0.5rem 0.6rem}
+  .slide-title .ecosystem-meta{gap:1.5rem}
+  .slide-nav{bottom:0.75rem;padding:0.4rem 0.75rem;gap:0.5rem}
+  .slide-nav .counter{font-size:0.55rem;min-width:2rem}
+}
+@media(max-width:640px){
+  .s-grid{grid-template-columns:1fr;gap:0.6rem}
+  .slide-title h1{font-size:3rem}
+}
+
+/* Section Divider */
+.section-divider{text-align:center}
+.section-divider .divider-line{
+  width:3rem;height:3px;border-radius:2px;
+  background:var(--deepstorm-500);margin:0 auto 1.5rem;
+}
+.section-divider h2{
+  font-size:clamp(2rem,4vw,3rem);font-weight:800;
+  letter-spacing:-0.03em;line-height:1.2;
+  background:linear-gradient(135deg,var(--deepstorm-500),var(--teal-500));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  margin-bottom:0.5rem;
+}
+.section-divider .divider-sub{
+  font-size:clamp(0.85rem,1.2vw,1rem);color:var(--text-60);
+  line-height:1.6;max-width:500px;margin:0 auto;
+}
+.section-divider .suites-mini{
+  display:flex;gap:1.5rem;justify-content:center;margin-top:2rem;
+}
+.section-divider .suites-mini .sm-item{
+  display:flex;flex-direction:column;align-items:center;gap:0.4rem;
+}
+.section-divider .suites-mini .sm-icon{
+  width:3rem;height:3rem;border-radius:0.85rem;
   display:flex;align-items:center;justify-content:center;
-  padding:0.15rem 0 0.15rem 2.5rem;
-  color:var(--text-30);font-size:0.7rem;
+  font-size:1.3rem;background:var(--surface);border:1px solid var(--text-10);
 }
-.pgroup-gap{
-  display:flex;align-items:center;justify-content:center;
-  padding:0.35rem 0;
-  color:var(--text-30);font-size:0.85rem;
-}
-.pg-gap-arrow{opacity:0.4}
-@media(max-width:639px){
-  .pg-step-head{font-size:0.82rem}
-  .pgroup-steps{padding:0.5rem 0.75rem 0.75rem}
+.section-divider .suites-mini .sm-label{
+  font-size:0.75rem;font-weight:600;color:var(--text-60);
 }
 
-/* Pipeline section: wider inner */
-.pipeline-section .section-inner{max-width:960px}
+/* Animated entry */
+.slide.active .anim-fade{animation:fadeUp 0.7s var(--bezier-smooth) both}
+.slide.active .anim-fade-1{animation-delay:0.1s}
+.slide.active .anim-fade-2{animation-delay:0.2s}
+.slide.active .anim-fade-3{animation-delay:0.3s}
+.slide.active .anim-fade-4{animation-delay:0.4s}
+.slide.active .anim-fade-5{animation-delay:0.5s}
+@keyframes fadeUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
 
-/* Roadmap */
-.roadmap-stage{
-  padding:1.5rem;border-radius:var(--radius-inner);
-  border:1px solid var(--text-10);margin-bottom:1rem;
-  background:var(--surface);transition:all 0.4s var(--bezier-smooth);
-}
-.roadmap-stage:hover{background:var(--surface-hover);border-color:var(--text-20)}
-.roadmap-stage .stage-header{display:flex;align-items:center;gap:0.75rem;margin-bottom:0.75rem}
-.roadmap-stage .stage-badge{
-  padding:0.2rem 0.6rem;border-radius:4px;
-  font-size:0.65rem;font-weight:600;letter-spacing:0.05em;
-}
-.roadmap-stage .stage-badge.phase1{background:var(--deepstorm-100);color:var(--deepstorm-600)}
-.roadmap-stage .stage-badge.phase2{background:var(--teal-50);color:var(--teal-500)}
-.roadmap-stage h3{font-size:1rem;font-weight:600}
-.roadmap-stage p{font-size:0.82rem;color:var(--text-60);line-height:1.6}
-
-/* Footer */
-footer{
-  text-align:center;padding:3rem 1.5rem;
-  border-top:1px solid var(--text-10);color:var(--text-40);
-  font-size:0.75rem;line-height:1.8;
-}
-footer strong{color:var(--text-60)}
-
-/* Scroll Reveal */
-.reveal{opacity:0;transform:translateY(48px);transition:all 0.9s var(--bezier-smooth)}
-.reveal.visible{opacity:1;transform:translateY(0)}
-.reveal-delay-1{transition-delay:0.1s}
-.reveal-delay-2{transition-delay:0.2s}
-.reveal-delay-3{transition-delay:0.3s}
-
-/* Mobile Nav */
-@media(max-width:767px){
-  nav{top:1rem;left:1rem;right:1rem;transform:none;border-radius:1.5rem;padding:0.25rem;justify-content:space-between}
-  nav .nav-inner{display:none}
-  nav .hamburger{display:flex;align-items:center;justify-content:center}
-  nav.open .nav-inner{
-    display:flex;flex-direction:column;
-    position:fixed;top:0;left:0;right:0;bottom:0;
-    background:rgba(255,255,255,0.95);backdrop-filter:blur(48px);
-    -webkit-backdrop-filter:blur(48px);
-    justify-content:center;align-items:center;gap:0.5rem;padding:2rem;z-index:-1;border-radius:0;
-  }
-  nav.open .nav-inner a{
-    font-size:1.1rem;padding:1rem 2rem;color:var(--text);
-    opacity:0;animation:nav-in 0.4s var(--bezier-smooth) forwards;
-  }
-  nav.open .nav-inner a:nth-child(2){animation-delay:0.05s}
-  nav.open .nav-inner a:nth-child(3){animation-delay:0.1s}
-  nav.open .nav-inner a:nth-child(4){animation-delay:0.15s}
-  nav.open .nav-inner a:nth-child(5){animation-delay:0.2s}
-  nav.open .nav-inner a:nth-child(6){animation-delay:0.25s}
-  nav.open .nav-inner a:nth-child(7){animation-delay:0.3s}
-  @keyframes nav-in{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
-  .hero h1{font-size:clamp(3rem,18vw,5rem)}
-  .section-title{font-size:1.75rem}
-}
-
-/* Gradient divider */
-.gradient-divider{
-  height:1px;border:none;
-  background:linear-gradient(90deg,transparent,var(--text-10),var(--deepstorm-400),var(--text-10),transparent);
-  margin:0 auto;
-}
-
-/* Print Styles — PDF 优化布局 */
+/* Print styles */
 @media print{
-  @page{margin:0}
-  html{font-size:9pt}
-  body{background:white!important;color:#1c1917!important}
-  .reveal{opacity:1!important;transform:none!important}
-  nav,.orb,.scroll-hint,.cta-row,.hamburger{display:none!important}
-  .gradient-divider{display:none}
-
-  /* Hero — 紧凑，不要全屏 */
-  .hero{
-    min-height:0!important;padding:1.5rem 2rem 0.5rem!important;
-    background:none!important;text-align:center!important;
-  }
-  .hero .badge{display:none}
-  .hero h1{font-size:3.2rem!important;-webkit-text-fill-color:#1c1917!important;background:none!important;color:#1c1917!important;margin-bottom:0.4rem!important}
-  .hero p{font-size:0.85rem!important;max-width:100%!important;color:#555!important;margin-bottom:0!important}
-
-  /* Sections — 减少上下留白 */
-  section{padding:1rem 1.8rem!important}
-  .section-title{font-size:1.4rem!important;margin-bottom:0.4rem!important}
-  .section-sub{font-size:0.78rem!important;margin-bottom:0.8rem!important;max-width:100%!important}
-  .eyebrow{margin-bottom:0.4rem!important;font-size:0.55rem!important}
-
-  /* 去掉 glass-card 嵌套外边框 — 减少浪费 */
-  .glass-card-outer{background:none!important;border:none!important;padding:0!important;border-radius:0!important;box-shadow:none!important}
-  .glass-card-inner{padding:1rem 1rem!important;border-radius:0.5rem!important;border:0.5px solid #ddd!important;background:white!important;box-shadow:none!important}
-
-  /* Problem Grid */
-  .problem-grid{grid-template-columns:repeat(3,1fr)!important;gap:0.6rem!important}
-  .problem-card{min-height:0!important;padding:0.8rem!important}
-  .problem-card .icon-box{width:1.6rem;height:1.6rem;font-size:0.8rem;margin-bottom:0.4rem}
-
-  /* Goal Banner */
-  .goal-banner{margin-top:0.8rem!important;padding:0!important;background:none!important;border:none!important}
-  .goal-banner-inner{padding:0.8rem 1rem!important;border:0.5px solid #ddd!important}
-  .goal-banner-inner .goal-items{gap:0.8rem!important}
-  .goal-banner-inner .goal-item{min-width:140px!important}
-  .goal-banner-inner .goal-text strong{font-size:0.8rem!important}
-  .goal-banner-inner .goal-text span{font-size:0.7rem!important}
-
-  /* Quote */
-  .quote-block{margin:0.5rem auto!important;padding:0.8rem!important}
-  .quote-block blockquote{font-size:0.78rem!important;line-height:1.5!important}
-
-  /* Principles */
-  .principles-grid{gap:0.6rem!important}
-  .principle-card{padding:1rem!important}
-  .principle-card .num{font-size:1.8rem!important;margin-bottom:0.3rem!important}
-  .principle-card h3{font-size:0.85rem!important}
-  .principle-card p{font-size:0.72rem!important}
-
-  /* Three-Layer Spec — 紧凑横排 */
-  .spec-visual{flex-direction:row!important;align-items:stretch!important;gap:2px!important}
-  .spec-layer-wrap{flex-direction:row!important;align-items:center!important;flex:1!important}
-  .spec-layer{min-height:160px!important;padding:1rem!important;border-radius:0.6rem!important}
-  .spec-layer .layer-label{font-size:0.5rem!important;margin-bottom:0.2rem!important}
-  .spec-layer h3{font-size:0.85rem!important;margin-bottom:0.3rem!important}
-  .spec-layer .layer-desc{font-size:0.68rem!important;line-height:1.4!important}
-  .spec-layer .tool-tag{font-size:0.55rem!important;padding:0.15rem 0.4rem!important;margin-top:0.3rem!important}
-  .spec-layer .consumer-tag{font-size:0.5rem!important;padding:0.1rem 0.35rem!important}
-  .spec-arrow-h{padding:0 0.3rem!important;font-size:0.7rem!important}
-  .spec-arrow-h span{font-size:0.45rem!important}
-
-  /* Feature ID Demo */
-  .feature-id-demo{padding:0.6rem 0.8rem!important;font-size:0.7rem!important;margin-top:0.6rem!important}
-  .feature-id-demo .indent{padding-left:1rem!important}
-  .feature-id-demo .indent-2{padding-left:2rem!important}
-
-  /* Comparison Table */
-  .table-wrap{font-size:0.7rem!important}
-  .table-wrap th{padding:0.4rem 0.6rem!important;font-size:0.6rem!important}
-  .table-wrap td{padding:0.35rem 0.6rem!important;font-size:0.68rem!important}
-
-  /* Suites Grid */
-  .suites-grid{grid-template-columns:repeat(2,1fr)!important;gap:0.6rem!important}
-  .suite-card{padding:0.8rem 0.8rem!important}
-  .suite-card .suite-icon{width:2.2rem;height:2.2rem;font-size:1rem;margin-bottom:0.4rem}
-  .suite-card h3{font-size:0.85rem!important}
-  .suite-card .desc{font-size:0.68rem!important}
-  .suite-card .eco-meta{font-size:0.6rem!important;margin-top:0.4rem;padding-top:0.4rem}
-
-  /* Pipeline — 紧凑分组，控制分页 */
-  .pipeline-section .section-inner{max-width:100%!important}
-  .pgroup{border-radius:0.5rem!important;padding:0.2rem!important;margin:0!important;page-break-inside:avoid!important}
-  .pgroup-header{padding:0.35rem 0.75rem!important}
-  .pgroup-header .pgroup-icon{font-size:0.8rem!important}
-  .pgroup-header .pgroup-title{font-size:0.6rem!important}
-  .pgroup-steps{padding:0.15rem 0.75rem 0.5rem!important}
-  .pg-step{gap:0.4rem!important}
-  .pg-step-dot{width:1.2rem;height:1.2rem;font-size:0.5rem!important;margin-top:0;flex-shrink:0!important}
-  .pg-step-head{font-size:0.72rem!important;gap:0.3rem!important}
-  .pg-step-desc{font-size:0.62rem!important;line-height:1.35!important}
-  .pg-meta{gap:0.2rem!important;margin-top:0.2rem!important}
-  .pg-tag{font-size:0.5rem!important;padding:0.1rem 0.3rem!important}
-  .pg-actor{font-size:0.48rem!important;padding:0.08rem 0.3rem!important}
-  .pg-conn{padding:0.05rem 0 0.05rem 1.6rem!important;font-size:0.5rem!important}
-  .pgroup-gap{padding:0.1rem 0!important;font-size:0.6rem!important}
-
-  /* 前 4 组 pipeline 保持在一页内，第 5 组人工验证另起一页 */
-  .pgroup-manual{page-break-before:always!important}
-
-  /* Roadmap */
-  .roadmap-stage{padding:0.6rem 0.8rem!important;margin-bottom:0.5rem!important}
-  .roadmap-stage .stage-header{margin-bottom:0.3rem!important}
-  .roadmap-stage h3{font-size:0.8rem!important}
-  .roadmap-stage p{font-size:0.7rem!important}
-
-  /* Footer */
-  footer{padding:0.8rem!important;font-size:0.6rem!important}
-
-  /* 长表格/大区块分页保护 */
-  .spec-visual,.principles-grid,.suites-grid,.pgroup{page-break-inside:avoid!important}
+  @page{margin:0;size:landscape}
+  html{font-size:8pt}
+  body{background:white!important;color:#1c1917!important;overflow:visible!important}
+  .slide{position:static!important;opacity:1!important;visibility:visible!important;height:100vh!important;page-break-after:always!important;padding:2rem 2.5rem!important;overflow:hidden!important}
+  .slide-nav{display:none!important}
+  .slide-title{background:none!important}
+  .anim-fade{animation:none!important;opacity:1!important;transform:none!important}
+  .p-card,.principle-card,.s-card,.summary-item,.phase-box,.spec-layer{border:0.5px solid #ddd!important;background:white!important;box-shadow:none!important}
+  .slide-title .badge{display:none}
 }
 </style>
 </head>
 <body>
 
-<nav id="navbar">
-  <div class="nav-inner">
-    <span class="logo">DeepStorm</span>
-    <a href="#background">背景</a>
-    <a href="#philosophy">思路</a>
-    <a href="#spec">三层 Spec</a>
-    <a href="#comparison">对比</a>
-    <a href="#suites">套件</a>
-    <a href="#roadmap">路径</a>
-  </div>
-  <button class="hamburger" id="hamburger" aria-label="菜单">
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-      <line x1="3" y1="6" x2="17" y2="6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-      <line x1="3" y1="10" x2="17" y2="10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-      <line x1="3" y1="14" x2="17" y2="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-    </svg>
-  </button>
-</nav>
+<div class="slides" id="slides">
 
-<section class="hero" id="hero">
-  <div class="orb orb-1"></div>
-  <div class="orb orb-2"></div>
-  <div class="badge"><span class="dot"></span> AI 协同工程实践 · Spec 驱动开发</div>
-  <h1>DeepStorm</h1>
-  <p>以结构化规格文档串联需求、规范、测试与实现，让 AI 在持续的工程上下文中系统工作。</p>
-  <div class="cta-row">
-    <a href="#spec" class="btn btn-primary">探索三层 Spec<span class="icon-wrap">↓</span></a>
-    <a href="#background" class="btn btn-ghost">了解背景</a>
-  </div>
-  <div class="scroll-hint">Scroll</div>
-</section>
+<!-- ==================== SLIDE 1: TITLE ==================== -->
+<section class="slide slide-title active" id="s0">
+  <div class="slide-inner" style="text-align:center">
+    <div class="badge anim-fade"><span class="dot"></span> AI 协同工程实践 · Spec 驱动开发</div>
+    <h1 class="anim-fade anim-fade-1">
+      DeepStorm
+      <span style="display:block;font-weight:400;font-size:0.5em;margin:0.4em auto 0.25em;width:fit-content;background:linear-gradient(135deg,var(--teal-500),var(--deepstorm-500));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">深澜</span>
+    </h1>
+    <p class="tagline anim-fade anim-fade-2">
+      以结构化规格文档串联需求、规范、测试与实现，<br>
+      让 AI 在持续的工程上下文中系统工作。
+    </p>
 
-<section id="background">
-  <div class="section-inner">
-    <div class="eyebrow reveal"><span class="dash"></span> 背景与问题</div>
-    <h2 class="section-title reveal">AI 辅助开发的现状与局限</h2>
-    <p class="section-sub reveal">代码生成速度的提升，并不直接等同于需求理解准确度、系统设计一致性和工程可维护性的提升。</p>
-
-    <div class="problem-grid">
-      <div class="glass-card-outer reveal">
-        <div class="glass-card-inner problem-card">
-          <div class="icon-box">🔄</div>
-          <h3>信息传递衰减与失真</h3>
-          <p>从产品需求到技术实现的多层翻译过程中，原始意图容易偏离。信息在角色间传递时持续衰减，团队需要大量反复沟通来对齐理解。</p>
-        </div>
-      </div>
-      <div class="glass-card-outer reveal reveal-delay-1">
-        <div class="glass-card-inner problem-card">
-          <div class="icon-box">🧩</div>
-          <h3>上下文碎片化</h3>
-          <p>AI 缺乏持续稳定的工程上下文，每个会话独立理解任务，无法感知上游决策、业务背景和架构约束，生成结果容易偏离实际意图。</p>
-        </div>
-      </div>
-      <div class="glass-card-outer reveal reveal-delay-2">
-        <div class="glass-card-inner problem-card">
-          <div class="icon-box">🔗</div>
-          <h3>需求·规范·测试 脱节</h3>
-          <p>需求、规范、测试、实现之间缺少显性关联，变更影响难以快速追踪，规约与历史决策无法沉淀为长期工程资产。</p>
-        </div>
+    <div class="mission-banner anim-fade anim-fade-3">
+      <div class="mission-icon">✦</div>
+      <div class="mission-text">
+        为公司 AI 编程带来一场<span class="highlight">深度风暴</span>——<br>重构编程环境与范式，让工程智慧在结构化上下文中持续沉淀。
       </div>
     </div>
 
-    <div class="goal-banner reveal">
-      <div class="goal-banner-inner">
-        <h3>三个递进目标</h3>
-        <div class="goal-items">
-          <div class="goal-item">
-            <div class="goal-num g1">1</div>
-            <div class="goal-text">
-              <strong class="g1">效率提升</strong>
-              <span>利用 AI 辅助代码生成、测试生成、规范草拟，减少重复性手工劳动，加快从需求到交付的流转速度。</span>
-            </div>
-          </div>
-          <div class="goal-item">
-            <div class="goal-num g2">2</div>
-            <div class="goal-text">
-              <strong class="g2">上下文连续性</strong>
-              <span>通过结构化规格文档将需求、接口规范、测试用例和实现代码串联为一条显性链路，降低因信息断层导致的理解偏差和返工。</span>
-            </div>
-          </div>
-          <div class="goal-item">
-            <div class="goal-num g3">3</div>
-            <div class="goal-text">
-              <strong class="g3">规约资产化积累</strong>
-              <span>每次需求澄清、设计决策和验收标准制定都以结构化形态沉淀，构成可追溯的历史记录，使变更影响评估有据可依。</span>
-            </div>
-          </div>
-        </div>
+    <div class="ecosystem-meta anim-fade anim-fade-4">
+      <div class="eco-item">
+        <div class="num">4</div>
+        <div class="label">工具套件</div>
       </div>
-    </div>
-
-    <div class="quote-block reveal">
-      <blockquote>
-        当前 AI 辅助开发提升了单点的执行速度，却未能解决跨环节的上下文断层。<br>这正是 SDD 能够弥补的部分——以结构化规格文档作为各环节的共同输入，使需求、规范、验证之间保持显性关联。
-      </blockquote>
-    </div>
-  </div>
-</section>
-
-<hr class="gradient-divider" style="width:60%">
-
-<section id="philosophy">
-  <div class="section-inner">
-    <div class="eyebrow reveal"><span class="dash"></span> 核心思路</div>
-    <h2 class="section-title reveal">以 Spec 为轴的 AI 协同工程</h2>
-    <p class="section-sub reveal">利用 AI 提升各环节执行效率，同时以结构化 Spec 将需求、规范、验证、实现串联，使 AI 和人在一致的上下文中协作。</p>
-
-    <div class="principles-grid">
-      <div class="glass-card-outer reveal">
-        <div class="glass-card-inner principle-card">
-          <div class="num">01</div>
-          <h3>需求质量前置</h3>
-          <p>利用 AI 辅助的结构化追问与校验，在需求进入开发前澄清边界条件、异常路径与验收标准，将缺陷拦截在产品阶段。</p>
-        </div>
+      <div class="eco-item">
+        <div class="num">3</div>
+        <div class="label">Spec 层级</div>
       </div>
-      <div class="glass-card-outer reveal reveal-delay-1">
-        <div class="glass-card-inner principle-card">
-          <div class="num">02</div>
-          <h3>上下文连续性</h3>
-          <p>通过统一的 feature_id 将需求、接口规范、测试用例、实现代码显性关联，使 AI 在任何步骤都能获取上游结构化信息。</p>
-        </div>
+      <div class="eco-item">
+        <div class="num">10</div>
+        <div class="label">工程步骤</div>
       </div>
-      <div class="glass-card-outer reveal reveal-delay-2">
-        <div class="glass-card-inner principle-card">
-          <div class="num">03</div>
-          <h3>人机边界清晰</h3>
-          <p>人负责决策（目标、约束、策略），AI 负责生成与执行（结构化、草稿、代码）。所有 AI 产出均需人工确认，不绕过判断上线。</p>
-        </div>
+      <div class="eco-item">
+        <div class="num">5</div>
+        <div class="label">参与角色</div>
       </div>
     </div>
   </div>
 </section>
 
-<hr class="gradient-divider" style="width:40%">
 
-<section id="spec">
-  <div class="section-inner">
-    <div class="eyebrow reveal"><span class="dash"></span> 三层 Spec 体系</div>
-    <h2 class="section-title reveal">结构化的工程规约链路</h2>
-    <p class="section-sub reveal">三层 Spec 之间为单向驱动关系：上层产出作为下层输入，形成信息密度高、传递损耗低的工程链路。</p>
-
-    <div class="spec-visual reveal">
-      <div class="spec-layer-wrap">
-        <div class="spec-layer business">
-          <div class="layer-label">第一层 · Business Spec</div>
-          <h3>业务规范</h3>
-          <p class="layer-desc">业务目标、用户目标、验收标准、Story 列表。由产品侧维护，需求驱动更新，写完归档为主，部分修改可追加。</p>
-          <div class="consumer-list">
-            <span class="consumer-tag">消费者：产品</span>
-            <span class="consumer-tag">消费者：开发</span>
-          </div>
-          <span class="tool-tag">工具：BMAD</span>
-        </div>
-        <div class="spec-arrow-h">&rarr; <span>驱动</span></div>
+<!-- ==================== SLIDE 2: PROBLEM ==================== -->
+<section class="slide" id="s1">
+  <div class="slide-inner">
+    <div class="eyebrow anim-fade"><span class="dash"></span> 背景与问题</div>
+    <h2 class="slide-title-h2 anim-fade anim-fade-1">AI 辅助开发的现状与局限</h2>
+    <p class="slide-sub anim-fade anim-fade-2">代码生成速度的提升，并不直接等同于需求理解准确度、系统设计一致性和工程可维护性的提升。</p>
+    <div class="p-grid anim-fade anim-fade-3">
+      <div class="p-card">
+        <div class="icon-box">🔄</div>
+        <h3>信息传递衰减与失真</h3>
+        <p>从产品需求到技术实现的多层翻译过程中，原始意图容易偏离。团队需要大量反复沟通来对齐理解。</p>
       </div>
-
-      <div class="spec-layer-wrap">
-        <div class="spec-layer technical">
-          <div class="layer-label">第二层 · Technical Spec</div>
-          <h3>技术规范</h3>
-          <p class="layer-desc">接口规范、数据模型、业务规则、开发约束。由开发侧维护，迭代驱动持续演化，反映系统当前真实状态。</p>
-          <div class="consumer-list">
-            <span class="consumer-tag">消费者：开发</span>
-            <span class="consumer-tag">消费者：AI 代码生成</span>
-          </div>
-          <span class="tool-tag">工具：OpenSpec</span>
-        </div>
-        <div class="spec-arrow-h">&rarr; <span>驱动</span></div>
+      <div class="p-card">
+        <div class="icon-box">🧩</div>
+        <h3>上下文碎片化</h3>
+        <p>AI 缺乏持续稳定的工程上下文，每个会话独立理解任务，无法感知上游决策、业务背景和架构约束。</p>
       </div>
-
-      <div class="spec-layer-wrap">
-        <div class="spec-layer verification">
-          <div class="layer-label">第三层 · Verification Spec</div>
-          <h3>验证规范</h3>
-          <p class="layer-desc">测试用例、断言、预期行为（正常/异常/边界）。由测试侧维护，随功能和缺陷修复持续补充。</p>
-          <div class="consumer-list">
-            <span class="consumer-tag">消费者：测试</span>
-            <span class="consumer-tag">消费者：AI 测试生成</span>
-          </div>
-          <span class="tool-tag">工具：Superpowers</span>
-        </div>
+      <div class="p-card">
+        <div class="icon-box">🔗</div>
+        <h3>需求·规范·测试 脱节</h3>
+        <p>需求、规范、测试、实现之间缺少显性关联，变更影响难以快速追踪，规约无法沉淀为长期资产。</p>
       </div>
-    </div>
-
-    <div class="feature-id-demo reveal">
-      <div><span class="fid">feature_id: AUTH-LOGIN-WECOM</span></div>
-      <div class="indent"><span class="bullet">●</span> Business Spec &rarr; epics/epic-1.md 中的对应 Story</div>
-      <div class="indent"><span class="bullet">●</span> Technical Spec &rarr; POST /auth/wecom、数据字段定义</div>
-      <div class="indent"><span class="bullet">●</span> Verification &rarr; invalid_qr / expired_qr / unauthorized_org 测试场景</div>
-      <div class="indent"><span class="bullet">●</span> 实现代码 &rarr; auth/wecom.ts</div>
     </div>
   </div>
 </section>
 
-<hr class="gradient-divider" style="width:60%">
 
-<section id="comparison">
-  <div class="section-inner">
-    <div class="eyebrow reveal"><span class="dash"></span> 模式对比</div>
-    <h2 class="section-title reveal">与传统做法和当前 AI 辅助的区别</h2>
-    <p class="section-sub reveal">传统模式困于人工翻译损耗，当前 AI 模式快在单点却未解决断裂，DeepStorm 用结构化规约让 AI 在连续上下文中系统工作。</p>
+<!-- ==================== SLIDE 3: PHILOSOPHY ==================== -->
+<section class="slide" id="s2">
+  <div class="slide-inner">
+    <div class="eyebrow anim-fade"><span class="dash"></span> 核心思路</div>
+    <h2 class="slide-title-h2 anim-fade anim-fade-1">以 Spec 为轴的 AI 协同工程</h2>
+    <p class="slide-sub anim-fade anim-fade-2">利用 AI 提升各环节执行效率，同时以结构化 Spec 将需求、规范、验证、实现串联，使 AI 和人在一致的上下文中协作。</p>
+    <div class="principles-grid anim-fade anim-fade-3">
+      <div class="principle-card">
+        <div class="num">01</div>
+        <h3>需求质量前置</h3>
+        <p>利用 AI 辅助的结构化追问与校验，在需求进入开发前澄清边界条件、异常路径与验收标准，将缺陷拦截在产品阶段。</p>
+      </div>
+      <div class="principle-card">
+        <div class="num">02</div>
+        <h3>上下文连续性</h3>
+        <p>通过统一的 feature_id 将需求、接口规范、测试用例、实现代码显性关联，使 AI 在任何步骤都能获取上游结构化信息。</p>
+      </div>
+      <div class="principle-card">
+        <div class="num">03</div>
+        <h3>人机边界清晰</h3>
+        <p>人负责决策（目标、约束、策略），AI 负责生成与执行（结构化、草稿、代码）。所有 AI 产出均需人工确认。</p>
+      </div>
+    </div>
+  </div>
+</section>
 
-    <div class="table-wrap reveal">
+
+<!-- ==================== SLIDE 4: THREE-LAYER SPEC ==================== -->
+<section class="slide" id="s3">
+  <div class="slide-inner">
+    <div class="eyebrow anim-fade"><span class="dash"></span> 三层 Spec 体系</div>
+    <h2 class="slide-title-h2 anim-fade anim-fade-1">结构化的工程规约链路</h2>
+    <p class="slide-sub anim-fade anim-fade-2">三层 Spec 之间为单向驱动关系：上层产出作为下层输入，形成信息密度高、传递损耗低的工程链路。</p>
+
+    <div class="spec-flow anim-fade anim-fade-3">
+      <div class="spec-layer business">
+        <div class="layer-label">第一层 · Business Spec</div>
+        <h3>业务规范</h3>
+        <p class="layer-desc">业务目标、用户目标、验收标准、Story 列表。由产品侧维护，需求驱动更新。</p>
+        <span class="tool-tag">工具：BMAD</span>
+      </div>
+      <div class="spec-arrow">
+        <span class="arrow-icon">&rarr;</span>
+        <span>驱动</span>
+      </div>
+      <div class="spec-layer technical">
+        <div class="layer-label">第二层 · Technical Spec</div>
+        <h3>技术规范</h3>
+        <p class="layer-desc">接口规范、数据模型、业务规则、开发约束。由开发侧维护，迭代驱动持续演化。</p>
+        <span class="tool-tag">工具：OpenSpec</span>
+      </div>
+      <div class="spec-arrow">
+        <span class="arrow-icon">&rarr;</span>
+        <span>驱动</span>
+      </div>
+      <div class="spec-layer verification">
+        <div class="layer-label">第三层 · Verification Spec</div>
+        <h3>验证规范</h3>
+        <p class="layer-desc">测试用例、断言、预期行为（正常/异常/边界）。由测试侧维护，随功能补充。</p>
+        <span class="tool-tag">工具：Superpowers</span>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+
+<!-- ==================== SLIDE 5: ECOSYSTEM ==================== -->
+<section class="slide" id="s4">
+  <div class="slide-inner">
+    <div class="eyebrow anim-fade"><span class="dash"></span> 工具套件</div>
+    <h2 class="slide-title-h2 anim-fade anim-fade-1">DeepStorm 生态体系</h2>
+    <p class="slide-sub anim-fade anim-fade-2">四个子套件分别面向不同角色，命名源自珊瑚礁生态系统。每个套件针对工程链路中的特定痛点，在结构化上下文中协作运转。</p>
+
+    <div class="s-grid anim-fade anim-fade-3">
+
+      <!-- Tide -->
+      <div class="s-card">
+        <div class="sd-header">
+          <div class="suite-icon tide">🌊</div>
+          <div>
+            <h3>Tide <span class="zh-name">潮汐</span></h3>
+            <div class="stitle">需求驱动 · 产品角色</div>
+          </div>
+        </div>
+        <div class="sd-body">
+          <div class="sd-features">
+            <ul>
+              <li class="tide-f"><span class="f-icon">▸</span> BMAD 多角色需求讨论</li>
+              <li class="tide-f"><span class="f-icon">▸</span> PRD 自动生成</li>
+              <li class="tide-f"><span class="f-icon">▸</span> 飞书知识库推送</li>
+              <li class="tide-f"><span class="f-icon">▸</span> Jira Issue 创建 &amp; 任务拆分</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Reef -->
+      <div class="s-card">
+        <div class="sd-header">
+          <div class="suite-icon reef">🪸</div>
+          <div>
+            <h3>Reef <span class="zh-name">礁群</span></h3>
+            <div class="stitle">代码构建 · 开发角色</div>
+          </div>
+        </div>
+        <div class="sd-body">
+          <div class="sd-features">
+            <ul>
+              <li class="reef-f"><span class="f-icon">▸</span> OpenSpec SDD 工作流</li>
+              <li class="reef-f"><span class="f-icon">▸</span> 前后端代码生成 &amp; 规范</li>
+              <li class="reef-f"><span class="f-icon">▸</span> Test Case &amp; 代码审查</li>
+              <li class="reef-f"><span class="f-icon">▸</span> 分支范围验证 &amp; PR 创建</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sweep -->
+      <div class="s-card">
+        <div class="sd-header">
+          <div class="suite-icon sweep">🫧</div>
+          <div>
+            <h3>Sweep <span class="zh-name">扫掠</span></h3>
+            <div class="stitle">质量检测 · 测试角色</div>
+          </div>
+        </div>
+        <div class="sd-body">
+          <div class="sd-features">
+            <ul>
+              <li class="sweep-f"><span class="f-icon">▸</span> E2E 测试项目初始化</li>
+              <li class="sweep-f"><span class="f-icon">▸</span> 测试意图文档（.flow.md）生成</li>
+              <li class="sweep-f"><span class="f-icon">▸</span> Playwright 混合执行（原生 + AI 自愈）</li>
+              <li class="sweep-f"><span class="f-icon">▸</span> 多环境 &amp; 批量执行</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Atoll -->
+      <div class="s-card">
+        <div class="sd-header">
+          <div class="suite-icon atoll">🏝️</div>
+          <div>
+            <h3>Atoll <span class="zh-name">环礁</span></h3>
+            <div class="stitle">运维承载 · 运维角色</div>
+          </div>
+        </div>
+        <div class="sd-body">
+          <div class="sd-features">
+            <ul>
+              <li class="atoll-f"><span class="f-icon">▸</span> 部署辅助与环境检查</li>
+              <li class="atoll-f"><span class="f-icon">▸</span> 日志与监控 AI 查询</li>
+              <li class="atoll-f"><span class="f-icon">▸</span> 故障排查智能引导</li>
+              <li class="atoll-f"><span class="f-icon">▸</span> 系统健康度看板</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+
+<!-- ==================== SLIDE 10: PIPELINE ==================== -->
+<section class="slide" id="s9">
+  <div class="slide-inner">
+    <div class="eyebrow anim-fade"><span class="dash"></span> 完整工程链路</div>
+    <h2 class="slide-title-h2 anim-fade anim-fade-1">从产品意图到自动化测试的全流程</h2>
+    <p class="slide-sub anim-fade anim-fade-2">产品 → 开发 → 质量门禁 → CI → 人工验证，十步链路串联五个阶段，每一环节的产出驱动下一环节。</p>
+
+    <div class="pipeline-visual anim-fade anim-fade-3">
+      <!-- Row of phases -->
+      <div class="phase-row">
+        <div class="phase-box phase-product">
+          <div class="phase-icon">📋</div>
+          <div class="phase-label">产品侧</div>
+          <div class="phase-steps">
+            <div class="s"><span class="d">1</span><span class="t">产品意图（自然语言描述）</span></div>
+            <div class="s"><span class="d">2</span><span class="t">BMAD 结构化 → 澄清边界条件</span></div>
+            <div class="s"><span class="d">3</span><span class="t">Business Spec 产出（PRD + Story）</span></div>
+            <div class="s"><span class="d">4</span><span class="t">创建 Jira 任务（含 Figma 链接）</span></div>
+          </div>
+        </div>
+        <div class="phase-box phase-dev">
+          <div class="phase-icon">🔧</div>
+          <div class="phase-label">开发侧</div>
+          <div class="phase-steps">
+            <div class="s"><span class="d">5</span><span class="t">/reef-start → SDD 产出（proposal→design→tasks）+ grill-me 审查</span></div>
+            <div class="s"><span class="d">6</span><span class="t">code-style 规范 + 代码骨架 + TDD 逐 task 实现 + grill-me</span></div>
+          </div>
+        </div>
+        <div class="phase-box phase-ai">
+          <div class="phase-icon">🤖</div>
+          <div class="phase-label">质量门禁</div>
+          <div class="phase-steps">
+            <div class="s"><span class="d">7</span><span class="t">reef-testcase 四维用例 → reef-scope 分支验证 → review 审查</span></div>
+            <div class="s"><span class="d">8</span><span class="t">reef-harden 加固 → reef-commit 提交 → reef-pr 创建，人确认</span></div>
+          </div>
+        </div>
+        <div class="phase-box phase-ci">
+          <div class="phase-icon">⚡</div>
+          <div class="phase-label">CI 集成</div>
+          <div class="phase-steps">
+            <div class="s"><span class="d">9</span><span class="t">Sweep E2E 测试（Playwright 混合执行 + AI 自愈）+ 覆盖率</span></div>
+          </div>
+        </div>
+        <div class="phase-box phase-manual">
+          <div class="phase-icon">👤</div>
+          <div class="phase-label">人工验证</div>
+          <div class="phase-steps">
+            <div class="s"><span class="d">10</span><span class="t">探索性测试 + Atoll 部署监控与故障排查</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Arrow indicators between phases -->
+      <div class="phase-arrow-row">
+        <div class="phase-arrow">▼</div>
+        <div class="phase-arrow">▼</div>
+        <div class="phase-arrow">▼</div>
+        <div class="phase-arrow">▼</div>
+        <div class="phase-arrow"></div>
+      </div>
+
+      <div class="phase-footer">
+        <strong>Tide</strong>（需求结构化）→ <strong>Reef</strong>（SDD → 规范 → 代码 → 质量门禁 → 交付）→ <strong>Sweep</strong>（E2E 测试）→ <strong>Atoll</strong>（部署与运维）<br>
+        各套件按链路阶段自然衔接，前序产出作为后序输入，闭环覆盖产品→开发→测试→CI→部署全生命周期。
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ==================== SLIDE 11: COMPARISON ==================== -->
+<section class="slide" id="s10">
+  <div class="slide-inner">
+    <div class="eyebrow anim-fade"><span class="dash"></span> 模式对比</div>
+    <h2 class="slide-title-h2 anim-fade anim-fade-1">与传统做法和当前 AI 辅助的区别</h2>
+    <p class="slide-sub anim-fade anim-fade-2">传统模式困于人工翻译损耗，当前 AI 模式快在单点却未解决断裂，DeepStorm 用结构化规约让 AI 在连续上下文中系统工作。</p>
+
+    <div class="table-wrap anim-fade anim-fade-3">
       <table>
         <thead>
           <tr>
@@ -810,37 +868,37 @@ footer strong{color:var(--text-60)}
             <td>核心机制</td>
             <td>人工翻译文档，口传信息</td>
             <td>AI 片段式生成，局部加速</td>
-            <td style="color:var(--deepstorm-500);font-weight:600">SDD 结构化规约 + AI 系统执行</td>
+            <td class="ds">SDD 结构化规约 + AI 系统执行</td>
           </tr>
           <tr>
             <td>上下文状态</td>
             <td>角色边界处断裂</td>
             <td>每次会话重新注入，仍断裂</td>
-            <td style="color:var(--deepstorm-500);font-weight:600">Spec 文件持续传递，AI 直读上游</td>
+            <td class="ds">Spec 文件持续传递，AI 直读上游</td>
           </tr>
           <tr>
             <td>需求验证</td>
             <td>编码或测试阶段才暴露</td>
             <td>无机制性改善</td>
-            <td style="color:var(--deepstorm-500);font-weight:600">产品阶段前置校验，缺陷提前暴露</td>
+            <td class="ds">产品阶段前置校验，缺陷提前暴露</td>
           </tr>
           <tr>
             <td>测试生成</td>
             <td>人工编写，覆盖依赖经验</td>
             <td>局部生成，与需求关联弱</td>
-            <td style="color:var(--deepstorm-500);font-weight:600">从验收标准直接派生，覆盖系统化</td>
+            <td class="ds">从验收标准直接派生，覆盖系统化</td>
           </tr>
           <tr>
             <td>变更响应</td>
             <td>人工通知，依赖记忆</td>
             <td>仍靠人工，遗漏风险不变</td>
-            <td style="color:var(--deepstorm-500);font-weight:600">feature_id 关联，影响可定位</td>
+            <td class="ds">feature_id 关联，影响可定位</td>
           </tr>
           <tr>
             <td>人机分工</td>
             <td>人全链路执行</td>
             <td>人主导，AI 辅助单点</td>
-            <td style="color:var(--deepstorm-500);font-weight:600">人决策 + 确认，AI 在规约框架内生成</td>
+            <td class="ds">人决策 + 确认，AI 在规约框架内生成</td>
           </tr>
         </tbody>
       </table>
@@ -848,316 +906,704 @@ footer strong{color:var(--text-60)}
   </div>
 </section>
 
-<hr class="gradient-divider" style="width:40%">
 
-<section id="suites">
-  <div class="section-inner">
-    <div class="eyebrow reveal"><span class="dash"></span> 工具套件</div>
-    <h2 class="section-title reveal">DeepStorm 生态体系</h2>
-    <p class="section-sub reveal">四个子套件分别面向不同角色，命名源自珊瑚礁生态系统，隐喻个体协作构建复杂系统的工程理念。</p>
+<!-- ==================== SLIDE 12: SUMMARY ==================== -->
+<section class="slide" id="s11">
+  <div class="slide-inner">
+    <div class="eyebrow anim-fade"><span class="dash"></span> 价值与路径</div>
+    <h2 class="slide-title-h2 anim-fade anim-fade-1">预期价值与下一阶段</h2>
+    <p class="slide-sub anim-fade anim-fade-2">AI 加速 + 结构化上下文 → 将信息不对齐和重复手工劳动带来的损耗控制在较低水平，让团队聚焦高价值决策。</p>
 
-    <div class="suites-grid">
-      <div class="glass-card-outer reveal">
-        <div class="glass-card-inner suite-card">
-          <div class="suite-icon tide">🌊</div>
-          <h3>Tide</h3>
-          <div class="role">潮汐 · Desktop Extension</div>
-          <p class="desc">需求流人的源头。负责需求结构化、PRD 管理、Jira 同步，为整个链路提供驱动力。</p>
-          <div class="eco-meta"><strong>生态隐喻：</strong>潮汐，养分与势能的周期性输入</div>
+    <div class="summary-grid anim-fade anim-fade-3">
+      <div class="summary-item">
+        <div class="si-num g1">1</div>
+        <div class="si-text">
+          <strong>Tide — 产品需求结构化</strong>
+          <span>BMAD 驱动 PRD + Story + 验收标准，同步 Jira。<br><strong style="color:var(--green-600)">✅ 已实现</strong></span>
         </div>
       </div>
-      <div class="glass-card-outer reveal reveal-delay-1">
-        <div class="glass-card-inner suite-card">
-          <div class="suite-icon reef">🪸</div>
-          <h3>Reef</h3>
-          <div class="role">礁群 · Claude Code Plugin</div>
-          <p class="desc">代码的持续构建与结构沉淀。负责规范生成、代码实现、架构约束检查。</p>
-          <div class="eco-meta"><strong>海洋隐喻：</strong>珊瑚礁群由无数珊瑚虫经年构建</div>
+      <div class="summary-item">
+        <div class="si-num g2">2</div>
+        <div class="si-text">
+          <strong>Reef — 规范生成与代码实现</strong>
+          <span>Business Spec → Technical Spec，feature_id 关联，Claude Code 自动执行。<br><strong style="color:var(--green-600)">✅ 已实现</strong></span>
         </div>
       </div>
-      <div class="glass-card-outer reveal reveal-delay-2">
-        <div class="glass-card-inner suite-card">
-          <div class="suite-icon sweep">🌊</div>
-          <h3>Sweep</h3>
-          <div class="role">扫掠 · Claude Code Plugin</div>
-          <p class="desc">持续感知代码质量。负责测试生成、覆盖率分析、CI 结果解读，异常的第一道探测器。</p>
-          <div class="eco-meta"><strong>生态隐喻：</strong>与珊瑚共生，对水质极其敏感</div>
+      <div class="summary-item">
+        <div class="si-num g3">3</div>
+        <div class="si-text">
+          <strong>Sweep — 测试生成与覆盖率</strong>
+          <span>验收标准 → 测试用例 → 可执行测试，CI 管线自动触发。<br><strong style="color:var(--green-600)">✅ 已实现</strong></span>
         </div>
       </div>
-      <div class="glass-card-outer reveal reveal-delay-3">
-        <div class="glass-card-inner suite-card">
-          <div class="suite-icon atoll">🏝️</div>
-          <h3>Atoll</h3>
-          <div class="role">环礁 · Desktop Extension</div>
-          <p class="desc">系统最终运行的稳定承载层。负责部署辅助、监控查询、故障排查和环境检查。</p>
-          <div class="eco-meta"><strong>生态隐喻：</strong>珊瑚礁发育的最高阶段</div>
+      <div class="summary-item">
+        <div class="si-num g4">4</div>
+        <div class="si-text">
+          <strong>Atoll — 部署与运维（规划中）</strong>
+          <span>部署辅助、监控查询、故障排查与环境检查。<br><strong style="color:var(--gold-500)">○ 待实现</strong></span>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:1.5rem;padding:1.25rem;border-radius:1.25rem;background:var(--bg-alt);border:1px solid var(--text-10);text-align:center" class="anim-fade anim-fade-4">
+      <p style="color:var(--text-60);font-size:0.82rem;line-height:1.7;max-width:640px;margin:0 auto">
+        <strong style="color:var(--deepstorm-500);font-size:0.95rem">DeepStorm 深澜</strong><br>
+        为公司 AI 编程带来一场深度风暴——<br>
+        以结构化规格文档重构编程范式，让每一次 AI 交互都有据可依、有迹可循。<br>
+        <strong style="color:var(--deepstorm-500)">不只是提升效率，而是重新定义 AI 时代的人机协作工程模式。</strong>
+      </p>
+    </div>
+
+    <div style="text-align:center;margin-top:1rem;font-size:0.7rem;color:var(--text-40)" class="anim-fade anim-fade-5">
+      深澜 · 命名源自珊瑚礁生态系统 · 个体协作构建复杂系统
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 套件使用说明与案例 ==================== -->
+<section class="slide section-divider" id="s-divider">
+  <div class="slide-inner" style="text-align:center">
+    <div class="divider-line anim-fade"></div>
+    <h2 class="anim-fade anim-fade-1">套件使用说明与案例</h2>
+    <p class="divider-sub anim-fade anim-fade-2">每个套件的详细使用流程、工作场景和典型案例，帮助团队快速上手。</p>
+    <div class="suites-mini anim-fade anim-fade-3">
+      <div class="sm-item">
+        <div class="sm-icon" style="color:var(--teal-500)">🌊</div>
+        <div class="sm-label">Tide</div>
+      </div>
+      <div class="sm-item">
+        <div class="sm-icon" style="color:var(--deepstorm-500)">🪸</div>
+        <div class="sm-label">Reef</div>
+      </div>
+      <div class="sm-item">
+        <div class="sm-icon" style="color:var(--gold-500)">🫧</div>
+        <div class="sm-label">Sweep</div>
+      </div>
+      <div class="sm-item">
+        <div class="sm-icon" style="color:var(--indigo-400)">🏝️</div>
+        <div class="sm-label">Atoll</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== SLIDE 6: TIDE USAGE ==================== -->
+<section class="slide" id="s5">
+  <div class="slide-inner">
+    <div class="eyebrow anim-fade"><span class="dash"></span> Tide · 1/2 需求讨论与发布</div>
+    <h2 class="slide-title-h2 anim-fade anim-fade-1">产品经理如何工作</h2>
+    <p class="slide-sub anim-fade anim-fade-2">口述需求 → BMAD 讨论 → PRD → 知识库推送 → Jira 创建，让每个需求有据可查。</p>
+
+    <div class="usage-grid anim-fade anim-fade-3">
+      <div class="usage-flow">
+        <h4>使用流程</h4>
+        <div class="usage-steps">
+          <div class="u-step">
+            <div class="u-num tide-n">1</div>
+            <div class="u-text">
+              <div class="u-title">口述需求 → /tide-discuss 自动激活</div>
+              <div class="u-desc">产品经理在 Claude Code 中用自然语言描述需求，/tide-discuss 自动激活 BMAD 多角色讨论流。</div>
+            </div>
+          </div>
+          <div class="u-step">
+            <div class="u-num tide-n">2</div>
+            <div class="u-text">
+              <div class="u-title">BMAD 多角色讨论</div>
+              <div class="u-desc">AI 依次扮演分析师（Mary）、产品经理（John）等角色，从不同视角追问边界条件、异常路径、验收标准。</div>
+            </div>
+          </div>
+          <div class="u-step">
+            <div class="u-num tide-n">3</div>
+            <div class="u-text">
+              <div class="u-title">PRD 生成 + 知识库推送</div>
+              <div class="u-desc">讨论产出自动整理为格式规范的 PRD，推送至飞书知识库归档，团队随时查阅。</div>
+            </div>
+          </div>
+          <div class="u-step">
+            <div class="u-num tide-n">4</div>
+            <div class="u-text">
+              <div class="u-title">Jira Issue 创建</div>
+              <div class="u-desc">PRD 自动拆分为 Jira Issue（含 Story、优先级），关联 Figma 设计稿，立即可供开发领取。</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="usage-scenario">
+        <h4>💡 工作场景</h4>
+        <div class="u-story">
+          <p>产品经理口述需求：<span class="hl-t">"给后台加个企业微信登录"</span>。</p>
+          <p style="margin-top:0.5rem">Tide 自动激活 BMAD 工作流，依次以不同角色追问：</p>
+          <ul style="font-size:0.75rem;color:var(--text-60);line-height:1.7;margin:0.4rem 0 0.4rem 1.2rem;padding:0">
+            <li><strong>分析师 Mary</strong> → 澄清 OAuth vs 扫码、回调域配置</li>
+            <li><strong>PM John</strong> → 确认多组织绑定策略、存量账号迁移</li>
+            <li><strong>架构师</strong> → 讨论技术约束和系统集成方案</li>
+          </ul>
+          <p style="margin-top:0.4rem">讨论完成后自动输出 <span class="hl-t">PRD</span>，推送到飞书知识库，并在 Jira 中创建开发任务（关联 Figma 原型）。</p>
+          <p style="margin-top:0.5rem;padding-top:0.5rem;border-top:1px solid var(--text-10);font-size:0.75rem;color:var(--text-40)">
+            耗时：从 1-2 天人工对齐 → <strong class="hl-t">30 分钟</strong>结构化讨论<br>
+            关联：Figma / 飞书知识库 / Jira
+          </p>
         </div>
       </div>
     </div>
   </div>
 </section>
 
-<hr class="gradient-divider" style="width:60%">
 
-<section class="pipeline-section">
-  <div class="section-inner">
-    <div class="eyebrow reveal"><span class="dash"></span> 完整工程链路</div>
-    <h2 class="section-title reveal">从产品意图到自动化测试的全流程</h2>
-    <p class="section-sub reveal">链路的核心运行方式：产品输出高质量 PRD 后创建 Jira 任务，开发人员在新迭代中自行拉取任务，利用 AI 工具逐步完成 Spec 生成、代码实现和测试。除 CI 外，多数环节由人工按需触发。</p>
+<!-- ==================== SLIDE 6b: TIDE — 2/2 需求管理与归档 ==================== -->
+<section class="slide" id="tide-mgmt">
+  <div class="slide-inner">
+    <div class="eyebrow anim-fade"><span class="dash"></span> Tide · 2/2 需求管理与归档</div>
+    <h2 class="slide-title-h2 anim-fade anim-fade-1">需求全生命周期管理</h2>
+    <p class="slide-sub anim-fade anim-fade-2">每个 session 贯穿 active → published → completed 全生命周期，可恢复、可追溯、可变更。</p>
 
-    <div class="pipeline reveal">
-
-      <!-- Group: 产品侧 -->
-      <div class="pgroup pgroup-product">
-        <div class="pgroup-header">
-          <span class="pgroup-icon">&#x1F4CB;</span>
-          <span class="pgroup-title">产品侧 · 需求定义</span>
-        </div>
-        <div class="pgroup-steps">
-          <div class="pg-step">
-            <div class="pg-step-dot">1</div>
-            <div class="pg-step-body">
-              <div class="pg-step-head">产品意图（自然语言）<span class="pg-actor product">产品</span></div>
-              <div class="pg-step-desc">产品侧以自然语言描述业务目标、用户场景和期望产出，作为整条链路的原始输入。</div>
+    <div class="usage-grid anim-fade anim-fade-3">
+      <div class="usage-flow">
+        <h4>管理流程</h4>
+        <div class="usage-steps">
+          <div class="u-step">
+            <div class="u-num tide-n">1</div>
+            <div class="u-text">
+              <div class="u-title">入口查询与已有需求感知</div>
+              <div class="u-desc">再次 <code style="font-size:0.7rem">/tide</code> 进入入口列表，按状态展示所有活跃会话，让用户感知已有需求上下文。支持按 sessionId、featureId、关键词搜索 <code style="font-size:0.7rem">sessions/</code> 和 <code style="font-size:0.7rem">archive/</code>，关联的历史需求一目了然。</div>
             </div>
           </div>
-          <div class="pg-conn">&darr;</div>
-          <div class="pg-step">
-            <div class="pg-step-dot ai">2</div>
-            <div class="pg-step-body">
-              <div class="pg-step-head">BMAD 结构化 <span class="pg-actor ai">AI 辅助</span></div>
-              <div class="pg-step-desc">产品侧使用 BMAD 工具，在 AI 辅助下将自然语言意图转化为结构化需求文档，澄清边界条件和验收标准。</div>
-              <div class="pg-meta"><span class="pg-tag">工具：BMAD</span><span class="pg-tag warn">需人工确认</span></div>
+          <div class="u-step">
+            <div class="u-num tide-n">2</div>
+            <div class="u-text">
+              <div class="u-title">变更需求：关联追溯</div>
+              <div class="u-desc">选择「变更需求」或「重来」时，自动加载旧会话 JSON 作为参考上下文，在新需求的 BMAD 讨论中提供历史背景。旧会话标记为 superseded 并建立 parent 关联，变更脉络完整可查。</div>
             </div>
           </div>
-          <div class="pg-conn">&darr;</div>
-          <div class="pg-step">
-            <div class="pg-step-dot doc">3</div>
-            <div class="pg-step-body">
-              <div class="pg-step-head">Business Spec 产出 <span class="pg-actor product">产品</span></div>
-              <div class="pg-step-desc">生成结构化 PRD 文档，包含 Story 拆分、验收标准定义、非功能需求梳理，作为下游开发输入。</div>
-              <div class="pg-meta"><span class="pg-tag">PRD + Story</span><span class="pg-tag">验收标准</span><span class="pg-tag">边界条件</span></div>
+          <div class="u-step">
+            <div class="u-num tide-n">3</div>
+            <div class="u-text">
+              <div class="u-title">发布异常处理</div>
+              <div class="u-desc">PRD 推送到知识库或创建工单失败时，session 进入 publish_error 状态，可随时重试失败步骤。PRD Markdown 文件误删时自动从 JSON 快照恢复。</div>
             </div>
           </div>
-          <div class="pg-conn">&darr;</div>
-          <div class="pg-step">
-            <div class="pg-step-dot">4</div>
-            <div class="pg-step-body">
-              <div class="pg-step-head">产品创建 Jira 任务 <span class="pg-actor product">产品</span></div>
-              <div class="pg-step-desc">产品将结构化的 Story 内容创建为 Jira 任务，附带完整的结构化描述、Figma 设计稿链接和相关上下文。</div>
-              <div class="pg-meta"><span class="pg-tag">工具：Jira</span><span class="pg-tag">含 Figma 链接</span></div>
+          <div class="u-step">
+            <div class="u-num tide-n">4</div>
+            <div class="u-text">
+              <div class="u-title">自动归档</div>
+              <div class="u-desc">全部完成（published + Jira 工单创建成功）后自动归档，从入口列表移除。归档会话可通过精确查询回溯。每次入口扫描自动搬移残留的已完结文件。</div>
             </div>
           </div>
         </div>
       </div>
-
-      <div class="pgroup-gap"><span class="pg-gap-arrow">&#x2935;</span></div>
-
-      <!-- Group: 开发侧 -->
-      <div class="pgroup pgroup-dev">
-        <div class="pgroup-header">
-          <span class="pgroup-icon">&#x1F6E0;</span>
-          <span class="pgroup-title">开发侧 · 技术实现</span>
-        </div>
-        <div class="pgroup-steps">
-          <div class="pg-step">
-            <div class="pg-step-dot">5</div>
-            <div class="pg-step-body">
-              <div class="pg-step-head">新迭代开始，任务分配给开发人员 <span class="pg-actor dev">开发</span></div>
-              <div class="pg-step-desc">在敏捷迭代规划中，Jira 任务被分配给开发人员。开发人员获取任务后，拉取上游的 Business Spec 作为输入。</div>
-            </div>
+      <div class="usage-scenario">
+        <h4>💡 状态流转示例</h4>
+        <div class="u-story">
+          <p>一个需求的完整生命周期：</p>
+          <div style="font-size:0.72rem;font-family:monospace;background:var(--bg-alt);padding:0.5rem 0.7rem;border-radius:0.5rem;margin:0.4rem 0;line-height:1.8;color:var(--text-70)">
+            <span style="color:var(--text-40)"># 新建讨论</span><br>
+            🔴 active   讨论中     Mary(☑️) John(☑️) architect(⬜)<br>
+            <br>
+            <span style="color:var(--text-40)"># 讨论完成 → PRD 就绪</span><br>
+            🟢 prd_ready     待推送知识库<br>
+            <br>
+            <span style="color:var(--text-40)"># 推送知识库 → 创建 Jira 工单</span><br>
+            🟢 published     已发布     📄 飞书知识库<br>
+            <br>
+            <span style="color:var(--text-40)"># 全部完成 → 自动归档</span><br>
+            ✅ completed     已归档     📎 Jira: AUTH-42
           </div>
-          <div class="pg-conn">&darr;</div>
-          <div class="pg-step">
-            <div class="pg-step-dot ai">6</div>
-            <div class="pg-step-body">
-              <div class="pg-step-head">生成 Technical Spec <span class="pg-actor dev">开发</span><span class="pg-actor ai">AI</span></div>
-              <div class="pg-step-desc">开发人员在 Claude Code 中运行 AI Skill，基于 Business Spec 自动生成 Technical Spec，包括接口定义、数据模型、业务规则和开发约束。</div>
-              <div class="pg-meta"><span class="pg-tag">工具：OpenSpec</span><span class="pg-tag">接口规范</span><span class="pg-tag">数据模型</span><span class="pg-tag warn">需人工确认</span></div>
-            </div>
-          </div>
+          <p style="margin-top:0.5rem;padding-top:0.5rem;border-top:1px solid var(--text-10);font-size:0.75rem;color:var(--text-60)">
+            <strong>变更追溯：</strong>需求调整时旧需求 superseded，新需求 parent 指向旧记录。<br>
+            <code>/tide AUTH-LOGIN-WECOM</code> 可搜索到全部版本，完整变更历史一目了然。
+          </p>
         </div>
-      </div>
-
-      <div class="pgroup-gap"><span class="pg-gap-arrow">&#x2935;</span></div>
-
-      <!-- Group: AI 自动化生成 -->
-      <div class="pgroup pgroup-ai">
-        <div class="pgroup-header">
-          <span class="pgroup-icon">&#x1F916;</span>
-          <span class="pgroup-title">AI 自动化生成</span>
-        </div>
-        <div class="pgroup-steps">
-          <div class="pg-step">
-            <div class="pg-step-dot ai">7</div>
-            <div class="pg-step-body">
-              <div class="pg-step-head">生成 Verification Spec <span class="pg-actor test">测试</span><span class="pg-actor ai">AI</span></div>
-              <div class="pg-step-desc">基于 Technical Spec 的接口定义和业务规则，生成结构化的测试用例文档，覆盖正常路径、异常路径和边界条件。</div>
-              <div class="pg-meta"><span class="pg-tag">Superpowers</span><span class="pg-tag">正常场景</span><span class="pg-tag">异常场景</span><span class="pg-tag">边界条件</span><span class="pg-tag warn">需人工审核</span></div>
-            </div>
-          </div>
-          <div class="pg-conn">&darr;</div>
-          <div class="pg-step">
-            <div class="pg-step-dot ai">8</div>
-            <div class="pg-step-body">
-              <div class="pg-step-head">测试代码 + 实现代码 <span class="pg-actor ai">AI 生成</span></div>
-              <div class="pg-step-desc">Superpowers 将测试用例转化为可执行的单元测试和集成测试，Claude Code 基于 Technical Spec 生成实现代码（TDD 模式）。</div>
-              <div class="pg-meta"><span class="pg-tag">Claude Code 实现</span><span class="pg-tag">Superpowers 测试</span><span class="pg-tag ok">可自动化执行</span></div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="pgroup-gap"><span class="pg-gap-arrow">&#x2935;</span></div>
-
-      <!-- Group: CI 自动化 -->
-      <div class="pgroup pgroup-ci">
-        <div class="pgroup-header">
-          <span class="pgroup-icon">&#x26A1;</span>
-          <span class="pgroup-title">CI 持续集成</span>
-        </div>
-        <div class="pgroup-steps">
-          <div class="pg-step">
-            <div class="pg-step-dot ci">9</div>
-            <div class="pg-step-body">
-              <div class="pg-step-head">CI 自动触发：测试执行 + 覆盖率报告 <span class="pg-actor ci">CI</span></div>
-              <div class="pg-step-desc">代码提交后 CI 管线自动触发，运行所有测试用例并生成覆盖率报告。结果快速反馈给开发人员，确保变更不引入回归。</div>
-              <div class="pg-meta"><span class="pg-tag">自动化测试</span><span class="pg-tag">覆盖率分析</span><span class="pg-tag ok">全自动</span></div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="pgroup-gap"><span class="pg-gap-arrow">&#x2935;</span></div>
-
-      <!-- Group: 人工验证 -->
-      <div class="pgroup pgroup-manual">
-        <div class="pgroup-header">
-          <span class="pgroup-icon">&#x1F464;</span>
-          <span class="pgroup-title">人工验证 · 最终把关</span>
-        </div>
-        <div class="pgroup-steps">
-          <div class="pg-step">
-            <div class="pg-step-dot">10</div>
-            <div class="pg-step-body">
-              <div class="pg-step-head">人工探索性测试（少量）<span class="pg-actor test">测试</span></div>
-              <div class="pg-step-desc">在自动化测试覆盖的基础上，进行少量人工探索性测试，覆盖自动化难以发现的交互问题和体验问题。</div>
-              <div class="pg-meta"><span class="pg-tag">探索性测试</span><span class="pg-tag">交互验证</span></div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-    </div>
-  </div>
-</section>
-
-<hr class="gradient-divider" style="width:40%">
-
-<section id="roadmap">
-  <div class="section-inner">
-    <div class="eyebrow reveal"><span class="dash"></span> 价值与路径</div>
-    <h2 class="section-title reveal">预期价值与实施路径</h2>
-    <p class="section-sub reveal">AI 加速 + 结构化上下文 → 将信息不对齐和重复手工劳动带来的损耗控制在较低水平，让团队聚焦高价值决策和创造性工作。</p>
-
-    <div class="roadmap-stage reveal">
-      <div class="stage-header">
-        <span class="stage-badge phase1">✅</span>
-        <h3>Tide — 产品需求结构化</h3>
-      </div>
-      <p>使用 BMAD 在 AI 辅助下将自然语言意图转化为结构化需求文档，产出 PRD + Story + 验收标准，并同步至 Jira 任务管理，为整条链路提供驱动力。<strong style="color:var(--green-600)">已实现。</strong></p>
-    </div>
-
-    <div class="roadmap-stage reveal reveal-delay-1">
-      <div class="stage-header">
-        <span class="stage-badge phase1">✅</span>
-        <h3>Reef — 规范生成与代码实现</h3>
-      </div>
-      <p>基于 Business Spec 自动生成 Technical Spec（接口定义、数据模型、业务规则），建立 feature_id 关联规则和 Spec 文件组织约定，并通过 hooks 在 Claude Code 中执行自动格式化、文件保护和运行测试。<strong style="color:var(--green-600)">已实现。</strong></p>
-    </div>
-
-    <div class="roadmap-stage reveal reveal-delay-2">
-      <div class="stage-header">
-        <span class="stage-badge phase1">✅</span>
-        <h3>Sweep — 测试生成与覆盖率分析</h3>
-      </div>
-      <p>从验收标准半自动生成测试用例，覆盖正常路径、异常路径和边界条件，并将测试场景转化为可执行的单元测试和集成测试。结合 CI 管线自动触发测试执行，结果快速反馈。<strong style="color:var(--green-600)">已实现。</strong></p>
-    </div>
-
-    <div class="roadmap-stage reveal reveal-delay-3">
-      <div class="stage-header">
-        <span class="stage-badge phase2">○</span>
-        <h3>Atoll — 部署辅助、监控与运维排查（暂未实现）</h3>
-      </div>
-      <p>部署辅助、监控查询、故障排查和环境检查。作为系统的稳定承载层，待后续迭代接入。</p>
-    </div>
-
-    <div class="glass-card-outer reveal" style="margin-top:2rem">
-      <div class="glass-card-inner" style="text-align:center;padding:2.5rem">
-        <p style="color:var(--text-60);font-size:0.9rem;line-height:1.8;max-width:600px;margin:0 auto">
-          这套实践旨在利用 AI 提升开发效率的同时，以结构化规格文档将产品、开发、测试的上下文串联。<br>
-          它是对 SDD、TDD 等既有范式的工程化应用，存在磨合成本和暂时无法解决的问题。<br>
-          但相比于团队各自为战、文档与代码脱节的现状，朝这个方向推进，<br>
-          <strong style="color:var(--deepstorm-500)">我们认为会更接近高质量的持续交付。</strong>
-        </p>
       </div>
     </div>
   </div>
 </section>
 
-<footer>
-  <strong>DeepStorm</strong> — Spec 驱动的 AI 协同软件工程实践<br>
-  命名源自珊瑚礁生态系统 · 个体协作构建复杂系统
-</footer>
+
+<!-- ==================== SLIDE 7a: REEF — 1/4 启动与设计 ==================== -->
+<section class="slide" id="reef-start-design">
+  <div class="slide-inner">
+    <div class="eyebrow anim-fade"><span class="dash"></span> Reef · 1/4 启动与设计</div>
+    <h2 class="slide-title-h2 anim-fade anim-fade-1">从需求到设计：只需 /reef-start</h2>
+    <p class="slide-sub anim-fade anim-fade-2">一个入口 /reef-start，自动路由 Issue 或自由讨论，产出完整 Technical Spec + 实现计划。</p>
+
+    <div class="usage-grid anim-fade anim-fade-3">
+      <div class="usage-flow">
+        <h4>启动流程</h4>
+        <div class="usage-steps">
+          <div class="u-step">
+            <div class="u-num reef-n">1</div>
+            <div class="u-text">
+              <div class="u-title">单入口 /reef-start</div>
+              <div class="u-desc">提供 Jira Issue 链接（<code style="font-size:0.7rem">/reef-start https://jira.../AUTH-42</code>）或直接口述需求，一个命令启动所有流程。</div>
+            </div>
+          </div>
+          <div class="u-step">
+            <div class="u-num reef-n">2</div>
+            <div class="u-text">
+              <div class="u-title">自动路由与上下文获取</div>
+              <div class="u-desc">有 Issue → 自动拉取 PRD、Figma 设计稿和关联文档。无 Issue → 进入 OpenSpec 自由讨论，AI 按框架引导需求澄清。开发者只需按提示回答问题。</div>
+            </div>
+          </div>
+          <div class="u-step">
+            <div class="u-num reef-n">3</div>
+            <div class="u-text">
+              <div class="u-title">SDD 文档生成 + grill-me 审查</div>
+              <div class="u-desc">Reef 内部调用 OpenSpec 产出：方案提案（proposal）→ 技术设计（design）→ 接口规范 → 实现任务清单（tasks）。每步产出经 grill-me 多轮追问审查后进入下一阶段，最后经 spec-hardener 四道筛（含反向 grill）加固。</div>
+            </div>
+          </div>
+          <div class="u-step">
+            <div class="u-num reef-n">4</div>
+            <div class="u-text">
+              <div class="u-title">代码框架就绪</div>
+              <div class="u-desc">按项目配置（前端 Angular/React/Vue，后端 Java/Python）自动生成对应风格的代码骨架，开发者可直接进入 TDD 实现。</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="usage-scenario">
+        <h4>💡 工作场景</h4>
+        <div class="u-story">
+          <p>开发者启动任务 <span class="tag reef-tag">AUTH-LOGIN-WECOM</span>，只需一步：</p>
+          <div style="font-size:0.72rem;font-family:monospace;background:var(--bg-alt);padding:0.5rem 0.7rem;border-radius:0.5rem;margin:0.5rem 0;line-height:1.8;color:var(--text-70)">
+            /reef-start https://jira.example.com/AUTH-42
+          </div>
+          <p style="font-size:0.75rem;color:var(--text-60);line-height:1.6">Reef 自动处理后续一切：</p>
+          <ul style="font-size:0.72rem;color:var(--text-60);line-height:1.8;margin:0.3rem 0 0.4rem 1rem;padding:0">
+            <li>✅ 拉取 Issue 详情 + PRD 文档</li>
+            <li>✅ 读取 Figma 设计稿关联</li>
+            <li>✅ 创建 feature 分支</li>
+            <li>✅ SDD 生成（grill-me 逐阶段审查）</li>
+            <li>✅ spec-hardener 四道筛加固</li>
+          </ul>
+          <p style="margin-top:0.5rem;padding-top:0.5rem;border-top:1px solid var(--text-10);font-size:0.75rem;color:var(--text-80)">
+            <strong>开发者无需记忆</strong> /opsx:new、/reef-gen-frontend、/reef-style-backend 等子命令——<br>
+            Reef 按需在后台自动调用。所有操作在同一个引导会话中完成。
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ==================== SLIDE 7b: REEF — 2/4 代码规范与生成 ==================== -->
+<section class="slide" id="reef-code-gen">
+  <div class="slide-inner">
+    <div class="eyebrow anim-fade"><span class="dash"></span> Reef · 2/4 代码规范与生成</div>
+    <h2 class="slide-title-h2 anim-fade anim-fade-1">规范先行：多维 code-style + 骨架生成</h2>
+    <p class="slide-sub anim-fade anim-fade-2">多维可组合的 code-style 体系，setup 选技术栈即生成规范文档和项目骨架，TDD 全程在规范框架内进行。</p>
+
+    <div class="usage-grid anim-fade anim-fade-3">
+      <div class="usage-flow">
+        <h4>规范与生成流程</h4>
+        <div class="usage-steps">
+          <div class="u-step">
+            <div class="u-num reef-n">1</div>
+            <div class="u-text">
+              <div class="u-title">多维 code-style 规范</div>
+              <div class="u-desc"><code style="font-size:0.7rem">reef-style-frontend</code> / <code style="font-size:0.7rem">reef-style-backend</code> 在 setup 时按技术栈组合生成规范文档。每个维度独立产出 markdown 片段，互不干扰。维度包括框架（Angular/React/Vue）、TS 配置、CSS 方案、测试框架等。</div>
+            </div>
+          </div>
+          <div class="u-step">
+            <div class="u-num reef-n">2</div>
+            <div class="u-text">
+              <div class="u-title">代码骨架一键生成</div>
+              <div class="u-desc"><code style="font-size:0.7rem">reef-gen-frontend</code> / <code style="font-size:0.7rem">reef-gen-backend</code> 按规范文档自动创建组件、服务、路由的骨架代码，确保文件结构、命名约定、导入风格与团队规范一致。</div>
+            </div>
+          </div>
+          <div class="u-step">
+            <div class="u-num reef-n">3</div>
+            <div class="u-text">
+              <div class="u-title">TDD 实现循环</div>
+              <div class="u-desc">按 RED → GREEN → REFACTOR 逐 task 实现。AI 依据 code-style 规范自动编写代码，每完成一个 task 经 <code style="font-size:0.7rem">grill-me</code> 审查确认后自动引导至下一个。</div>
+            </div>
+          </div>
+          <div class="u-step">
+            <div class="u-num reef-n">4</div>
+            <div class="u-text">
+              <div class="u-title">规范即约束</div>
+              <div class="u-desc">代码规范不只是参考文档——AI 在生成代码时主动遵守规范约束。分支范围验证和代码审查也基于同一套规范体系进行判定，确保团队一致性。</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="usage-scenario">
+        <h4>💡 技术栈组合示例</h4>
+        <div class="u-story">
+          <p>setup 时的技术栈选择决定 code-style 维度：</p>
+          <div style="font-size:0.72rem;font-family:monospace;background:var(--bg-alt);padding:0.5rem 0.7rem;border-radius:0.5rem;margin:0.4rem 0;line-height:1.8;color:var(--text-70)">
+            <span style="color:var(--text-40)"># 选中 Angular + Tailwind + Jest 后，code-style 自动组装</span><br>
+            📐 framework/angular/quick-reference.md   ← 组件规范<br>
+            📐 ts-config/strict/quick-reference.md    ← 类型约束<br>
+            📐 css/tailwind/quick-reference.md        ← 样式规范<br>
+            📐 test/jest/quick-reference.md           ← 测试规范
+          </div>
+          <p style="margin-top:0.5rem;font-size:0.75rem;color:var(--text-60);line-height:1.6">
+            前端代码生成时自动遵循：Angular standalone 组件 + Tailwind class + strict TS + Jest 测试，全部自洽。
+          </p>
+          <p style="margin-top:0.5rem;padding-top:0.5rem;border-top:1px solid var(--text-10);font-size:0.75rem;color:var(--text-60)">
+            <strong>可扩展：</strong>新增维度只需添加 fragment 目录 + 更新 wizard.json，不影响已有维度。目前支持 Angular / React / Vue / Java / Python 组合。
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ==================== SLIDE 7c: REEF — 3/4 测试与质量门禁 ==================== -->
+<section class="slide" id="reef-quality">
+  <div class="slide-inner">
+    <div class="eyebrow anim-fade"><span class="dash"></span> Reef · 3/4 测试与质量门禁</div>
+    <h2 class="slide-title-h2 anim-fade anim-fade-1">四维质量防线</h2>
+    <p class="slide-sub anim-fade anim-fade-2">测试用例 → 分支验证 → 代码审查 → 设计加固，四道防线确保代码质量和业务一致性。</p>
+
+    <div class="usage-grid anim-fade anim-fade-3">
+      <div class="usage-flow">
+        <h4>质量门禁流程</h4>
+        <div class="usage-steps">
+          <div class="u-step">
+            <div class="u-num reef-n">1</div>
+            <div class="u-text">
+              <div class="u-title">结构化测试用例生成</div>
+              <div class="u-desc"><code style="font-size:0.7rem">reef-testcase</code> 从 Issue 描述和 PRD 上下文中提取测试场景，覆盖四维：正常流程、边界条件、异常场景、验收标准。用例既是测试指南，也帮助开发者和 AI 想清边缘情况。</div>
+            </div>
+          </div>
+          <div class="u-step">
+            <div class="u-num reef-n">2</div>
+            <div class="u-text">
+              <div class="u-title">分支范围验证</div>
+              <div class="u-desc"><code style="font-size:0.7rem">reef-scope</code> 通过 AI 语义分析 diff 内容，自动识别变更涉及的业务领域。单领域 commit 正常通过，多领域变更阻断并给出拆分建议。支持 pre-commit 和 CI 两种门禁模式。</div>
+            </div>
+          </div>
+          <div class="u-step">
+            <div class="u-num reef-n">3</div>
+            <div class="u-text">
+              <div class="u-title">多维度代码审查</div>
+              <div class="u-desc"><code style="font-size:0.7rem">reef-review</code> 从正确性、性能、安全、可维护性等维度进行审查，发现的问题按严重程度分级报告。子 Agent 分别审查不同维度，汇总后给出改进建议。</div>
+            </div>
+          </div>
+          <div class="u-step">
+            <div class="u-num reef-n">4</div>
+            <div class="u-text">
+              <div class="u-title">设计加固（spec-hardener）</div>
+              <div class="u-desc"><code style="font-size:0.7rem">reef-harden</code> 在实现完成后再次审视设计合理性。第五道是"反向 grill"——主动追问"三个月后可能在哪五处后悔"，确保设计经得起时间考验。</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="usage-scenario">
+        <h4>💡 分支验证示例</h4>
+        <div class="u-story">
+          <p>git commit 被 reef-scope 阻断并自动拆分：</p>
+          <div style="font-size:0.72rem;font-family:monospace;background:var(--bg-alt);padding:0.5rem 0.7rem;border-radius:0.5rem;margin:0.4rem 0;line-height:1.8;color:var(--text-70)">
+            $ git commit -m "feat: order and payment changes"<br>
+            <span style="color:#ef4444">🚫 阻断！检测到 order + payment 两个领域</span><br>
+            <br>
+            <span style="color:var(--text-40)"># 自动生成拆分方案</span><br>
+            → 分支 feat/order-update 创建完毕<br>
+            → 分支 feat/payment-update 创建完毕
+          </div>
+          <p style="margin-top:0.5rem;padding-top:0.5rem;border-top:1px solid var(--text-10);font-size:0.75rem;color:var(--text-60);line-height:1.6">
+            <strong>CI 集成：</strong><code>reef-scope-ci.sh</code> 可在 GitHub Actions / GitLab CI 中运行，<br>
+            PR 级别阻断多领域变更，形成团队共识。
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ==================== SLIDE 7d: REEF — 4/4 提交与交付 ==================== -->
+<section class="slide" id="reef-ship">
+  <div class="slide-inner">
+    <div class="eyebrow anim-fade"><span class="dash"></span> Reef · 4/4 提交与交付</div>
+    <h2 class="slide-title-h2 anim-fade anim-fade-1">智能提交与一键 PR</h2>
+    <p class="slide-sub anim-fade anim-fade-2">reef-commit 规范提交 → reef-pr PR 描述 + Issue 关联，审阅后一键推送。</p>
+
+    <div class="usage-grid anim-fade anim-fade-3">
+      <div class="usage-flow">
+        <h4>交付流程</h4>
+        <div class="usage-steps">
+          <div class="u-step">
+            <div class="u-num reef-n">1</div>
+            <div class="u-text">
+              <div class="u-title">智能提交信息生成</div>
+              <div class="u-desc"><code style="font-size:0.7rem">reef-commit</code> 根据当前变更内容、OpenSpec 任务定义以及仓库历史 PR 风格，生成规范的提交信息。用户说「提交代码」「commit」自动触发，无需手动编写。</div>
+            </div>
+          </div>
+          <div class="u-step">
+            <div class="u-num reef-n">2</div>
+            <div class="u-text">
+              <div class="u-title">PR 自动创建与关联</div>
+              <div class="u-desc"><code style="font-size:0.7rem">reef-pr</code> 读取 commits 和 OpenSpec 上下文，自动生成 PR 标题和完整描述（变更背景、影响范围、测试说明），自动关联 Jira Issue。</div>
+            </div>
+          </div>
+          <div class="u-step">
+            <div class="u-num reef-n">3</div>
+            <div class="u-text">
+              <div class="u-title">审阅后一键推送</div>
+              <div class="u-desc">PR 内容生成后展示给开发者审阅，可修改补充。确认无误后调用 <code style="font-size:0.7rem">gh</code> 推送，做到 AI 草拟 + 人决策。</div>
+            </div>
+          </div>
+          <div class="u-step">
+            <div class="u-num reef-n">4</div>
+            <div class="u-text">
+              <div class="u-title">可追溯的交付链路</div>
+              <div class="u-desc">从 Issue → OpenSpec tasks → commit message → PR，整个链路可追溯。PR 描述中包含 OpenSpec change 链接，reviewer 可回溯查看完整设计上下文。</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="usage-scenario">
+        <h4>💡 提交体验</h4>
+        <div class="u-story">
+          <p>完成实现后，开发者只需说"提交代码"：</p>
+          <div style="font-size:0.72rem;font-family:monospace;background:var(--bg-alt);padding:0.5rem 0.7rem;border-radius:0.5rem;margin:0.4rem 0;line-height:1.8;color:var(--text-70)">
+            <span style="color:var(--text-40)"># 开发者输入</span><br>
+            提交代码<br>
+            <br>
+            <span style="color:var(--text-40)"># reef-commit 自动生成</span><br>
+            ✍️  实现企业微信扫码登录 OAuth 流程<br>
+            <br>
+            <span style="color:var(--text-40)"># 再输入"提 PR"</span><br>
+            📤 reef-pr 自动创建 PR<br>
+            📎 关联 Jira: AUTH-42<br>
+            📝 描述：变更背景 + 影响范围 + 测试说明<br>
+            🎉 PR ready for review!
+          </div>
+          <p style="margin-top:0.5rem;padding-top:0.5rem;border-top:1px solid var(--text-10);font-size:0.75rem;color:var(--text-60)">
+            <strong>关键原则：</strong>AI 生成草稿 → 人审阅确认 → 自动推送。<br>
+            commit message 风格继承仓库历史，保持团队一致。
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section><!-- ==================== SLIDE 8: SWEEP USAGE ==================== -->
+<section class="slide" id="sweep-usage">
+  <div class="slide-inner">
+    <div class="eyebrow anim-fade"><span class="dash"></span> Sweep · 质量检测</div>
+    <h2 class="slide-title-h2 anim-fade anim-fade-1">E2E 测试如何执行</h2>
+    <p class="slide-sub anim-fade anim-fade-2">Playwright E2E 测试：初始化 → 生成测试意图 → 混合执行（原生 Playwright + AI 自愈），覆盖端到端流程。</p>
+
+    <div class="usage-grid anim-fade anim-fade-3">
+      <div class="usage-flow">
+        <h4>使用流程</h4>
+        <div class="usage-steps">
+          <div class="u-step">
+            <div class="u-num sweep-n">1</div>
+            <div class="u-text">
+              <div class="u-title">/sweep-init — 初始化项目</div>
+              <div class="u-desc">创建测试项目骨架，生成框架配置（Playwright）、目录结构、环境变量，标志项目可被后续流程使用。</div>
+            </div>
+          </div>
+          <div class="u-step">
+            <div class="u-num sweep-n">2</div>
+            <div class="u-text">
+              <div class="u-title">/sweep-plan — 生成测试意图文档</div>
+              <div class="u-desc">从 Issue 或 PRD 提取验收标准，交互式覆盖功能流程、边界条件和异常场景，输出 .flow.md 测试意图文档。</div>
+            </div>
+          </div>
+          <div class="u-step">
+            <div class="u-num sweep-n">3</div>
+            <div class="u-text">
+              <div class="u-title">/sweep-run — 混合执行</div>
+              <div class="u-desc">默认模式：预编译 .flow.spec.ts → 原生 Playwright 执行（~20x 加速）。失败时 AI 自动诊断并自愈重试。</div>
+            </div>
+          </div>
+          <div class="u-step">
+            <div class="u-num sweep-n">4</div>
+            <div class="u-text">
+              <div class="u-title">多环境 &amp; 批量</div>
+              <div class="u-desc">支持 --env 切换测试环境，--all 全量执行，--path 按模块，--browser 打开浏览器逐步骤调试。</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="usage-scenario">
+        <h4>💡 工作场景</h4>
+        <div class="u-story">
+          <p>测试工程师为新功能配置 E2E 测试。</p>
+          <p style="margin-top:0.5rem">在 Claude Code 中：</p>
+          <div style="font-size:0.72rem;font-family:monospace;background:var(--bg-alt);padding:0.5rem 0.7rem;border-radius:0.5rem;margin:0.4rem 0;line-height:1.8;color:var(--text-70)">
+            /sweep-init<br>
+            <span style="color:var(--text-40)">→ 测试项目初始化完成</span><br>
+            /sweep-plan<br>
+            <span style="color:var(--text-40)">→ 交互式生成 login.flow.md（覆盖正常登录、二维码过期、组织无权限）</span><br>
+            /sweep-run --all<br>
+            <span style="color:var(--text-40)">→ 原生 Playwright 执行 ✅（5 个 Flow 全部通过）</span>
+          </div>
+          <p style="margin-top:0.5rem;padding-top:0.5rem;border-top:1px solid var(--text-10);font-size:0.75rem;color:var(--text-40)">
+            执行模式：原生 Playwright（~20x 加速）| 混合执行（失败 AI 自愈）| 浏览器调试（headed）<br>
+            /sweep-run --all --browser 可打开浏览器逐步骤调试
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ==================== SLIDE 9: ATOLL USAGE ==================== -->
+<section class="slide" id="atoll-usage">
+  <div class="slide-inner">
+    <div class="eyebrow anim-fade"><span class="dash"></span> Atoll · 运维承载</div>
+    <h2 class="slide-title-h2 anim-fade anim-fade-1">运维能力规划</h2>
+    <p class="slide-sub anim-fade anim-fade-2">部署辅助 → 监控查询 → 故障排查 → 环境检查，AI 协同中精准定位问题。</p>
+
+    <div class="usage-grid anim-fade anim-fade-3">
+      <div class="usage-flow">
+        <h4>规划中的核心能力</h4>
+        <div class="usage-steps">
+          <div class="u-step">
+            <div class="u-num atoll-n">1</div>
+            <div class="u-text">
+              <div class="u-title">部署辅助</div>
+              <div class="u-desc">发布检查清单自动生成，依赖分析、配置校验、回滚方案一键查询。</div>
+            </div>
+          </div>
+          <div class="u-step">
+            <div class="u-num atoll-n">2</div>
+            <div class="u-text">
+              <div class="u-title">日志与监控 AI 查询</div>
+              <div class="u-desc">自然语言查询错误日志和监控指标，AI 自动关联上下文，无需切换多个控制台。</div>
+            </div>
+          </div>
+          <div class="u-step">
+            <div class="u-num atoll-n">3</div>
+            <div class="u-text">
+              <div class="u-title">故障排查引导</div>
+              <div class="u-desc">输入错误现象，AI 结合部署历史和变更记录，给出根因分析和修复建议。</div>
+            </div>
+          </div>
+          <div class="u-step">
+            <div class="u-num atoll-n">4</div>
+            <div class="u-text">
+              <div class="u-title">系统健康度看板</div>
+              <div class="u-desc">关键指标聚合展示，异常自动告警，支持深度钻取分析。</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="usage-scenario">
+        <h4>📋 规划中</h4>
+        <div class="u-planning">
+          <div class="u-plan-icon">🏗️</div>
+          <p>Atoll 目前处于规划阶段，<br>核心能力将围绕「AI 协同运维」持续构建。</p>
+          <p style="margin-top:0.3rem;font-size:0.68rem;color:var(--text-40)">预计覆盖：部署 → 监控 → 排障 → 巡检全流程</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+
+
+</div>
+
+<!-- ==================== NAVIGATION ==================== -->
+<div class="slide-nav" id="slideNav">
+  <button class="nav-btn" id="prevBtn" aria-label="上一页">←</button>
+  <div class="dots" id="dots"></div>
+  <span class="counter" id="counter">1 / 8</span>
+  <button class="nav-btn" id="nextBtn" aria-label="下一页">→</button>
+</div>
 
 <script>
-const navLinks = document.querySelectorAll('nav a:not(.logo)');
-const sections = document.querySelectorAll('section[id]');
-const observer = new IntersectionObserver(entries => {
-  entries.forEach(entry => {
-    if(entry.isIntersecting){
-      navLinks.forEach(l => l.classList.remove('active'));
-      const link = document.querySelector('nav a[href="#'+entry.target.id+'"]');
-      if(link) link.classList.add('active');
+(function(){
+  const slides = document.querySelectorAll('.slide');
+  const dotsContainer = document.getElementById('dots');
+  const counter = document.getElementById('counter');
+  const prevBtn = document.getElementById('prevBtn');
+  const nextBtn = document.getElementById('nextBtn');
+  const total = slides.length;
+  let current = 0;
+  let isAnimating = false;
+
+  // Create dots
+  for(let i=0; i<total; i++){
+    const dot = document.createElement('button');
+    dot.className = 'dot' + (i===0?' active':'');
+    dot.setAttribute('aria-label','转到第'+(i+1)+'页');
+    dot.addEventListener('click', () => goTo(i));
+    dotsContainer.appendChild(dot);
+  }
+
+  function goTo(index){
+    if(isAnimating || index === current || index < 0 || index >= total) return;
+    isAnimating = true;
+
+    const prev = current;
+    slides[prev].classList.remove('active');
+    slides[prev].classList.add('exit');
+    setTimeout(() => {
+      slides[prev].classList.remove('exit');
+    }, 500);
+
+    current = index;
+    slides[current].classList.add('active');
+    updateNav();
+    setTimeout(() => { isAnimating = false; }, 700);
+  }
+
+  function updateNav(){
+    const dots = dotsContainer.children;
+    for(let i=0; i<total; i++){
+      if(i === current){
+        dots[i].classList.add('active');
+      } else {
+        dots[i].classList.remove('active');
+      }
+    }
+    counter.textContent = (current+1) + ' / ' + total;
+    prevBtn.classList.toggle('hidden', current === 0);
+    nextBtn.classList.toggle('hidden', current === total-1);
+  }
+
+  prevBtn.addEventListener('click', () => goTo(current-1));
+  nextBtn.addEventListener('click', () => goTo(current+1));
+
+  document.addEventListener('keydown', (e) => {
+    if(e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' '){
+      e.preventDefault();
+      goTo(current+1);
+    } else if(e.key === 'ArrowLeft' || e.key === 'ArrowUp'){
+      e.preventDefault();
+      goTo(current-1);
+    } else if(e.key === 'Home'){
+      e.preventDefault();
+      goTo(0);
+    } else if(e.key === 'End'){
+      e.preventDefault();
+      goTo(total-1);
     }
   });
-}, {threshold:0.3, rootMargin:'-80px 0px 0px 0px'});
-sections.forEach(s => observer.observe(s));
 
-const hamburger = document.getElementById('hamburger');
-const nav = document.getElementById('navbar');
-hamburger.addEventListener('click', () => {
-  nav.classList.toggle('open');
-  if(nav.classList.contains('open')){
-    hamburger.innerHTML = '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><line x1="4" y1="4" x2="16" y2="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="16" y1="4" x2="4" y2="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
-  } else {
-    hamburger.innerHTML = '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><line x1="3" y1="6" x2="17" y2="6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="3" y1="10" x2="17" y2="10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="3" y1="14" x2="17" y2="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
-  }
-});
-document.querySelectorAll('nav a').forEach(a => a.addEventListener('click', () => {
-  nav.classList.remove('open');
-  hamburger.innerHTML = '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><line x1="3" y1="6" x2="17" y2="6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="3" y1="10" x2="17" y2="10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="3" y1="14" x2="17" y2="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
-}));
-
-const revealObserver = new IntersectionObserver(entries => {
-  entries.forEach(entry => {
-    if(entry.isIntersecting){
-      entry.target.classList.add('visible');
-      revealObserver.unobserve(entry.target);
+  // Touch/swipe support
+  let touchStartX = 0;
+  let touchStartY = 0;
+  document.addEventListener('touchstart', (e) => {
+    touchStartX = e.changedTouches[0].screenX;
+    touchStartY = e.changedTouches[0].screenY;
+  }, {passive:true});
+  document.addEventListener('touchend', (e) => {
+    const dx = e.changedTouches[0].screenX - touchStartX;
+    const dy = e.changedTouches[0].screenY - touchStartY;
+    if(Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 50){
+      if(dx < 0) goTo(current+1);
+      else goTo(current-1);
+    } else if(Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 50){
+      if(dy < 0) goTo(current+1);
+      else goTo(current-1);
     }
-  });
-}, {threshold:0.1, rootMargin:'0px 0px -60px 0px'});
-document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+  }, {passive:true});
 
-window.addEventListener('scroll', () => {
-  if(window.scrollY > 100){
-    nav.style.background = 'rgba(255,255,255,0.9)';
-    nav.style.boxShadow = '0 4px 28px rgba(28,25,23,0.1)';
-  } else {
-    nav.style.background = 'rgba(255,255,255,0.75)';
-    nav.style.boxShadow = '0 4px 24px rgba(28,25,23,0.06)';
-  }
-}, {passive:true});
+  // 初始化计数器
+  updateNav();
+})();
 </script>
 </body>
 </html>
