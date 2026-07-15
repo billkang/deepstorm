@@ -31,6 +31,7 @@ color: blue
 - `catch` 块正确处理异常（不吞没）
 - `@Transactional` 内调用外部服务 / RPC（事务边界问题）
 - 方法嵌套深度 > 4 层（可读性）
+- Entity / DTO / Repository / Service / Controller 类、字段或 public 方法缺少 Javadoc 或 `@Operation` 注释
 - Entity 字段变更缺少对应的 Liquibase changelog
 - REST 路径不统一（复数名词 `/api/v1/users`、路径变量命名一致）
 - `@Tool` 注解方法缺少 `description` 描述（影响模型选择该工具的准确性）

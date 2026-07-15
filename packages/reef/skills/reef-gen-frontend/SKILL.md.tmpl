@@ -62,6 +62,7 @@ git diff "$FORK_POINT"..HEAD --diff-filter=M --name-only
 {{#if reef.frontend.framework.sourcePath}}
 阅读本技能目录下的 `steps.md` 了解当前框架的编码步骤顺序和核心约束。编写过程中逐单元对照 `reef:reef-style-frontend` 中对应章节检查。
 
+**注释原则**：关键组件、自定义 Hooks / Composables / Service 和非直观逻辑添加必要的注释说明用途，简单模板代码可不加。
 **注释语言**：代码注释统一使用中文，专有名词/技术术语（如 Signal、Pipe、Component、Service、httpResource 等）保留英文。
 {{/if}}
 

@@ -84,6 +84,14 @@ readonly form = form(signal({ name: '', email: '' }), (path) => {
 - 控制流语句必须使用大括号，禁止无大括号的早期返回
 - 代码折行规则（90 列限制）详见 `examples/code-wrapping.md`
 
+## 注释规则
+
+| 文件类型 | 注释要求 |
+|---------|---------|
+| **类型定义** | 复杂类型加行内注释说明字段含义 |
+| **Service** | 简要说明每个方法的功能和返回类型 |
+| **Component** | 关键组件加注释说明用途；复杂逻辑行内注释 |
+
 ## 前端实体类型
 
 实体接口镜像后端实体层次，定义在 `shared/base.ts`：`ImmutableEntity` → `Entity` → `Auditable<T>` / `ImmutableAuditable<T>`。完整定义、分页响应、Discriminated Union 模式见 `examples/entity-types.md`。

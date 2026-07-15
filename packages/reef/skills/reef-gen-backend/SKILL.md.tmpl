@@ -41,6 +41,7 @@ git diff "$FORK_POINT"..HEAD --diff-filter=M --name-only
 {{#if reef.backend.language.sourcePath}}
 阅读本技能目录下的 `steps.md` 了解当前技术栈的编码步骤顺序和规范。编写过程中逐单元对照 `reef:reef-style-backend` 中对应章节检查。
 
+**注释要求**：所有生成的后端代码必须包含有意义的注释（Javadoc / Docstring / 行内注释），说明代码的功能、参数含义和业务逻辑。缺少必要注释的代码视为未完成，不得提交。
 **注释语言**：代码注释统一使用中文，专有名词/技术术语（如 REST、DTO、HTTP、JPA 等）保留英文。
 {{/if}}
 

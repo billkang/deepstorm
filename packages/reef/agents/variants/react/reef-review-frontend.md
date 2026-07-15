@@ -34,6 +34,7 @@ color: green
 - 变更触及了 `// FIXME` / `// HACK` 标注的已知问题区域但未修复
 - 同一文件同一组件区域在 git 历史中被反复修改（>=3 次），变更需特别关注
 - 变更破坏了组件附近 `// accessible` / `// aria-hidden` 注释标注的交互行为
+- 关键组件、自定义 Hook 或复杂类型定义缺少必要的注释说明
 
 ### 🟢 建议（Approve with Comments）
 - 错误消息用 `as const` 集中定义

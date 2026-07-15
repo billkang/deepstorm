@@ -36,6 +36,7 @@ color: blue
 - 新代码 / 修改代码有对应 pytest 测试
 - `catch` 块正确处理异常（不吞没）
 - 方法嵌套深度 > 4 层（可读性）
+- Model / Schema / Service / Router / Migration 缺少 docstring、`Field(description=...)` 或端点注释
 - 缺少 Alembic migration（Model 变更后）
 - REST 路径不统一（复数名词 `/api/v1/users`、kebab-case、路径变量命名一致）
 - Pydantic Schema 未做 Request/Response 分离（禁止共用同一个 Schema）
