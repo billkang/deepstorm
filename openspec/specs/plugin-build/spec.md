@@ -53,9 +53,9 @@
 - **WHEN** 系统完成构建
 - **THEN** 产出物 MUST 包含 `settings.json`，内容为 `{"enabledMcpjsonServers": [...]}`，列出用户选中的 MCP 服务名称
 
-#### Scenario: 产出物包含 .env.example
+#### Scenario: 产出物包含 .env
 - **WHEN** 用户选择了任何 MCP 服务
-- **THEN** 产出物 MUST 包含 `.env.example`，包含所选 MCP 服务所需的环境变量模板
+- **THEN** 产出物 MUST 包含 `.env`，包含所选 MCP 服务所需的环境变量模板
 
 #### Scenario: 产出物包含 README.md
 - **WHEN** 系统完成构建

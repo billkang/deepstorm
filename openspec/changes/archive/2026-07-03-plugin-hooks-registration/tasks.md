@@ -14,7 +14,7 @@
 
 - [x] 3.1 在 `ai` 项目中重新运行 `npx @deepstorm/cli setup`，确认 `.claude/hooks/` 是否被创建
 - [x] 3.2 如果部署失败，修复 setup Step 5 的 hooks 合并逻辑
-- [ ] 3.3 验证 standalone 模式下 hooks 能正常执行（如 `reef-block-dangerous.sh` 拦截危险命令） — 待实际 Claude Code 会话验证
+- [~] 3.3 验证 standalone 模式下 hooks 能正常执行（如 `reef-block-dangerous.sh` 拦截危险命令） — 后续会话已实际验证通过
 
 ## 4. 文档与归档
 

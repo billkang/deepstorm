@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # DeepStorm Playground — 一键全量初始化
-# 构建 CLI → 依次安装各套件 → 生成 .env.example → 安装 app 依赖
+# 构建 CLI → 依次安装各套件 → 生成 .env → 安装 app 依赖
 # 用法: bash scripts/setup-all.sh
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -33,7 +33,6 @@ fi
 # ─── 清理上一次生成的配置 ──────────────────────
 rm -rf "$PLAYGROUND_DIR/.claude" "$PLAYGROUND_DIR/.env" "$PLAYGROUND_DIR/.mcp.json" \
   "$PLAYGROUND_DIR/node_modules" "$PLAYGROUND_DIR/tide-data" \
-  "$PLAYGROUND_DIR/.env.example" \
   "$PLAYGROUND_DIR/e2e/.env" "$PLAYGROUND_DIR/e2e/.mcp.json" \
   "$PLAYGROUND_DIR/e2e/.sweep-init" "$PLAYGROUND_DIR/e2e/node_modules"
 
@@ -58,19 +57,18 @@ echo ""
 echo "✅ 各套件安装完成"
 echo ""
 
-# ─── 重新生成根路径 .env.example（不含 playwright） ──
-echo "📄 [3/4] 生成根路径 .env.example..."
+# ─── 重新生成根路径 .env（不含 playwright） ──
+echo "📄 [3/4] 更新根路径 .env..."
 ENV_EXAMPLES_DIR="$CLI_DIR/env-examples"
-# 清空已有 .env.example（sweep 可能写过 playwright 内容）
-rm -f "$PLAYGROUND_DIR/.env.example"
 for tool in jira figma github context7; do
   example_file="$ENV_EXAMPLES_DIR/$tool.env-example"
   if [ -f "$example_file" ]; then
-    [ -s "$PLAYGROUND_DIR/.env.example" ] && printf "\n" >> "$PLAYGROUND_DIR/.env.example"
-    cat "$example_file" >> "$PLAYGROUND_DIR/.env.example"
+    grep -E '^[A-Z_]\+=' "$example_file" >> "$PLAYGROUND_DIR/.env" 2>/dev/null || true
   fi
 done
-echo "✅ 根路径 .env.example 已生成（jira, figma, github, context7）"
+grep -q '^# DEEPSTORM_PLAYGROUND' "$PLAYGROUND_DIR/.env" 2>/dev/null || \
+  printf "\n# DEEPSTORM_PLAYGROUND — auto-generated from env-examples/\n" >> "$PLAYGROUND_DIR/.env"
+echo "✅ 根路径 .env 已更新（jira, figma, github, context7）"
 echo ""
 
 # ─── 安装 app 依赖 ─────────────────────────────

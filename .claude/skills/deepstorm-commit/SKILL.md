@@ -161,7 +161,7 @@ echo "$CHANGED"
    - 修改了 `packages/*/skills/` / `agents/` / `hooks/` → README.md（根 + 对应 package）组件列表、CLAUDE.md
    - 修改了 CLI 命令（`packages/cli/src/commands/`）→ 根 README.md CLI 命令表
    - 修改了 MCP 服务器配置（`packages/cli/mcp/`）→ 根 README.md MCP 章节
-   - 修改了配置格式（`config-schema.json`、`.env.example`、`wizard.json`）→ 项目结构/配置文档
+   - 修改了配置格式（`config-schema.json`、`wizard.json`）→ 项目结构/配置文档
    - 修改了工作流程或约定（skills/agents/hooks 的行为逻辑）→ CLAUDE.md 关键约定
 
 2. **提醒方式：** 发现未同步的文档时，**提示用户**（非阻断）：「本次变更涉及 XXX，相关文档可能需要同步更新：- path/to/doc.md」。用户可立即更新或跳过。
