@@ -6,6 +6,7 @@ import { RegistryReader } from '../engine/registry'
 import { deepMerge } from '../utils/json'
 import { writeDeepStormConfig, readDeepStormConfig } from '../merger/settings'
 import { initContextMap } from './init'
+import { step9AutoInstallDeps } from '../utils/auto-install'
 import { mergeMcpServers } from '../merger/mcp'
 import { mergeHooks } from '../merger/hooks'
 import { getMcpEnvStubs, collectEnvSections } from '../wizard/mcp-env'
@@ -226,6 +227,9 @@ async function runSetup(
     mcpTools: selectedMcpTools.length > 0 ? selectedMcpTools : undefined,
     mcpEnvStubs: mcpEnvStubs.length > 0 ? mcpEnvStubs : undefined,
   })
+
+  // Step 9: 自动安装各套件前置依赖（bmad-method、grill-me、Playwright 等）
+  step9AutoInstallDeps(tools, config, targetDir)
 }
 
 /**
