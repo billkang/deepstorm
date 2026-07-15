@@ -32,7 +32,7 @@ Playground 位于 `playground/`，是各套件的演示和集成测试环境。
 ```bash
 pnpm playground:setup
 ```
-等价于：构建 CLI → 安装各套件 → 生成 .env.example → 安装 app 依赖
+等价于：构建 CLI → 安装各套件 → 生成 .env → 安装 app 依赖
 
 ### 启动 App
 ```bash
@@ -57,7 +57,7 @@ pnpm e2e:report
 ### 环境重置（从零开始）
 ```bash
 cd playground
-rm -rf .claude .env .mcp.json node_modules tide-data .env.example
+rm -rf .claude .env .mcp.json node_modules tide-data
 rm -rf e2e/.env e2e/.mcp.json e2e/.sweep-init e2e/node_modules
 pnpm setup:all
 ```
@@ -74,6 +74,6 @@ playground/
 │   ├── setup-all.sh  # 全量初始化
 │   ├── setup-*.sh    # 各套件独立安装
 │   └── start-dev.sh  # 开发服务器启动
-├── .env / .env.example / .mcp.json
+├── .env / .mcp.json
 └── tide-data/
 ```

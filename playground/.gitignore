@@ -1,7 +1,6 @@
 # 运行 setup 后生成的配置文件，保留在本地供查看
 .claude/
 .env
-.env.example
 .mcp.json
 
 node_modules
