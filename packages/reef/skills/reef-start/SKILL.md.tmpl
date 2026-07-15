@@ -76,30 +76,7 @@ flowchart TD
 
 ### 运行时 MCP 服务发现
 
-进入 Stage 1 前，AI SHALL 读取 `.claude/settings.json` → `deepstorm.mcpCapabilities`，确定当前可用的 provider。
-
-能力映射结构说明：
-
-```
-{
-  "issue_tracker": {
-    "available": true/false,        // 是否有可用的 Issue 跟踪服务
-    "providers": [                  // 可用的 MCP 服务列表
-      { "id": "jira", "label": "Jira" }
-    ]
-  },
-  "knowledge_base": {
-    "available": true/false,        // 是否有可用的知识库服务
-    "providers": [...]
-  },
-  "design_tools": {
-    "available": true/false,        // 是否有可用的设计工具服务
-    "providers": [...]
-  }
-}
-```
-
-每个 provider 的 MCP 操作指南按读写方向拆分，位于 `.claude/skills/deepstorm-mcp-{service}-{op}/SKILL.md`。AI 根据当前步骤所需的操作类型读取对应指南（读取 Issue → `deepstorm-mcp-jira-read`、读取文档 → `deepstorm-mcp-feishu-wiki-read`、读取设计稿 → `deepstorm-mcp-figma-read`）。AI 调用前可读取该文件了解工具使用方式。
+进入 Stage 1 前，AI SHALL 读取 `.claude/settings.json` → `deepstorm.mcpCapabilities`，确定当前可用的 provider。每个 provider 的 MCP 操作指南按读写方向拆分，位于 `.claude/skills/deepstorm-mcp-{service}-{op}/SKILL.md`。AI 根据当前步骤所需的操作类型读取对应指南（读取 Issue → `deepstorm-mcp-jira-read`、读取文档 → `deepstorm-mcp-feishu-wiki-read`、读取设计稿 → `deepstorm-mcp-figma-read`）。AI 调用前可读取该文件了解工具使用方式。
 
 如果 `deepstorm.mcpCapabilities` 读取失败（文件不存在/格式错误），AI SHALL 降级为"无 MCP 服务安装"，按手动模式运行各子步骤。
 
@@ -184,6 +161,17 @@ PRD 上下文获取的详细操作方式见 `.claude/skills/deepstorm-mcp-feishu
 
 **降级处理：** `design_tools.available === false` 时，告知用户"未检测到设计工具服务，将不生成设计稿摘要"。
 
+#### 1.6 更新上下文地图
+
+完成需求获取（Issue 详情、PRD、设计稿）后，AI SHALL 对比当前 `.deepstorm/context.md` 与阶段一采集的项目信息，仅在存在实质性变化时执行写入：
+
+- **技术栈更新**：确认 Issue 中提到的框架、工具、版本是否与 context.md 一致
+- **关键模块更新**：如果 Issue 涉及新模块或模块边界变化，更新模块表格
+- **历史踩坑**：如果发现新的重要故障或架构决策，记录概要 + 引用路径
+- **外部引用**：记录发现的外部 API 文档、设计系统或业务规范
+
+输出更新摘要供用户知晓。如无实质变化，跳过更新，避免无意义的 git 变动。
+
 ### 🅰️ Path A — 阶段二：创建分支
 
 分支命名流程：
@@ -253,6 +241,17 @@ _bmad-output/brainstorming/brainstorming-session-{date}-{seq}.md
 - **后续步骤**：下一阶段需要处理的要点
 
 > **注意**：Path B 不在此处创建 git 分支。分支创建推迟到 superpowers 门禁通过后、TDD 实现开始前（见阶段四入口）。
+
+#### B1.5 更新上下文地图
+
+产出 brainstorming 文件后，AI SHALL 检查 `.deepstorm/context.md` 是否存在，如不存在则创建模板：
+
+```bash
+# 如果 context.md 不存在，创建模板
+deepstorm init --name "$(basename $(pwd))" 2>/dev/null || true
+```
+
+如果 context.md 已存在，对比当前讨论中采集的项目信息（技术栈、关键模块、外部引用），有实质性变化时更新并输出摘要。
 
 ### 🅰️🅱️ 阶段三（共享）：openspec SDD 文档生成
 
@@ -396,56 +395,58 @@ openspec instructions tasks --change "$CHANGE" --json
 >   - [纪律 2]
 > ```
 
-### Rigid 技能声明模板（加载后立即执行）
+### 🧭 风险路由：选择执行模式
 
-加载完所有 superpowers 后，按以下格式向用户声明：
+在加载 superpowers 并声明 rigid 纪律**之前**，先执行风险路由判断，确定当前变更使用 **plan mode**（直接实现 + 后置验证）还是 **tdd mode**（完整 RED→GREEN→REFACTOR）。
 
-```
-## ✅ Superpowers 门闸通过
+#### 判断流程
 
-### 已加载的技能
+1. **分析变更特征** — 审视 tasks.md 中的变更范围
+   - 变更涉及哪些文件类型（代码 / 配置 / 文档）
+   - 是否涉及运行时行为改动
+   - 是否存在复杂的边界条件或异常路径
+   - 现有测试覆盖是否充分
 
-| 技能 | 类型 | 对本变更的要求 |
-|------|------|---------------|
-| test-driven-development | 🔴 **Rigid** | 每个代码行为改动必须先写测试、看失败、再写实现 |
+2. **查阅风险路由卡** — 以 `references/risk-routing-card.md` 为判断依据
+   - 根据变更类型在风险因子对照表中查找推荐模式
+   - 检查是否满足 plan mode 的四项决定性特征
+   - 如涉及多种变更类型，以最高风险特征为准
 
-### Rigid 纪律确认
+3. **输出风险判断表** — 按以下模板输出供用户确认：
 
-进入实现前，以下 rigid 纪律将覆盖默认实现流程：
-- `test-driven-development` 的铁律：**NO PRODUCTION CODE WITHOUT A FAILING TEST FIRST**
-- 配置文件、SKILL.md 模板、markdown 文件豁免 TDD
+   ```
+   ### 🧭 风险路由判断
 
-用户确认后，才能进入阶段四。
-```
+   | 变更特征 | 判定 |
+   |---------|------|
+   | 变更类型 | {变更类型描述} |
+   | 涉及模块 | {模块列表} |
+   | 运行时代码 | {✅ 是 / ❌ 否} |
+   | 边界条件 | {有 / 无 / 描述} |
+   | 推荐模式 | {🟢 **plan mode** / 🔴 **tdd mode**} |
+
+   **理由：** {简要说明推荐依据}
+   **请确认是否按 {plan/tdd} mode 进入阶段四实现？**
+   ```
+
+4. **等待用户确认** — 用户确认前不得进入阶段四
+
+#### Mode 切换规则
+
+- **plan → tdd 允许升级**：实现中发现复杂度超预期时，主动暂停并建议升级
+- **tdd → plan 禁止降级**：一旦判定为 tdd mode，不得以降级为由跳过测试
+
+### 声明模板（按已确定的 mode 输出）
+
+加载完所有 superpowers、完成风险路由判断后，按 mode 选择对应模板输出：
+
+执行[门闸声明]时，SEE: references/superpowers-gate.md
+  - 声明模板 → 见该文件"Plan Mode / TDD Mode 声明模板"
+  - 安全检查清单 → 见该文件"安全检查清单"
+  - Red Flags → 见该文件"Red Flags"
+AI SHALL 在完成风险路由判断、输出 mode 声明前读取该文件。
 
 **声明后等待用户确认。用户未确认前不得进入实现阶段。**
-
-### 安全检查清单（增强版）
-
-- [ ] proposal.md 已生成并通过 spec-hardener
-- [ ] specs/ 已生成并通过 spec-hardener
-- [ ] design.md 已生成
-- [ ] tasks.md 已生成
-- [ ] 📝 **实现计划已生成**（superpowers:writing-plans 完成，存于 `docs/superpowers/plans/`）
-- [ ] 用户已审阅并批准所有 SDD 文档及实现计划
-- [ ] 🔍 **Superpowers 技能已加载**（Skill 工具已调用）
-- [ ] 🚨 **Rigid 纪律已向用户声明并获得确认**
-- [ ] Path A 检查项：Git 分支已从 main 岔出
-- [ ] Path B 检查项：OpenSpec change 已创建，brainstorming 文件已产出
-
-### 🚩 Red Flags — 你正在绕过 Superpowers 检查
-
-> 以下每一个想法都是一个危险信号。**任何一个出现 → 立即停止 → 回到本步骤执行 superpowers 检查。**
-
-| 想法 | 现实 |
-|------|------|
-| "tasks + plan 都完成了，直接实现吧" | ❌ 必须先走完 3.8 语言规范 → 3.9 用户确认 → Superpowers 门禁。plan 生成 ≠ 可以跳过后续步骤。 |
-| "tasks 完成了，直接进入实现吧" | ❌ 必须先检查 superpowers。顺序不可颠倒。 |
-| "这个变更很简单，不需要检查" | 只要有 1% 的可能性适用，就**必须**检查。 |
-| "我知道 TDD 是什么，不用加载技能" | 技能会更新。加载当前版本才有效。 |
-| "先搞快点，后面再补测试" | 补 = 不补。不可协商的纪律。 |
-| "子代理一次性写代码效率高，TDD 太慢" | TDD 铁律优先于效率。质量不可妥协。 |
-| "已经改了代码，回头补测试也一样" | 测试-after 和 TDD 不等价。测试-after 验证的是"代码做了什么"，不是"代码应该做什么"。 |
 
 ---
 
@@ -453,99 +454,74 @@ openspec instructions tasks --change "$CHANGE" --json
 
 ```mermaid
 flowchart TD
-    CHK["⛔ 门闸通过"] --> BRANCH{"Path B 且<br/>分支未创建？"}
-    BRANCH -->|"是（Path B）"| BR["创建 git 分支<br/>基于 change 名"]
-    BRANCH -->|"否（Path A）"| NEXT{"还有未完成的 task ？"}
-    BR --> NEXT
-    NEXT -->|"有"| J{"涉及代码<br/>行为改动？"}
-    J -->|"是"| RED["🔴 RED<br/>编写测试<br/>预期失败"]
-    J -->|"否"| TT{"Task 具体类型？"}
-    TT -->|"纯配置 / markdown /<br>SKILL.md / Shell"| DIR["直接实现"]
-    TT -->|"测试框架<br>基础设施搭建"| FRAME["先创建框架<br>后续代码用 TDD"]
-    RED --> GREEN["🟢 GREEN<br/>写最小实现<br/>通过测试"]
-    GREEN --> REFACTOR["🔵 REFACTOR<br/>重构优化<br/>保持测试通过"]
-    REFACTOR --> MARK["✅ 标记完成"]
-    DIR --> MARK
-    FRAME --> MARK
-    MARK --> NEXT
-    NEXT -->|"无"| CA["4.4 code-audit"]
-    CA -->|"通过"| SYNC["openspec sync --change"]
+    CHK["⛔ 门闸通过"] --> MODE{"风险路由<br/>选择执行模式"}
+    MODE -->|"🟢 Plan Mode"| PLAN["plan mode 分支"]
+    MODE -->|"🔴 TDD Mode"| TDD["tdd mode 分支"]
+    MODE -->|"不确定"| CONFIRM["由用户确认模式"]
+    CONFIRM --> PLAN
+    CONFIRM --> TDD
+
+    subgraph PLAN["🟢 Plan Mode 路径"]
+        PLAN_ENTRY["plan mode 入口"] --> P_BRANCH{"Path B 且<br/>分支未创建？"}
+        P_BRANCH -->|"是"| P_BR["创建 git 分支"]
+        P_BRANCH -->|"否"| P_NEXT{"还有未完成的 task ？"}
+        P_BR --> P_NEXT
+        P_NEXT -->|"有"| P_DIR["直接实现"]
+        P_DIR --> P_VERIFY["后置验证<br/>build → lint → test"]
+        P_VERIFY -->|"通过"| P_MARK["✅ 标记完成"]
+        P_VERIFY -->|"失败"| P_FIX["修复后重验"]
+        P_FIX --> P_VERIFY
+        P_MARK --> P_NEXT
+        P_NEXT -->|"无"| OUT["→ code-audit"]
+    end
+
+    subgraph TDD["🔴 TDD Mode 路径"]
+        T_ENTRY["tdd mode 入口"] --> T_BRANCH{"Path B 且<br/>分支未创建？"}
+        T_BRANCH -->|"是"| T_BR["创建 git 分支"]
+        T_BRANCH -->|"否"| T_NEXT{"还有未完成的 task ？"}
+        T_BR --> T_NEXT
+        T_NEXT -->|"有"| T_J{"涉及代码<br/>行为改动？"}
+        T_J -->|"是"| RED["🔴 RED<br/>编写测试<br/>预期失败"]
+        T_J -->|"否"| TT{"Task 具体类型？"}
+        TT -->|"纯配置 / markdown /<br>SKILL.md / Shell"| T_DIR["直接实现"]
+        TT -->|"测试框架<br>基础设施搭建"| FRAME["先创建框架<br>后续代码用 TDD"]
+        RED --> GREEN["🟢 GREEN<br/>写最小实现<br/>通过测试"]
+        GREEN --> REFACTOR["🔵 REFACTOR<br/>重构优化<br/>保持测试通过"]
+        REFACTOR --> T_VERIFY["后置验证<br/>build → lint → test"]
+        T_DIR --> T_VERIFY
+        FRAME --> T_VERIFY
+        T_VERIFY -->|"通过"| T_MARK["✅ 标记完成"]
+        T_VERIFY -->|"失败"| T_FIX["修复后重验"]
+        T_FIX --> T_VERIFY
+        T_MARK --> T_NEXT
+        T_NEXT -->|"无"| T_OUT["→ code-audit"]
+    end
+
+    OUT --> CA["4.4 code-audit"]
+    T_OUT --> CA
+    CA -->|"通过"| VR["4.4 生成验证报告"]
     CA -->|"失败"| REPAIR["修复后重跑"]
     REPAIR --> CA
+    VR -->|"确认"| SYNC["openspec sync --change"]
     SYNC --> END["4.5 分支结束处理<br/>提交 / PR / 保留 / 丢弃"]
 ```
 
 ### 核心原则
 
-- **实现阶段必须遵循 TDD（Red → Green → Refactor）纪律**
-- 每个涉及代码行为改动的 task，第一步永远是写测试（RED），不是看实现细节
-- 配置文件、SKILL.md 模板、markdown 文件豁免 TDD
+- **实现阶段根据风险路由确定的 mode 执行对应纪律**
+- **TDD Mode 下**：遵循 RED → GREEN → REFACTOR 循环，每个涉及代码行为改动的 task 第一步永远是写测试（RED）
+- **Plan Mode 下**：先直接实现，再后置验证（build → lint → test），通过后才标完成
+- **Plan Mode 中复杂度超预期时**：主动暂停并建议升级为 tdd mode（plan→tdd 升级允许，tdd→plan 禁止降级）
+- 配置文件、SKILL.md 模板、markdown 文件豁免 TDD（在 plan mode 下豁免后置验证，但建议检查）
 
-#### 4.1 准备工作
-
-**Path A：**
-
-```bash
-CHANGE=$(git branch --show-current)
-PLAN_FILE="docs/superpowers/plans/$(date +%Y-%m-%d)-$CHANGE.md"
-```
-
-**Path B：** 超powers 门禁通过后，**先创建 git 分支**，再进入 TDD 循环：
-
-```bash
-# 获取 change 名
-CHANGE=$(ls openspec/changes/ | sort -r | head -1)
-# 创建分支
-git stash push -m "reef-start-auto-stash" 2>/dev/null || true
-git checkout main && git fetch origin main && git reset --hard origin/main
-git checkout -b "$CHANGE"
-git stash pop 2>/dev/null || true
-# 记录计划文件路径
-PLAN_FILE="docs/superpowers/plans/$(date +%Y-%m-%d)-$CHANGE.md"
-```
-
-如果 `$PLAN_FILE` 存在，读取实现计划，按 plan 中的 task 分解顺序逐 task 实现。计划中的每个 task 已包含完整的文件路径、测试代码、实现代码和提交步骤。
-
-#### 4.2 逐 task TDD 实现
-
-**🔴 RED — 先写测试**
-- 根据 spec 的 Scenario 编写单元测试
-- 运行测试，确认失败（红）
-- 如果测试意外通过了，说明测试写的太弱，需改进
-- **不写实现代码**
-
-**🟢 GREEN — 最小实现**
-- 只写让当前测试通过的最小代码量
-- 不提前实现未测试的功能
-- 运行测试，确认全绿
-- 如果感觉"这段代码还没写完"，那是正常的 — 下一个 task 会覆盖
-
-**🔵 REFACTOR — 保持测试通过的前提下重构**
-- 清理重复代码、提取函数、重命名
-- 保持测试运行通过
-- 不改变行为
-
-**完成一个 task 后：**
-1. 标记 tasks.md 中对应项为 `- [x]`
-2. 如 `$PLAN_FILE` 存在，同步标记 plan 中对应步骤为 `- [x]`
-3. 运行完整测试套件确认没有回归
-4. 进入下一个 task（参照 plan 中的步骤顺序）
-5. 如遇到阻塞或模糊需求，暂停并询问用户
-
-#### 4.3 全部任务完成后的 code-audit
-
-加载 `reef:reef-review` skill。检测变更范围，并行派发 agent。全部通过后执行 `openspec sync --change "$CHANGE"`。
-
-#### 4.4 分支结束处理
-
-询问用户：**创建提交 / 创建 PR / 保留分支 / 丢弃分支**
-
-| 操作 | 说明 |
-|------|------|
-| 创建提交 | 中文 message + Issue URL（Path A 有则加，Path B 可选） + PRD 链接（如有） |
-| 创建 PR | `git push -u origin "$CHANGE"` → `gh pr create` |
-| 保留分支 | 报告分支名和变更位置 |
-| 丢弃分支 | 用户确认后删除 |
+执行阶段四时，SEE: references/stage-4-implementation.md
+  - 4.1 准备工作 → 见该文件"4.1 准备工作"
+  - 4.2 逐 task 实现 → 见该文件"4.2 逐 task 实现"
+  - 验证命令表 → 见该文件"框架自适应验证命令"
+  - 4.3 code-audit → 见该文件"4.3 全部任务完成后的 code-audit"
+  - 4.4 验证报告 → 见该文件"4.4 生成验证报告"
+  - 4.5 分支结束 → 见该文件"4.5 分支结束处理"
+AI SHALL 在进入阶段四前读取 references/stage-4-implementation.md 了解实现细节。
 
 ## 关键原则
 
