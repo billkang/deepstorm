@@ -3,7 +3,7 @@ import * as fs from 'node:fs'
 import * as path from 'node:path'
 import os from 'node:os'
 import { RegistryReader } from '../../engine/registry'
-import { installMcpSkills, shouldInstallGlobalHooks, writeEnabledMcpJsonServers, mergeSettingsMcpServers, mergeSandboxDisabled, copyFragmentsForSkill, collectFragmentsFromQuestion, copyReferencesForSkill, generateEnvExample } from '../setup'
+import { installMcpSkills, shouldInstallGlobalHooks, writeEnabledMcpJsonServers, mergeSettingsMcpServers, mergeSandboxDisabled, copyFragmentsForSkill, collectFragmentsFromQuestion, copyReferencesForSkill } from '../setup'
 import type { Registry } from '../../types/registry'
 
 describe('installMcpSkills', () => {
@@ -636,101 +636,6 @@ describe('copyReferencesForSkill', () => {
     copyReferencesForSkill(srcDir, targetDir)
 
     expect(fs.existsSync(path.join(targetDir, 'references'))).toBe(false)
-  })
-})
-
-describe('generateEnvExample', () => {
-  let tmpDir: string
-
-  beforeEach(() => {
-    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'env-example-test-'))
-  })
-
-  afterEach(() => {
-    fs.rmSync(tmpDir, { recursive: true, force: true })
-  })
-
-  it('generates .env.example from selected tool env-example files', () => {
-    // Create source env-example files
-    const examplesDir = path.join(tmpDir, 'env-examples')
-    fs.mkdirSync(examplesDir, { recursive: true })
-    fs.writeFileSync(
-      path.join(examplesDir, 'playwright.env-example'),
-      '# Playwright MCP — 连接地址已硬编码在 .mcp.json 中\n',
-      'utf-8',
-    )
-    fs.writeFileSync(
-      path.join(examplesDir, 'jira.env-example'),
-      '# Jira MCP\nJIRA_API_KEY=your_token_here\n',
-      'utf-8',
-    )
-
-    generateEnvExample(['playwright', 'jira'], examplesDir, tmpDir)
-
-    const envExamplePath = path.join(tmpDir, '.env.example')
-    expect(fs.existsSync(envExamplePath)).toBe(true)
-
-    const content = fs.readFileSync(envExamplePath, 'utf-8')
-    expect(content).toContain('Playwright MCP')
-    expect(content).toContain('JIRA_API_KEY=your_token_here')
-  })
-
-  it('preserves raw template content (comments, whitespace, order)', () => {
-    const examplesDir = path.join(tmpDir, 'env-examples')
-    fs.mkdirSync(examplesDir, { recursive: true })
-    fs.writeFileSync(
-      path.join(examplesDir, 'playwright.env-example'),
-      '# ════════════\n# Playwright\n# ════════════\n# 连接地址已硬编码在 .mcp.json 中\n',
-      'utf-8',
-    )
-
-    generateEnvExample(['playwright'], examplesDir, tmpDir)
-
-    const content = fs.readFileSync(path.join(tmpDir, '.env.example'), 'utf-8')
-    // Comments preserved
-    expect(content).toContain('# ════════════')
-    expect(content).toContain('# Playwright')
-    // Comment content preserved
-    expect(content).toContain('硬编码')
-  })
-
-  it('skips tools that have no matching env-example file', () => {
-    const examplesDir = path.join(tmpDir, 'env-examples')
-    fs.mkdirSync(examplesDir, { recursive: true })
-    fs.writeFileSync(
-      path.join(examplesDir, 'playwright.env-example'),
-      '# Playwright MCP — 连接地址已硬编码在 .mcp.json 中\n',
-      'utf-8',
-    )
-
-    // 'nonexistent' has no file — should be silently skipped
-    generateEnvExample(['playwright', 'nonexistent'], examplesDir, tmpDir)
-
-    const content = fs.readFileSync(path.join(tmpDir, '.env.example'), 'utf-8')
-    expect(content).toContain('Playwright MCP')
-  })
-
-  it('does nothing when no env-example files exist', () => {
-    const examplesDir = path.join(tmpDir, 'empty-examples')
-    fs.mkdirSync(examplesDir, { recursive: true })
-
-    generateEnvExample(['playwright'], examplesDir, tmpDir)
-
-    expect(fs.existsSync(path.join(tmpDir, '.env.example'))).toBe(false)
-  })
-
-  it('does nothing when selectedMcpTools is empty', () => {
-    const examplesDir = path.join(tmpDir, 'env-examples')
-    fs.mkdirSync(examplesDir, { recursive: true })
-    fs.writeFileSync(
-      path.join(examplesDir, 'playwright.env-example'),
-      '# Playwright MCP — 连接地址已硬编码在 .mcp.json 中\n',
-      'utf-8',
-    )
-
-    generateEnvExample([], examplesDir, tmpDir)
-
-    expect(fs.existsSync(path.join(tmpDir, '.env.example'))).toBe(false)
   })
 })
 

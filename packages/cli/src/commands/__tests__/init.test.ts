@@ -112,7 +112,7 @@ describe('runInit', () => {
 
     // 公共文件
     expect(fileExists(path.join(root, '.gitignore'))).toBe(true)
-    expect(fileExists(path.join(root, '.env.example'))).toBe(true)
+    expect(fileExists(path.join(root, '.env'))).toBe(true)
     expect(fileExists(path.join(root, 'README.md'))).toBe(true)
   })
 

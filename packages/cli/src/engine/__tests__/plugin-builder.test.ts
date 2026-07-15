@@ -156,7 +156,7 @@ describe('buildPlugin', () => {
     expect(settings.enabledMcpjsonServers).toContain('jira')
   })
 
-  it('creates .env.example when MCP tools are selected', async () => {
+  it('creates .env when MCP tools are selected', async () => {
     const outputDir = await buildPlugin({
       marketplaceName: 'example-orgg',
       tools: ['reef'],
@@ -167,12 +167,12 @@ describe('buildPlugin', () => {
       registry,
     })
 
-    const envExamplePath = path.join(outputDir, '.env.example')
-    expect(fs.existsSync(envExamplePath)).toBe(true)
-    expect(fs.readFileSync(envExamplePath, 'utf-8')).toContain('GITHUB')
+    const envPath = path.join(tmpDir, '.env')
+    expect(fs.existsSync(envPath)).toBe(true)
+    expect(fs.readFileSync(envPath, 'utf-8')).toContain('GITHUB')
   })
 
-  it('does not create .env.example when no MCP tools selected', async () => {
+  it('does not create .env when no MCP tools selected', async () => {
     const outputDir = await buildPlugin({
       marketplaceName: 'example-orgg',
       tools: ['reef'],
@@ -183,8 +183,8 @@ describe('buildPlugin', () => {
       registry,
     })
 
-    const envExamplePath = path.join(outputDir, '.env.example')
-    expect(fs.existsSync(envExamplePath)).toBe(false)
+    const envPath = path.join(tmpDir, '.env')
+    expect(fs.existsSync(envPath)).toBe(false)
   })
 
   it('creates .mcp.json with selected MCP server configurations', async () => {

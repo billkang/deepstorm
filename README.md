@@ -295,7 +295,7 @@ npx @deepstorm/cli plugin build
 │   └── marketplace.json     # 市场注册信息
 ├── settings.json            # 插件设置（启用哪些 MCP 服务）
 ├── .mcp.json                # MCP 服务器配置（如有选中）
-├── .env.example             # MCP 环境变量模板（如有选中）
+├── .env                        # MCP 环境变量（自动生成，gitignored）
 ├── README.md
 ├── CHANGELOG.md
 ├── skills/                  # 渲染后的 skill 文件
@@ -343,8 +343,8 @@ deepstorm setup
 npx @deepstorm/cli setup
 
 # 2. 向导完成后，编辑 .env 填入实际 Token
-#    或从模板创建后填写：
-cp .env.example .env
+#    文件已自动生成，填写对应值即可：
+vi .env
 
 # 3. 修改 .env 后重启 Claude Code 会话即可生效
 ```
