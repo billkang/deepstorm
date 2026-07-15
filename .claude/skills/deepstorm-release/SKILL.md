@@ -22,7 +22,7 @@ description: Use when the user wants to publish a new version of @deepstorm/* pa
 ## Version Strategy
 
 - **统一版本号**：所有 `@deepstorm/*` 包共享同一版本号（根 `package.json` 中的 `version`）
-- **仅 CLI 发布到 npm**：`tide`/`reef`/`sweep`/`atoll` 为 `private: true`，自动跳过发布
+- **仅 CLI + Pilot 发布到 npm**：`tide`/`reef`/`sweep`/`atoll` 为 `private: true`，自动跳过发布。`@deepstorm/pilot` 是 CLI 的运行时依赖，必须**先于** CLI 发布。
 - **Tag 格式**：`v{version}`（如 `v0.2.0`）
 
 ## Workflow
@@ -221,9 +221,11 @@ git tag v{version}
 展示发布摘要后等待用户确认：
 
 ```
-📦 即将发布:
-   包: @deepstorm/cli
-   版本: v0.2.0
+📦 即将发布（按依赖顺序）:
+   1. @deepstorm/pilot
+   2. @deepstorm/cli
+
+   版本: v{version}
    标签: latest
 
    确认发布? (y/N)
@@ -255,7 +257,22 @@ git tag v{version}
 
 > **Pre-release 版本：** 使用 `--tag next` 替代 `--tag latest`，如 `0.2.0-beta.1`。用户确认发布时应在摘要中体现标签变化。
 
-**跳过私有包：** `"private": true` 的包不会发布。
+**发布顺序（按依赖拓扑）：**
+
+| 顺序 | 包 | 条件 |
+|:----:|----|------|
+| 1 | `@deepstorm/pilot` | `private: false` — CLI 的运行时依赖，**必须先发布** |
+| 2 | `@deepstorm/cli` | 主发布包，依赖 pilot |
+| — | `@deepstorm/tide` / `reef` / `sweep` / `atoll` | `private: true`，自动跳过 |
+
+```bash
+# Step 8 实际的发布命令（先 pilot，后 CLI）
+TOKEN=$(grep NPM_TOKEN .env | cut -d'=' -f2-)
+cd packages/pilot && pnpm publish --ignore-scripts --no-git-checks --//registry.npmjs.org/:_authToken="$TOKEN"
+cd ../cli && pnpm publish --ignore-scripts --no-git-checks --//registry.npmjs.org/:_authToken="$TOKEN"
+```
+
+> **为什么先发布 pilot？** `@deepstorm/cli` 依赖 `@deepstorm/pilot`（`workspace:^` → `^{version}`），如果 pilot 不在 npm 上，用户安装 CLI 时会报 `ETARGET` 错误。
 
 ### Step 9: Release 分支 & PR
 
@@ -332,6 +349,7 @@ git tag v{version}
 
    版本: v0.1.2 → v0.2.0
    Tag: v0.2.0
+   发布 @deepstorm/pilot@0.2.0 ✅
    发布 @deepstorm/cli@0.2.0 ✅
    Release 分支: release/v0.2.0 ✅
    PR: #<number> (auto-merged) ✅
@@ -351,7 +369,8 @@ git tag v{version}
 | 最新 tag | `git describe --tags --abbrev=0` |
 | 提交历史 | `git log --oneline <tag>..HEAD` |
 | 构建 | `pnpm build` |
-| 发布 | `cd packages/cli && pnpm publish --ignore-scripts --no-git-checks --//registry.npmjs.org/:_authToken="\$TOKEN"`（正式）或加 `--tag next`（pre-release） |
+| 发布 pilot | `cd packages/pilot && pnpm publish --ignore-scripts --no-git-checks --//registry.npmjs.org/:_authToken="\$TOKEN"` |
+| 发布 CLI | `cd packages/cli && pnpm publish --ignore-scripts --no-git-checks --//registry.npmjs.org/:_authToken="\$TOKEN"`（正式）或加 `--tag next`（pre-release） |
 | 获取 NPM_TOKEN | `grep NPM_TOKEN .env \| cut -d'=' -f2-` |
 | 验证 npm 登录 | `npm whoami`（可能因 token 认证方式不工作） |
 | 推送 | `git push origin main --tags` |
