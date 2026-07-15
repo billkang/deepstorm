@@ -210,11 +210,11 @@ bash -c '[[ packages/cli/dist/registry.json -nt packages/reef/wizard.json ]] && 
 
 ```bash
 git add .
-git commit -m "RELEASING: Releasing v{version}"
+git commit -m "chore: 发布 v{version}"
 git tag v{version}
 ```
 
-**Commit Message 格式：** `RELEASING: Releasing v{version}`
+**Commit Message 格式：** `chore: 发布 v{version}`
 
 ### Step 8: npm Publish ⚡ 门禁 #2
 

@@ -164,7 +164,7 @@ function doPublish(root: string, bump: string, tag: string, dryRun: boolean): vo
       `git add packages/cli/package.json packages/pilot/package.json packages/cli/registry.json packages/cli/bin/`,
       { cwd: root, stdio: 'pipe' },
     )
-    execSync(`git commit -m "RELEASING: Releasing v${newVersion}"`, {
+    execSync(`git commit -m "chore: 发布 v${newVersion}"`, {
       cwd: root,
       stdio: 'pipe',
     })
