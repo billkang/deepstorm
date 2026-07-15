@@ -74,6 +74,16 @@ class NumberControl(FormControl):
 **替代方案：** 用 `isinstance()` 判断 → ✗ 不推荐，违反开闭原则。
 **优势：** 开闭原则 — 新增子类只需在自己的类中覆盖方法；新增能力只需在基类加方法 + 各子类实现。
 
+## 注释规则
+
+| 文件类型 | 注释要求 |
+|---------|---------|
+| **Model (SQLAlchemy)** | 类 docstring 说明表含义；复杂字段用 `comment=` 行内注释 |
+| **Schema (Pydantic)** | 类 docstring 说明用途；关键字段用 `Field(description=...)` |
+| **Service** | public 函数加 docstring，说明功能、参数和返回值 |
+| **Router** | 每个端点加 `summary=`/`description=` 参数 |
+| **Migration** | 每个 revision 加 docstring 说明变更意图 |
+
 ## 类型注释规则
 
 | 声明位置 | 需要类型注释 |

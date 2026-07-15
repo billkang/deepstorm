@@ -46,6 +46,18 @@ app.include_router(orders.router, prefix="/api/v1/orders", tags=["orders"])
 
 每完成一块对照 `reef:reef-style-backend` 的 Python 章节检查。
 
+## 注释要求
+
+每类文件必须包含以下注释（缺少则视为未完成）：
+
+| 文件类型 | 注释要求 |
+|---------|---------|
+| **Schema (Pydantic)** | 类 docstring 说明用途；关键字段用 `Field(description=...)`（会生成 OpenAPI 文档） |
+| **Model (SQLAlchemy)** | 类 docstring 说明表含义；复杂字段用 `comment=` 或行内注释说明 |
+| **Service** | 每个 public 函数加 docstring（Google 风格 `"""功能、Args、Returns"""`）；复杂逻辑行内注释 |
+| **Router** | 每个端点加 `summary=`/`description=` 参数或 docstring |
+| **Migration** | 每个 revision 加 docstring 说明变更意图 |
+
 ## ⚠️ 异步红线
 
 - 所有数据库操作用 `AsyncSession`，禁止同步 `Session`

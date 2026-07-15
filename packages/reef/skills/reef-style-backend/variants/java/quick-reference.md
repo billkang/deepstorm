@@ -70,12 +70,15 @@ public abstract boolean supportsImporting();
 **替代方案：** 用 `instanceof` 判断 → ✗ 不推荐，违反开闭原则，每加一个子类就要改判断链。
 **优势：** 开闭原则 — 新增子类只需在自己的类中覆盖方法；新增能力只需在基类加方法 + 各子类实现。
 
-## 字段注释规则
+## 注释规则
 
-| 文件类型 | 需要 `/** */` 字段注释 |
-|---------|----------------------|
-| Model / Entity / Event | ✓ 是 |
-| DTO / Record | ✗ 否 |
+| 文件类型 | 注释要求 |
+|---------|---------|
+| **Entity** | 类 Javadoc `/** 实体描述 */`；每个字段 `/** 字段含义 */` |
+| **DTO / Record** | 类 Javadoc `/** 用途说明 */`；字段不加 `/** */` 注释 |
+| **Repository** | 自定义查询方法加 `/** 查询意图、参数含义 */`；简单 CRUD 方法可不加 |
+| **Service** | 每个 public 方法加 Javadoc `/** 功能、@param、@return */` |
+| **Controller** | 每个端点加 `@Operation(summary=, description=)` 或等价 Javadoc |
 
 ## 领域事件 / POJO
 
