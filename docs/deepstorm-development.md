@@ -2,7 +2,9 @@
 
 ## 定位
 
-本文档描述 **DeepStorm 自身的插件开发流程**（即开发 tide、reef、sweep、atoll 这四个套件时的规范），与 DeepStorm 提供给外部产品的工具能力是两个层面。
+本文档是 DeepStorm 自身套件开发的**详细参考指南**（即开发 tide、reef、sweep、atoll 四个套件时的规范），与 DeepStorm 提供给外部产品的工具能力是两个层面。
+
+> `CLAUDE.md` 中包含该工作流的简化概述。本文档是它的补充：提供环境搭建、BMAD 配置、CLI 发布、code-style 多维架构等完整细节。
 
 ---
 
@@ -197,19 +199,6 @@ flowchart LR
 ```
 
 变更完成，归档记录。每个 OpenSpec change 在独立会话中完成。
-
----
-
-## 已裁剪的工具（及其替代方案）
-
-| superpower | 为什么裁掉 | 替代方案 |
-|-----------|-----------|---------|
-| **brainstorming** | BMAD + OpenSpec Explore 已覆盖需求澄清 | 直接使用 BMAD 或 OpenSpec Explore |
-| **writing-plans** | OpenSpec tasks 已是可靠的实现计划 | OpenSpec tasks 直接消费 |
-| **subagent-driven-development** | 多个 task 通过 OpenSpec Apply 逐个完成，无需并行 agent | OpenSpec Apply |
-| **executing-plans** | 跨会话执行场景少，单次会话 OpenSpec Apply 即可 | OpenSpec Apply |
-| **test-driven-development** | skill = markdown，没有传统单元测试（注：CLI 的 TypeScript 代码使用 vitest，不在此列） | OpenSpec Verify |
-| **systematic-debugging / code-review** | skill 没有代码层面的 bug，不需要 | — |
 
 ---
 
