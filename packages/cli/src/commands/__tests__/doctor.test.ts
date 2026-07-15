@@ -38,7 +38,7 @@ describe('runDoctor', () => {
     expect(versionCheck!.status).toBe('pass')
   })
 
-  it('应当通过 settings.json 不存在检查', () => {
+  it('应当通过 .deepstorm/settings.json 不存在检查', () => {
     const report = runDoctor(testDir)
     const configCheck = report.checks.find((c) => c.name === '配置文件')
     expect(configCheck).toBeDefined()
@@ -46,24 +46,22 @@ describe('runDoctor', () => {
     expect(configCheck!.message).toContain('不存在')
   })
 
-  it('应当检测 deepstorm 命名空间完整（pass）', () => {
+  it('应当检测 DeepStorm 配置完整（pass）', () => {
     writeFile(
-      path.join(testDir, '.claude', 'settings.json'),
+      path.join(testDir, '.deepstorm', 'settings.json'),
       JSON.stringify({
-        deepstorm: {
-          installedSkills: ['reef-react-lint'],
-          installedAt: '2024-01-01T00:00:00.000Z',
-        },
+        installedSkills: ['reef-react-lint'],
+        installedAt: '2024-01-01T00:00:00.000Z',
       }),
     )
     const report = runDoctor(testDir)
-    const nsCheck = report.checks.find((c) => c.name === 'DeepStorm 命名空间')
+    const nsCheck = report.checks.find((c) => c.name === 'DeepStorm 配置')
     expect(nsCheck).toBeDefined()
     expect(nsCheck!.status).toBe('pass')
   })
 
-  it('应当检测 settings.json 格式错误（fail）', () => {
-    writeFile(path.join(testDir, '.claude', 'settings.json'), 'invalid json')
+  it('应当检测 .deepstorm/settings.json 格式错误（fail）', () => {
+    writeFile(path.join(testDir, '.deepstorm', 'settings.json'), 'invalid json')
     const report = runDoctor(testDir)
     const configCheck = report.checks.find((c) => c.name === '配置文件')
     expect(configCheck).toBeDefined()
@@ -72,12 +70,10 @@ describe('runDoctor', () => {
 
   it('应当检测缺少的依赖 skill（warn）', () => {
     writeFile(
-      path.join(testDir, '.claude', 'settings.json'),
+      path.join(testDir, '.deepstorm', 'settings.json'),
       JSON.stringify({
-        deepstorm: {
-          installedSkills: ['missing-skill-a', 'missing-skill-b'],
-          installedAt: '2024-01-01T00:00:00.000Z',
-        },
+        installedSkills: ['missing-skill-a', 'missing-skill-b'],
+        installedAt: '2024-01-01T00:00:00.000Z',
       }),
     )
     // 创建非空的 skills 目录但不包含 installedSkills 中的目录
@@ -132,12 +128,10 @@ describe('runDoctor', () => {
 
   it('应当检测 MCP 安装一致性 — 已记录服务在 .mcp.json 中缺失', () => {
     writeFile(
-      path.join(testDir, '.claude', 'settings.json'),
+      path.join(testDir, '.deepstorm', 'settings.json'),
       JSON.stringify({
-        deepstorm: {
-          installedAt: '2024-01-01T00:00:00.000Z',
-          installedMcpServers: ['jira', 'github'],
-        },
+        installedAt: '2024-01-01T00:00:00.000Z',
+        installedMcpServers: ['jira', 'github'],
       }),
     )
     // .mcp.json 中只包含 github，缺 jira
@@ -158,12 +152,10 @@ describe('runDoctor', () => {
 
   it('MCP 一致性检查通过 — 所有已记录服务均存在于 .mcp.json', () => {
     writeFile(
-      path.join(testDir, '.claude', 'settings.json'),
+      path.join(testDir, '.deepstorm', 'settings.json'),
       JSON.stringify({
-        deepstorm: {
-          installedAt: '2024-01-01T00:00:00.000Z',
-          installedMcpServers: ['figma'],
-        },
+        installedAt: '2024-01-01T00:00:00.000Z',
+        installedMcpServers: ['figma'],
       }),
     )
     writeFile(

@@ -2,7 +2,7 @@ import { Command } from 'commander'
 import * as fs from 'node:fs'
 import * as path from 'node:path'
 import Handlebars from 'handlebars'
-import { mergeDeepStormConfig } from '../merger/settings'
+import { writeDeepStormConfig } from '../merger/settings'
 import { RegistryReader } from '../engine/registry'
 import type { Registry } from '../types/registry'
 
@@ -52,9 +52,125 @@ export function parseInitArgs(raw: Record<string, unknown>): Partial<InitOptions
   return opts
 }
 
+const CONTEXT_MD_NAME = 'context.md'
+
+const CONTEXT_MD_TEMPLATE = `# 项目上下文地图
+
+> 由 \`reef-start\` 阶段一结束时按需维护。
+>
+> 记录项目的技术栈、关键模块、历史踩坑和外部引用，供后续开发阶段（style、lint、testcase、codegen 等）使用。
+
+---
+
+## 技术栈
+
+<!-- 模板变量将在 reef-start 中根据 wizard 配置自动填充 -->
+
+- **语言**：{backend.language}/{frontend.framework}
+- **构建工具**：
+- **包管理**：
+- **测试框架**：
+- **ORM/数据库**：
+- **CI/CD**：
+- **部署目标**：
+
+## 关键模块
+
+<!-- 记录项目的主要模块 / 目录结构概览 -->
+
+| 模块 | 路径 | 说明 |
+|------|------|------|
+|      |      |      |
+
+## 架构决策记录（ADR）
+
+<!-- 重要的技术决策及其理由 -->
+
+| 决策 | 选择 | 理由 |
+|------|------|------|
+|      |      |      |
+
+## 历史踩坑
+
+<!-- 开发过程中遇到的问题和规避方案 -->
+
+| 问题类型 | 问题描述 | 规避方案 |
+|---------|---------|---------|
+|         |         |         |
+
+## 外部引用
+
+<!-- 相关的 PRD 链接、设计稿、API 文档、第三方服务等 -->
+
+- **PRD**：
+- **设计稿**：
+- **API 文档**：
+- **第三方服务**：
+
+## 依赖关系
+
+<!-- 模块间的依赖关系图示或描述 -->
+
+\`\`\`mermaid
+graph TD
+\`\`\`
+
+---
+
+> 此文件的维护时机：
+> 1. \`reef-start\` 阶段一结束时按需创建/更新
+> 2. 每次引入新的技术栈决策或发现值得记录的踩坑时追加
+> 3. 重大架构变更时同步更新
+`
+
 /**
- * 将 init 选择的技术方案写入 .claude/settings.json 的 deepstorm.reef.* 命名空间。
+ * 初始化 .deepstorm/context.md 模板。
+ * 如果文件已存在，不覆盖。
+ * 同时确保 CLAUDE.md 包含项目上下文引用行。
+ */
+export function initContextMap(targetDir: string, opts: InitOptions): void {
+  const deepstormDir = path.join(targetDir, '.deepstorm')
+  const contextPath = path.join(deepstormDir, CONTEXT_MD_NAME)
+  if (fs.existsSync(contextPath)) return
+
+  ensureDir(deepstormDir)
+
+  const backendLang = opts.backend || 'none'
+  const frontendFramework = opts.frontend || 'none'
+  const content = CONTEXT_MD_TEMPLATE
+    .replace('{backend.language}', backendLang)
+    .replace('{frontend.framework}', frontendFramework)
+
+  fs.writeFileSync(contextPath, content, 'utf-8')
+  console.log('✔ 已创建 .deepstorm/context.md 项目上下文地图')
+  appendClaudeMdRef(targetDir)
+}
+
+/**
+ * 在 CLAUDE.md 末尾追加项目上下文引用行。
+ * 如果已有引用则不重复追加。
+ */
+function appendClaudeMdRef(targetDir: string): void {
+  const claudeMdPath = path.join(targetDir, 'CLAUDE.md')
+  const refLine = '\n> 项目事实见 .deepstorm/context.md\n'
+
+  if (!fs.existsSync(claudeMdPath)) {
+    fs.writeFileSync(claudeMdPath, refLine, 'utf-8')
+    return
+  }
+
+  const existing = fs.readFileSync(claudeMdPath, 'utf-8')
+  if (existing.includes('.deepstorm/context.md')) return
+
+  fs.appendFileSync(claudeMdPath, refLine, 'utf-8')
+  console.log('✔ 已在 CLAUDE.md 追加项目上下文引用')
+}
+
+/**
+ * 将 init 选择的技术方案写入 .deepstorm/settings.json 的 reef.* 命名空间。
  * 仅写入 init 问过的字段，不覆盖无关字段。
+ *
+ * 如果 opts 包含 frontend 或 backend 信息，同时初始化 .deepstorm/context.md。
  */
 export function writeInitTechStack(baseDir: string, opts: InitOptions): void {
   const config: Record<string, string> = {}
@@ -77,10 +193,10 @@ export function writeInitTechStack(baseDir: string, opts: InitOptions): void {
   if (Object.keys(config).length === 0) return
 
   const nested = buildInitNestedConfig(config)
-  const claudeDir = path.join(baseDir, '.claude')
-  ensureDir(claudeDir)
-  const settingsPath = path.join(claudeDir, 'settings.json')
-  mergeDeepStormConfig(settingsPath, nested)
+  writeDeepStormConfig(baseDir, nested)
+
+  // 同步初始化 .deepstorm/context.md
+  initContextMap(baseDir, opts)
 }
 
 function buildInitNestedConfig(flat: Record<string, string>): Record<string, any> {

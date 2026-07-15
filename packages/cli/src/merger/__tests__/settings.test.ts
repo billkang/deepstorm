@@ -97,20 +97,54 @@ describe('mergeDeepStormConfig', () => {
 
 describe('readDeepStormConfig', () => {
   let tmpDir: string
-  let settingsPath: string
+  let deepstormSettingsPath: string
 
   beforeEach(() => {
     tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'deepstorm-readdf-'))
-    settingsPath = path.join(tmpDir, 'settings.json')
+    const dotDeepstorm = path.join(tmpDir, '.deepstorm')
+    fs.mkdirSync(dotDeepstorm, { recursive: true })
+    deepstormSettingsPath = path.join(dotDeepstorm, 'settings.json')
   })
 
   afterEach(() => {
     fs.rmSync(tmpDir, { recursive: true, force: true })
   })
 
-  it('返回 deepstorm 命名空间内容', () => {
+  it('返回 .deepstorm/settings.json 的内容', () => {
     fs.writeFileSync(
-      settingsPath,
+      deepstormSettingsPath,
+      JSON.stringify({
+        reef: { frontend: { framework: 'angular' } },
+        installedSkills: ['reef-test'],
+      }),
+      'utf-8',
+    )
+
+    const result = readDeepStormConfig(tmpDir)
+    expect(result).not.toBeNull()
+    expect((result as any).reef.frontend.framework).toBe('angular')
+    expect((result as any).installedSkills).toEqual(['reef-test'])
+  })
+
+  it('文件不存在时返回 null', () => {
+    expect(readDeepStormConfig('/nonexistent/path')).toBeNull()
+  })
+
+  it('文件内容为空时返回 null', () => {
+    fs.writeFileSync(deepstormSettingsPath, '{}', 'utf-8')
+    expect(readDeepStormConfig(tmpDir)).toBeNull()
+  })
+
+  it('文件格式错误时返回 null', () => {
+    fs.writeFileSync(deepstormSettingsPath, 'not-json', 'utf-8')
+    expect(readDeepStormConfig(tmpDir)).toBeNull()
+  })
+
+  it('从旧 .claude/settings.json deepstorm 命名空间自动迁移', () => {
+    const dotClaude = path.join(tmpDir, '.claude')
+    fs.mkdirSync(dotClaude, { recursive: true })
+    fs.writeFileSync(
+      path.join(dotClaude, 'settings.json'),
       JSON.stringify({
         deepstorm: {
           reef: { frontend: { framework: 'angular' } },
@@ -120,29 +154,19 @@ describe('readDeepStormConfig', () => {
       'utf-8',
     )
 
-    const result = readDeepStormConfig(settingsPath)
+    // 应自动迁移到 .deepstorm/settings.json
+    const result = readDeepStormConfig(tmpDir)
     expect(result).not.toBeNull()
     expect((result as any).reef.frontend.framework).toBe('angular')
-    expect((result as any).installedSkills).toEqual(['reef-test'])
-  })
 
-  it('文件不存在时返回 null', () => {
-    expect(readDeepStormConfig('/nonexistent/path/settings.json')).toBeNull()
-  })
-
-  it('无 deepstorm 命名空间时返回 null', () => {
-    fs.writeFileSync(
-      settingsPath,
-      JSON.stringify({ mcpServers: {} }),
-      'utf-8',
+    // 旧配置应被清理
+    const oldSettings = JSON.parse(
+      fs.readFileSync(path.join(dotClaude, 'settings.json'), 'utf-8'),
     )
+    expect((oldSettings as any).deepstorm).toBeUndefined()
 
-    expect(readDeepStormConfig(settingsPath)).toBeNull()
-  })
-
-  it('文件格式错误时返回 null', () => {
-    fs.writeFileSync(settingsPath, 'not-json', 'utf-8')
-    expect(readDeepStormConfig(settingsPath)).toBeNull()
+    // 新文件应存在
+    expect(fs.existsSync(deepstormSettingsPath)).toBe(true)
   })
 })
 

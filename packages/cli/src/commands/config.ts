@@ -59,10 +59,9 @@ export function registerConfigCommand(program: Command, registry: Registry): voi
     .description('根据最新 MCP 安装状态，刷新所有已安装 skill 的模板渲染')
     .action(() => {
       const targetDir = process.cwd()
-      const dotClaudeDir = path.join(targetDir, '.claude')
       const cliDir = __dirname
 
-      const result = refreshConfig(cliDir, dotClaudeDir, registry)
+      const result = refreshConfig(cliDir, targetDir, registry)
 
       if (result.errors.length > 0) {
         for (const err of result.errors) {

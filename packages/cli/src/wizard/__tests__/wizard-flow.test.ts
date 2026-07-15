@@ -109,19 +109,17 @@ describe('loadExistingConfigKeys', () => {
   })
 
   function writeConfig(data: Record<string, unknown>): void {
-    const settingsDir = path.join(tmpDir, '.claude')
+    const settingsDir = path.join(tmpDir, '.deepstorm')
     fs.mkdirSync(settingsDir, { recursive: true })
     fs.writeFileSync(path.join(settingsDir, 'settings.json'), JSON.stringify(data), 'utf-8')
   }
 
   it('解析完整的 reef 配置返回对应 key 集合', () => {
     writeConfig({
-      deepstorm: {
-        reef: {
-          techs: 'frontend,backend',
-          frontend: { framework: 'angular', uiLibrary: 'primeng', css: 'tailwind' },
-          backend: { language: 'java', java: { orm: 'hibernate' } },
-        },
+      reef: {
+        techs: 'frontend,backend',
+        frontend: { framework: 'angular', uiLibrary: 'primeng', css: 'tailwind' },
+        backend: { language: 'java', java: { orm: 'hibernate' } },
       },
     })
     const keys = loadExistingConfigKeys(tmpDir)
@@ -135,11 +133,9 @@ describe('loadExistingConfigKeys', () => {
 
   it('值为 none 的 key 不应加入集合', () => {
     writeConfig({
-      deepstorm: {
-        reef: {
-          techs: 'frontend',
-          frontend: { framework: 'angular', uiLibrary: 'none', test: 'none' },
-        },
+      reef: {
+        techs: 'frontend',
+        frontend: { framework: 'angular', uiLibrary: 'none', test: 'none' },
       },
     })
     const keys = loadExistingConfigKeys(tmpDir)
@@ -154,8 +150,8 @@ describe('loadExistingConfigKeys', () => {
     expect(keys.size).toBe(0)
   })
 
-  it('无 deepstorm 命名空间时返回空集合', () => {
-    writeConfig({ other: { key: 'value' } })
+  it('配置为空时返回空集合', () => {
+    writeConfig({})
     const keys = loadExistingConfigKeys(tmpDir)
     expect(keys.size).toBe(0)
   })
@@ -173,13 +169,13 @@ describe('getInstalledMcpServices', () => {
   })
 
   function writeSettings(data: Record<string, unknown>): void {
-    const dir = path.join(tmpDir, '.claude')
+    const dir = path.join(tmpDir, '.deepstorm')
     fs.mkdirSync(dir, { recursive: true })
     fs.writeFileSync(path.join(dir, 'settings.json'), JSON.stringify(data), 'utf-8')
   }
 
   it('读取已安装的 MCP 服务列表', () => {
-    writeSettings({ deepstorm: { installedMcpServers: ['github', 'jira'] } })
+    writeSettings({ installedMcpServers: ['github', 'jira'] })
     expect(getInstalledMcpServices(tmpDir)).toEqual(['github', 'jira'])
   })
 
@@ -187,13 +183,13 @@ describe('getInstalledMcpServices', () => {
     expect(getInstalledMcpServices(tmpDir)).toEqual([])
   })
 
-  it('无 deepstorm 命名空间时返回空数组', () => {
+  it('installedMcpServers 不存在时返回空数组', () => {
     writeSettings({ other: {} })
     expect(getInstalledMcpServices(tmpDir)).toEqual([])
   })
 
   it('installedMcpServers 不是数组时返回空数组', () => {
-    writeSettings({ deepstorm: { installedMcpServers: 'github' } })
+    writeSettings({ installedMcpServers: 'github' })
     expect(getInstalledMcpServices(tmpDir)).toEqual([])
   })
 })
@@ -222,27 +218,25 @@ describe('getInstalledTools', () => {
   })
 
   function writeSettings(data: Record<string, unknown>): void {
-    const dir = path.join(tmpDir, '.claude')
+    const dir = path.join(tmpDir, '.deepstorm')
     fs.mkdirSync(dir, { recursive: true })
     fs.writeFileSync(path.join(dir, 'settings.json'), JSON.stringify(data), 'utf-8')
   }
 
   it('从 installedSkills 反向推导已安装工具', () => {
-    writeSettings({ deepstorm: { installedSkills: ['reef-react-lint', 'reef-jira-link'] } })
+    writeSettings({ installedSkills: ['reef-react-lint', 'reef-jira-link'] })
     const tools = getInstalledTools(tmpDir, mockRegistry)
     expect(tools).toEqual(['reef'])
   })
 
   it('处理多个工具的 skill', () => {
-    writeSettings({
-      deepstorm: { installedSkills: ['reef-react-lint', 'tide-bmad'] },
-    })
+    writeSettings({ installedSkills: ['reef-react-lint', 'tide-bmad'] })
     const tools = getInstalledTools(tmpDir, mockRegistry)
     expect(tools.sort()).toEqual(['reef', 'tide'])
   })
 
   it('无 installedSkills 时返回空数组', () => {
-    writeSettings({ deepstorm: {} })
+    writeSettings({})
     expect(getInstalledTools(tmpDir, mockRegistry)).toEqual([])
   })
 

@@ -1,29 +1,29 @@
 import * as fs from 'node:fs'
 import * as path from 'node:path'
+import { readDeepStormConfig, getDeepStormConfigPath } from '../merger/settings'
 
 /**
- * --reconfigure 流程：读取 deepstormm 命名空间 → 清理旧 skill → 清理 agent/MCP/hooks。
+ * --reconfigure 流程：读取 .deepstorm/settings.json → 清理旧 skill → 清理 agent/MCP/hooks。
  * 不删除 .deepstorm/templates/ 中的用户修改。
  */
 export function cleanInstalled(targetDir: string): void {
-  const settingsPath = path.join(targetDir, '.claude', 'settings.json')
+  const settingsPath = getDeepStormConfigPath(targetDir)
 
   if (!fs.existsSync(settingsPath)) {
-    return // 没有历史安装记录
+    return // 没有 DeepStorm 安装记录
   }
 
-  let settings: Record<string, unknown>
+  let config: Record<string, unknown>
   try {
-    settings = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'))
+    config = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'))
   } catch {
     return // 无有效配置，跳过清理
   }
 
-  const deepstorm = settings.deepstorm as Record<string, unknown> | undefined
-  if (!deepstorm) return
+  if (!config || Object.keys(config).length === 0) return
 
   // 清理已安装的 skill
-  const installedSkills = deepstorm.installedSkills as string[] | undefined
+  const installedSkills = config.installedSkills as string[] | undefined
   if (installedSkills) {
     for (const skillId of installedSkills) {
       const skillDir = path.join(targetDir, '.claude', 'skills', skillId)
@@ -34,7 +34,7 @@ export function cleanInstalled(targetDir: string): void {
   }
 
   // 清理已安装的 agent
-  const installedAgents = deepstorm.installedAgents as string[] | undefined
+  const installedAgents = config.installedAgents as string[] | undefined
   if (installedAgents) {
     for (const agent of installedAgents) {
       const agentDir = path.join(targetDir, '.claude', 'agents', agent)
@@ -55,7 +55,7 @@ export function cleanInstalled(targetDir: string): void {
   }
 
   // 清理 MCP 中 DeepStorm 安装的条目
-  const installedMcp = deepstorm.installedMcpServers as string[] | undefined
+  const installedMcp = config.installedMcpServers as string[] | undefined
   if (installedMcp) {
     const mcpPath = path.join(targetDir, '.mcp.json')
     if (fs.existsSync(mcpPath)) {

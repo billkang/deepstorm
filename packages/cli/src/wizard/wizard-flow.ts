@@ -7,6 +7,7 @@ import { selectTools } from './tool-select'
 import { selectMcpTools } from './mcp-select'
 import { runQuestionnaire } from './questionnaire'
 import { buildTemplateVariables } from '../template/registry'
+import { readDeepStormConfig, getDeepStormConfigPath } from '../merger/settings'
 
 export interface WizardFlowResult {
   tools: string[]
@@ -16,22 +17,21 @@ export interface WizardFlowResult {
 }
 
 /**
- * 从 .claude/settings.json 中读取已存在的 deepstorm 配置，
+ * 从 .deepstorm/settings.json 中读取已存在的配置，
  * 递归拍平为扁平的 key 集合，供 runQuestionnaire 跳过使用。
  * 值为 'none' 的 key 不被加入集合（表示显式不选）。
  */
 export function loadExistingConfigKeys(targetDir: string): Set<string> {
-  const settingsPath = path.join(targetDir, '.claude', 'settings.json')
+  const settingsPath = getDeepStormConfigPath(targetDir)
   if (!fs.existsSync(settingsPath)) return new Set()
 
   try {
     const raw = fs.readFileSync(settingsPath, 'utf-8')
-    const settings = JSON.parse(raw)
-    const deepstorm = settings.deepstorm as Record<string, unknown> | undefined
-    if (!deepstorm) return new Set()
+    const config = JSON.parse(raw)
+    if (!config || Object.keys(config).length === 0) return new Set()
 
     const keys = new Set<string>()
-    flattenConfig(deepstorm, '', keys)
+    flattenConfig(config, '', keys)
     return keys
   } catch {
     return new Set()
@@ -50,45 +50,33 @@ function flattenConfig(obj: Record<string, unknown>, prefix: string, keys: Set<s
 }
 
 /**
- * 从 settings.json 中读取已安装的 MCP 服务列表。
+ * 从 .deepstorm/settings.json 中读取已安装的 MCP 服务列表。
  */
 export function getInstalledMcpServices(targetDir: string): string[] {
-  const settingsPath = path.join(targetDir, '.claude', 'settings.json')
-  if (!fs.existsSync(settingsPath)) return []
-  try {
-    const raw = fs.readFileSync(settingsPath, 'utf-8')
-    const settings = JSON.parse(raw)
-    const installed = settings.deepstorm?.installedMcpServers
-    return Array.isArray(installed) ? installed : []
-  } catch {
-    return []
-  }
+  const config = readDeepStormConfig(targetDir)
+  if (!config) return []
+  const installed = config.installedMcpServers
+  return Array.isArray(installed) ? installed : []
 }
 
 /**
- * 从 settings.json 的 installedSkills 反向推导已安装的工具套件列表。
+ * 从 .deepstorm/settings.json 的 installedSkills 反向推导已安装的工具套件列表。
  * 遍历 registry.skills，将 installedSkills 中的 skill ID 映射到其所属的工具名称。
  */
 export function getInstalledTools(targetDir: string, registry: Registry): string[] {
-  const settingsPath = path.join(targetDir, '.claude', 'settings.json')
-  if (!fs.existsSync(settingsPath)) return []
-  try {
-    const raw = fs.readFileSync(settingsPath, 'utf-8')
-    const settings = JSON.parse(raw)
-    const installedSkills: string[] = settings.deepstorm?.installedSkills ?? []
-    if (!Array.isArray(installedSkills) || installedSkills.length === 0) return []
+  const config = readDeepStormConfig(targetDir)
+  if (!config) return []
+  const installedSkills: string[] = config.installedSkills as string[] ?? []
+  if (!Array.isArray(installedSkills) || installedSkills.length === 0) return []
 
-    const skillSet = new Set(installedSkills)
-    const toolSet = new Set<string>()
-    for (const [skillId, skill] of Object.entries(registry.skills)) {
-      if (skillSet.has(skillId) && skill.tool) {
-        toolSet.add(skill.tool)
-      }
+  const skillSet = new Set(installedSkills)
+  const toolSet = new Set<string>()
+  for (const [skillId, skill] of Object.entries(registry.skills)) {
+    if (skillSet.has(skillId) && skill.tool) {
+      toolSet.add(skill.tool)
     }
-    return Array.from(toolSet)
-  } catch {
-    return []
   }
+  return Array.from(toolSet)
 }
 
 /**

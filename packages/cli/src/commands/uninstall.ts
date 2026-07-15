@@ -3,12 +3,13 @@ import * as path from 'node:path'
 import { confirm } from '@clack/prompts'
 import { cleanInstalled } from '../wizard/reconfigure'
 import { resetConfig } from './config-reset'
+import { getDeepStormConfigPath } from '../merger/settings'
 
 /**
  * 卸载所有 DeepStorm 生成的内容。
  */
 export async function uninstallDeepStorm(targetDir: string): Promise<void> {
-  const settingsPath = path.join(targetDir, '.claude', 'settings.json')
+  const settingsPath = getDeepStormConfigPath(targetDir)
 
   // 检查是否已安装
   if (!fs.existsSync(settingsPath)) {
@@ -19,7 +20,7 @@ export async function uninstallDeepStorm(targetDir: string): Promise<void> {
   let hasDeepStorm = false
   try {
     const settings = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'))
-    hasDeepStorm = !!settings.deepstorm
+    hasDeepStorm = !!settings && Object.keys(settings).length > 0
   } catch {
     // 继续执行清理
   }
@@ -32,7 +33,7 @@ export async function uninstallDeepStorm(targetDir: string): Promise<void> {
   // 清理已安装的 skill/agent/MCP/hooks
   cleanInstalled(targetDir)
 
-  // 删除 deepstormm 命名空间
+  // 删除 DeepStorm 配置
   resetConfig(targetDir)
 
   // 询问是否删除 .deepstorm/templates/

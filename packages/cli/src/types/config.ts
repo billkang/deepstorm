@@ -1,5 +1,10 @@
 /**
- * 存储在 .claude/settings.json deepstormm 命名空间中的配置和安装记录。
+ * 存储在 .deepstorm/settings.json 中的 DeepStorm 配置和安装记录。
+ *
+ * 三层配置体系：
+ *   1. CLAUDE.md — 行为规则和工程约定
+ *   2. .deepstorm/settings.json — DeepStorm 项目配置（本文件）
+ *   3. .claude/settings.json — Claude Code 原生配置（mcpServers, sandbox 等）
  */
 
 /** DeepStorm 根配置命名空间 */
