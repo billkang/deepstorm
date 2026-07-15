@@ -857,28 +857,3 @@ function readExistingEnvKeys(envPath: string): Set<string> {
   }
   return keys
 }
-
-/**
- * 生成 .env.example — 从源 .env-example 文件提取原始模板内容。
- * 在 Step 7 写入 .env 后同步调用，生成一个干净的模板参考文件（可提交版本控制）。
- */
-export function generateEnvExample(
-  selectedMcpTools: string[],
-  examplesDir: string,
-  targetDir: string,
-): void {
-  const rawSections: string[] = []
-  for (const tool of selectedMcpTools) {
-    const filePath = path.join(examplesDir, `${tool}.env-example`)
-    if (fs.existsSync(filePath)) {
-      const raw = fs.readFileSync(filePath, 'utf-8').trimEnd()
-      rawSections.push(raw)
-    }
-  }
-  if (rawSections.length > 0) {
-    const envExamplePath = path.join(targetDir, '.env.example')
-    const exampleContent = rawSections.join('\n\n') + '\n'
-    fs.writeFileSync(envExamplePath, exampleContent, 'utf-8')
-    console.log(`✔ 已生成 .env.example 环境变量参考模板`)
-  }
-}

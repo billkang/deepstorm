@@ -1143,7 +1143,7 @@ __pycache__/
 *.iml
 `)
 
-  writeTemplate(projectDir, '.env.example', `# 数据库配置
+  writeEnvFile(projectDir, `# 数据库配置
 DB_URL=jdbc:postgresql://localhost:5432/${ctx.packageName}
 DB_USERNAME=postgres
 DB_PASSWORD=change-me
@@ -1216,6 +1216,20 @@ function writeTemplate(baseDir: string, relativePath: string, content: string): 
   }
   ensureDir(path.dirname(fullPath))
   fs.writeFileSync(fullPath, content, 'utf-8')
+}
+
+/**
+ * 写入 .env — 不存在则创建，存在则追加（避免覆盖已有配置）。
+ */
+function writeEnvFile(baseDir: string, content: string): void {
+  const envPath = path.join(baseDir, '.env')
+  ensureDir(path.dirname(envPath))
+  if (fs.existsSync(envPath)) {
+    const existing = fs.readFileSync(envPath, 'utf-8').trimEnd()
+    fs.writeFileSync(envPath, existing + '\n\n' + content, 'utf-8')
+  } else {
+    fs.writeFileSync(envPath, content, 'utf-8')
+  }
 }
 
 function printProjectTree(projectDir: string, hasFrontend: boolean, hasBackend: boolean): void {

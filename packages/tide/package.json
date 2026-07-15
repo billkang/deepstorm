@@ -1,6 +1,6 @@
 {
   "name": "@deepstorm/tide",
-  "version": "0.6.5",
+  "version": "0.6.6",
   "private": true,
   "type": "module",
   "description": "DeepStorm 产品侧套件 — BMAD 需求讨论、PRD 管理、Jira 发布",

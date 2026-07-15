@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.6.6] - 2026-07-15
+
+### Bug Fixes
+
+- 修复 init 命令 @clack/prompts select() 返回值类型错误，消除 5 处 TypeScript 编译报错 (`ee6a446`)
+
 ## [0.6.5] - 2026-07-15
 
 ### Code Refactoring

@@ -17,7 +17,7 @@ export interface BuildPluginConfig {
  *
  * 1. 创建输出目录 .deepstorm/
  * 2. 生成元数据文件（plugin.json, marketplace.json, settings.json, .mcp.json）
- * 3. 生成 .env.example（如有 MCP 服务）
+ * 3. 生成 .env（如有 MCP 服务）
  * 4. 生成 README.md 和 CHANGELOG.md
  *
  * 返回插件目录的绝对路径。
@@ -90,24 +90,26 @@ export async function buildPlugin(config: BuildPluginConfig): Promise<string> {
     }
   }
 
-  // 写入 .env.example（如有 MCP 服务）
+  // 写入 .env（如有 MCP 服务）— 不存在则创建，存在则追加
   if (selectedMcpTools.length > 0) {
-    const envPath = path.join(outputDir, '.env.example')
-    const envLines: string[] = [
-      '# DeepStorm Plugin MCP 环境变量配置',
-      '# 复制此文件为 .env 并填写实际值',
-      '',
-    ]
+    const envPath = path.join(targetDir, '.env')
+    const header = '# ── DeepStorm Plugin MCP 环境变量 ──\n\n'
+    const sections: string[] = []
     for (const mcpName of selectedMcpTools) {
       const envExampleFile = path.join(cliDir, 'env-examples', `${mcpName}.env-example`)
       if (fs.existsSync(envExampleFile)) {
         const content = fs.readFileSync(envExampleFile, 'utf-8')
-        envLines.push(`# ${mcpName}`)
-        envLines.push(content)
-        envLines.push('')
+        sections.push(`# ${mcpName}`)
+        sections.push(content)
       }
     }
-    fs.writeFileSync(envPath, envLines.join('\n'), 'utf-8')
+    const newContent = header + sections.join('\n') + '\n'
+    if (fs.existsSync(envPath)) {
+      const existing = fs.readFileSync(envPath, 'utf-8').trimEnd()
+      fs.writeFileSync(envPath, existing + '\n\n' + newContent, 'utf-8')
+    } else {
+      fs.writeFileSync(envPath, newContent, 'utf-8')
+    }
   }
 
   // 写入 README.md
@@ -173,7 +175,7 @@ function generateReadme(
     '',
     '## 环境变量',
     '',
-    '复制 .env.example 为 .env，填写对应的 API Token 后重启 Claude Code 会话。',
+    '编辑 .env 文件，填写对应的 API Token 后重启 Claude Code 会话。',
     '',
     '## 开发',
     '',
