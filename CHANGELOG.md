@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.7.0] - 2026-07-15
+
+### Features
+
+- 安装向导末尾自动安装 Tide/Sweep 前置依赖：Tide 选中时自动安装 BMAD Method 和 grill-me；Sweep+Playwright 选中时自动安装 Playwright 浏览器；已安装时跳过（幂等），失败仅警告不中断向导 (`c451b33`)
+
+### Bug Fixes
+
+- 修复 init 命令 @clack/prompts select() 返回值类型错误，消除 5 处 TypeScript 编译报错 (`3843e3b`)
+
+### Code Refactoring
+
+- 移除 `.env.example` 生成，环境变量内容直接写入 `.env` (`16cd2f9`)
+
 ## [0.6.6] - 2026-07-15
 
 ### Bug Fixes
