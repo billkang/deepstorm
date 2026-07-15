@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.1] - 2026-07-15
+
+### Maintenance
+
+- 清理项目中 .env.example 残留引用，移除不需要的 .gitignore 条目，更新 setup-all.sh 和 deepstorm-commit/playground skill 引用 (`ff16366`)
+- 将 @deepstorm/pilot 纳入发版流程，更新版本策略为"仅 CLI + Pilot"，调整发布命令和摘要 (`6191019`)
+
 ## [0.7.0] - 2026-07-15
 
 ### Features
