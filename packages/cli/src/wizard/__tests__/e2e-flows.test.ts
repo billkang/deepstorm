@@ -7,8 +7,8 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import * as fs from 'node:fs'
 import * as path from 'node:path'
 import { writeInitTechStack } from '../../commands/init'
-import { readDeepStormConfig, mergeDeepStormConfig } from '../../merger/settings'
-import { loadExistingConfigKeys, getInstalledMcpServices, getInstalledTools } from '../wizard-flow'
+import { readDeepStormConfig, writeDeepStormConfig } from '../../merger/settings'
+import { loadExistingConfigKeys, getInstalledMcpServices } from '../wizard-flow'
 import { isMcpFullyConfigured, parseEnvExampleFile } from '../mcp-env'
 import { printMcpEnvStatus } from '../guide'
 
@@ -17,7 +17,6 @@ function tmpDir(name: string): string {
   const dir = path.join(process.env.TMPDIR!, 'deepstorm-e2e', name)
   fs.rmSync(dir, { recursive: true, force: true })
   fs.mkdirSync(dir, { recursive: true })
-  fs.mkdirSync(path.join(dir, '.claude'), { recursive: true })
   return dir
 }
 
@@ -32,7 +31,7 @@ describe('E2E: writeInitTechStack → readDeepStormConfig', () => {
       projectName: 'test-proj',
     })
 
-    const config = readDeepStormConfig(path.join(dir, '.claude/settings.json'))
+    const config = readDeepStormConfig(dir)
     expect(config?.reef?.techs).toBe('frontend,backend')
     expect(config?.reef?.frontend?.framework).toBe('react')
     expect(config?.reef?.backend?.language).toBe('python')
@@ -46,7 +45,7 @@ describe('E2E: writeInitTechStack → readDeepStormConfig', () => {
       projectName: 'test-proj',
     })
 
-    const config = readDeepStormConfig(path.join(dir, '.claude/settings.json'))
+    const config = readDeepStormConfig(dir)
     expect(config?.reef?.techs).toBe('frontend')
     expect(config?.reef?.frontend?.framework).toBe('vue')
     expect(config?.reef?.backend).toBeUndefined()
@@ -60,7 +59,7 @@ describe('E2E: writeInitTechStack → readDeepStormConfig', () => {
       projectName: 'test-proj',
     })
 
-    const config = readDeepStormConfig(path.join(dir, '.claude/settings.json'))
+    const config = readDeepStormConfig(dir)
     expect(config?.reef?.techs).toBe('backend')
     expect(config?.reef?.backend?.language).toBe('java')
     expect(config?.reef?.frontend).toBeUndefined()
@@ -70,9 +69,7 @@ describe('E2E: writeInitTechStack → readDeepStormConfig', () => {
     const dir = tmpDir('preserve')
 
     // Write an unrelated field first
-    mergeDeepStormConfig(path.join(dir, '.claude/settings.json'), {
-      tide: { issueTracker: 'jira' },
-    })
+    writeDeepStormConfig(dir, { tide: { issueTracker: 'jira' } as any })
 
     // Then call writeInitTechStack
     writeInitTechStack(dir, {
@@ -81,11 +78,11 @@ describe('E2E: writeInitTechStack → readDeepStormConfig', () => {
       projectName: 'test-proj',
     })
 
-    // Read the full settings.json
-    const settingsPath = path.join(dir, '.claude/settings.json')
+    // Read .deepstorm/settings.json
+    const settingsPath = path.join(dir, '.deepstorm', 'settings.json')
     const content = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'))
-    expect(content.deepstorm?.reef?.frontend?.framework).toBe('angular')
-    expect(content.deepstorm?.tide?.issueTracker).toBe('jira')
+    expect(content.reef?.frontend?.framework).toBe('angular')
+    expect(content.tide?.issueTracker).toBe('jira')
   })
 
   it('partial write does not clobber existing unrelated settings', () => {
@@ -104,11 +101,11 @@ describe('E2E: writeInitTechStack → readDeepStormConfig', () => {
       projectName: 'test-proj',
     })
 
-    const config = readDeepStormConfig(path.join(dir, '.claude/settings.json'))
+    const config = readDeepStormConfig(dir)
     // techs should reflect the latest write
     expect(config?.reef?.techs).toBe('frontend')
     expect(config?.reef?.frontend?.framework).toBe('vue')
-    // backend from first call should still be there (mergeDeepStormConfig deep-merges)
+    // backend from first call should still be there (writeDeepStormConfig deep-merges)
     expect(config?.reef?.backend?.language).toBe('java')
   })
 })
@@ -116,14 +113,13 @@ describe('E2E: writeInitTechStack → readDeepStormConfig', () => {
 describe('E2E: loadExistingConfigKeys', () => {
   it('reads full config and returns all non-none keys', () => {
     const dir = tmpDir('config-keys-full')
-    const settingsPath = path.join(dir, '.claude/settings.json')
+    const settingsPath = path.join(dir, '.deepstorm', 'settings.json')
+    fs.mkdirSync(path.join(dir, '.deepstorm'), { recursive: true })
     fs.writeFileSync(settingsPath, JSON.stringify({
-      deepstorm: {
-        reef: {
-          techs: 'frontend,backend',
-          frontend: { framework: 'angular', uiLibrary: 'material' },
-          backend: { language: 'java' },
-        },
+      reef: {
+        techs: 'frontend,backend',
+        frontend: { framework: 'angular', uiLibrary: 'material' },
+        backend: { language: 'java' },
       },
     }, null, 2))
 
@@ -136,13 +132,12 @@ describe('E2E: loadExistingConfigKeys', () => {
 
   it('excludes keys with value "none"', () => {
     const dir = tmpDir('config-keys-none')
-    const settingsPath = path.join(dir, '.claude/settings.json')
+    const settingsPath = path.join(dir, '.deepstorm', 'settings.json')
+    fs.mkdirSync(path.join(dir, '.deepstorm'), { recursive: true })
     fs.writeFileSync(settingsPath, JSON.stringify({
-      deepstorm: {
-        reef: {
-          techs: 'frontend',
-          frontend: { framework: 'none' },
-        },
+      reef: {
+        techs: 'frontend',
+        frontend: { framework: 'none' },
       },
     }, null, 2))
 
@@ -157,12 +152,11 @@ describe('E2E: loadExistingConfigKeys', () => {
     expect(keys.size).toBe(0)
   })
 
-  it('returns empty set when deepstorm namespace is empty', () => {
+  it('returns empty set when config is empty', () => {
     const dir = tmpDir('empty-deepstorm')
-    const settingsPath = path.join(dir, '.claude/settings.json')
-    fs.writeFileSync(settingsPath, JSON.stringify({
-      deepstorm: {},
-    }, null, 2))
+    const settingsPath = path.join(dir, '.deepstorm', 'settings.json')
+    fs.mkdirSync(path.join(dir, '.deepstorm'), { recursive: true })
+    fs.writeFileSync(settingsPath, JSON.stringify({}, null, 2))
 
     const keys = loadExistingConfigKeys(dir)
     expect(keys.size).toBe(0)
@@ -170,28 +164,19 @@ describe('E2E: loadExistingConfigKeys', () => {
 })
 
 describe('E2E: getInstalledMcpServices', () => {
-  it('reads installedMcpServers from settings.json', () => {
+  it('reads installedMcpServers from .deepstorm/settings.json', () => {
     const dir = tmpDir('installed-mcp')
-    const settingsPath = path.join(dir, '.claude/settings.json')
+    const settingsPath = path.join(dir, '.deepstorm', 'settings.json')
+    fs.mkdirSync(path.join(dir, '.deepstorm'), { recursive: true })
     fs.writeFileSync(settingsPath, JSON.stringify({
-      deepstorm: {
-        installedMcpServers: ['github', 'jira'],
-      },
+      installedMcpServers: ['github', 'jira'],
     }, null, 2))
 
     const services = getInstalledMcpServices(dir)
     expect(services).toEqual(['github', 'jira'])
   })
 
-  it('returns empty array when no deepstorm namespace', () => {
-    const dir = tmpDir('no-deepstorm')
-    const settingsPath = path.join(dir, '.claude/settings.json')
-    fs.writeFileSync(settingsPath, JSON.stringify({ other: {} }, null, 2))
-
-    expect(getInstalledMcpServices(dir)).toEqual([])
-  })
-
-  it('returns empty array when no settings.json', () => {
+  it('returns empty array when no configuration file', () => {
     const dir = tmpDir('no-settings-file')
     expect(getInstalledMcpServices(dir)).toEqual([])
   })

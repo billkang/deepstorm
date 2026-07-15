@@ -4,7 +4,8 @@ import * as path from 'node:path'
 import * as fs from 'node:fs'
 import { RegistryReader } from '../engine/registry'
 import { deepMerge } from '../utils/json'
-import { mergeDeepStormConfig } from '../merger/settings'
+import { writeDeepStormConfig, readDeepStormConfig } from '../merger/settings'
+import { initContextMap } from './init'
 import { mergeMcpServers } from '../merger/mcp'
 import { mergeHooks } from '../merger/hooks'
 import { getMcpEnvStubs, collectEnvSections } from '../wizard/mcp-env'
@@ -28,7 +29,7 @@ export function registerSetupCommand(program: Command, registry: Registry): void
 
   program
     .command('setup')
-    .description('交互式安装向导 — 选择套件、配置参数、生成到 .claude/')
+    .description('交互式安装向导 — 选择套件、配置参数、生成到 .claude/ + .deepstorm/')
     .option('--reconfigure', '清空旧配置后重新运行向导')
     .option('--non-interactive', '非交互模式，通过参数传递配置')
     .option('--tools <tools>', '指定要安装的工具套件，逗号分隔')
@@ -146,31 +147,37 @@ async function runSetup(
   }
 
   // 记录 MCP 安装（去重）
-  const settingsPath = path.join(targetDir, '.claude', 'settings.json')
   let existingMcp: string[] = []
   if (selectedMcpTools.length > 0) {
-    try {
-      const existing = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'))
-      existingMcp = (existing.deepstorm?.installedMcpServers as string[]) ?? []
-    } catch {
-      // 文件不存在或格式错误，从头开始
+    const dsConfig = readDeepStormConfig(targetDir)
+    if (dsConfig) {
+      existingMcp = (dsConfig.installedMcpServers as string[]) ?? []
     }
     deepstormConfig.installedMcpServers = [...new Set([...existingMcp, ...selectedMcpTools])]
   }
 
-  mergeDeepStormConfig(settingsPath, deepstormConfig as DeepStormConfig)
+  // ── .deepstorm/settings.json：DeepStorm 自有配置 ──
+  writeDeepStormConfig(targetDir, deepstormConfig as DeepStormConfig)
+
+  // ── .deepstorm/context.md：初始化项目上下文地图（如果不存在） ──
+  const frontend = nestedConfig.reef?.frontend?.framework ?? undefined
+  const backend = nestedConfig.reef?.backend?.language ?? undefined
+  initContextMap(targetDir, { frontend, backend, projectName: '' })
+
+  // ── .claude/settings.json：Claude Code 原生配置（MCP、沙箱等） ──
+  const claudeSettingsPath = path.join(targetDir, '.claude', 'settings.json')
 
   // 将 enabledMcpjsonServers 写入 settings.json 顶层 — 与 .mcp.json 中的 deepstorm-{name} 名称一致
   if (enabledMcpJsonServers.length > 0) {
-    writeEnabledMcpJsonServers(settingsPath, enabledMcpJsonServers)
+    writeEnabledMcpJsonServers(claudeSettingsPath, enabledMcpJsonServers)
     // 同时将 MCP server 配置写入 settings.json 的 mcpServers 字段，
     // 确保 Claude Code 能直接激活这些服务（而非仅依赖 .mcp.json）
     const servers = loadMcpServerConfigs(cliDir, selectedMcpTools)
-    mergeSettingsMcpServers(settingsPath, servers)
+    mergeSettingsMcpServers(claudeSettingsPath, servers)
   }
 
   // Step 6b: 禁用沙箱（允许 localhost MCP 连接）
-  mergeSandboxDisabled(settingsPath)
+  mergeSandboxDisabled(claudeSettingsPath)
 
   // Step 7: 创建 .env — 从 .env-example 文件合并选中服务的配置项
   if (selectedMcpTools.length > 0) {

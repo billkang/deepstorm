@@ -29,15 +29,14 @@ describe('refreshConfig', () => {
   beforeEach(() => {
     tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'deepstorm-refresh-'))
 
-    // 创建 settings.json（模拟已安装状态）
-    fs.mkdirSync(path.join(tmpDir, '.claude'), { recursive: true })
+    // 创建 .deepstorm/settings.json（模拟已安装状态）
+    const dotDeepstorm = path.join(tmpDir, '.deepstorm')
+    fs.mkdirSync(dotDeepstorm, { recursive: true })
     fs.writeFileSync(
-      path.join(tmpDir, '.claude', 'settings.json'),
+      path.join(dotDeepstorm, 'settings.json'),
       JSON.stringify({
-        deepstorm: {
-          installedSkills: ['tide-discuss'],
-          installedMcpServers: ['jira', 'feishu-wiki'],
-        },
+        installedSkills: ['tide-discuss'],
+        installedMcpServers: ['jira', 'feishu-wiki'],
       }),
       'utf-8',
     )
@@ -67,10 +66,10 @@ Provider: {{tide_capabilities}}`,
     fs.rmSync(tmpDir, { recursive: true, force: true })
   })
 
-  it('reads settings.json and re-renders skills with latest MCP info', async () => {
+  it('reads .deepstorm/settings.json and re-renders skills with latest MCP info', async () => {
     const result = await refreshConfig(
       path.join(tmpDir, 'cli'),
-      path.join(tmpDir, '.claude'),
+      tmpDir,
       mockRegistry,
     )
 
@@ -89,27 +88,26 @@ Provider: {{tide_capabilities}}`,
   })
 
   it('skips skills without .tmpl file', async () => {
-    // Create a skill without .tmpl
-    const settingsPath = path.join(tmpDir, '.claude', 'settings.json')
+    const settingsPath = path.join(tmpDir, '.deepstorm', 'settings.json')
     const settings = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'))
-    settings.deepstorm.installedSkills = ['tide-discuss', 'nonexistent-skill']
+    settings.installedSkills = ['tide-discuss', 'nonexistent-skill']
     fs.writeFileSync(settingsPath, JSON.stringify(settings), 'utf-8')
 
     const result = await refreshConfig(
       path.join(tmpDir, 'cli'),
-      path.join(tmpDir, '.claude'),
+      tmpDir,
       mockRegistry,
     )
 
     expect(result.refreshed).toContain('tide-discuss')
   })
 
-  it('handles missing settings.json gracefully', async () => {
-    fs.rmSync(path.join(tmpDir, '.claude', 'settings.json'))
+  it('handles missing .deepstorm/settings.json gracefully', async () => {
+    fs.rmSync(path.join(tmpDir, '.deepstorm', 'settings.json'))
 
     const result = await refreshConfig(
       path.join(tmpDir, 'cli'),
-      path.join(tmpDir, '.claude'),
+      tmpDir,
       mockRegistry,
     )
 
@@ -118,16 +116,16 @@ Provider: {{tide_capabilities}}`,
   })
 
   it('handles empty installedSkills gracefully', async () => {
-    const settingsPath = path.join(tmpDir, '.claude', 'settings.json')
+    const settingsPath = path.join(tmpDir, '.deepstorm', 'settings.json')
     fs.writeFileSync(
       settingsPath,
-      JSON.stringify({ deepstorm: { installedMcpServers: [] } }),
+      JSON.stringify({ installedMcpServers: [] }),
       'utf-8',
     )
 
     const result = await refreshConfig(
       path.join(tmpDir, 'cli'),
-      path.join(tmpDir, '.claude'),
+      tmpDir,
       mockRegistry,
     )
 

@@ -10,7 +10,7 @@ import * as fs from 'node:fs'
 import * as path from 'node:path'
 import { renderTemplate } from '../template/renderer'
 import { injectSkillCapabilities, buildMcpCapabilities } from '../template/registry'
-import { readDeepStormConfig, mergeDeepStormConfig } from '../merger/settings'
+import { readDeepStormConfig, writeDeepStormConfig, getDeepStormConfigPath } from '../merger/settings'
 import { parseFrontmatter } from '../utils/frontmatter'
 import type { Registry } from '../types/registry'
 
@@ -25,37 +25,35 @@ export interface RefreshResult {
  * 刷新所有已安装 skill 的模板渲染。
  *
  * @param cliDir - CLI 包所在的目录（dist/），用于找到源模板文件
- * @param targetDotClaudeDir - 目标项目的 .claude/ 目录路径
+ * @param targetDir - 目标项目根目录
  * @param registry - Registry 对象
  * @returns 刷新结果
  */
 export function refreshConfig(
   cliDir: string,
-  targetDotClaudeDir: string,
+  targetDir: string,
   registry: Registry,
 ): RefreshResult {
   const result: RefreshResult = { refreshed: [], errors: [] }
 
-  // 1. 读取 settings.json，触发自动迁移
-  const settingsPath = path.join(targetDotClaudeDir, 'settings.json')
+  // 1. 读取 .deepstorm/settings.json，触发自动迁移
+  const settingsPath = getDeepStormConfigPath(targetDir)
   if (!fs.existsSync(settingsPath)) {
     return result
   }
 
-  readDeepStormConfig(settingsPath)
+  readDeepStormConfig(targetDir)
 
-  let settings: Record<string, unknown>
+  let config: Record<string, unknown>
   try {
-    settings = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'))
+    config = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'))
   } catch {
     return result
   }
 
-  const deepstorm = settings.deepstorm as Record<string, unknown> | undefined
-  if (!deepstorm) return result
-
-  const installedSkills = (deepstorm.installedSkills as string[]) ?? []
-  const installedMcpServers = (deepstorm.installedMcpServers as string[]) ?? []
+  const installedSkills = (config.installedSkills as string[]) ?? []
+  const installedMcpServers = (config.installedMcpServers as string[]) ?? []
+  const targetDotClaudeDir = path.join(targetDir, '.claude')
 
   if (installedSkills.length === 0) return result
 
@@ -88,10 +86,10 @@ export function refreshConfig(
     }
   }
 
-  // 3. 重建统一 MCP 能力映射并写入 settings.json
+  // 3. 重建统一 MCP 能力映射并写入 .deepstorm/settings.json
   const mcpCapabilities = buildUnifiedMcpCapabilities(cliDir, installedMcpServers, registry.mcpTools ?? {})
   if (mcpCapabilities && Object.keys(mcpCapabilities).length > 0) {
-    mergeDeepStormConfig(settingsPath, { mcpCapabilities } as any)
+    writeDeepStormConfig(targetDir, { mcpCapabilities } as any)
   }
 
   return result

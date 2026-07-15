@@ -21,41 +21,38 @@ describe('viewConfig', () => {
     consoleErrorSpy.mockRestore()
   })
 
-  it('settings.json 不存在时应输出引导提示', () => {
+  it('.deepstorm/settings.json 不存在时应输出引导提示', () => {
     viewConfig(tmpDir)
     expect(consoleLogSpy).toHaveBeenCalledWith(
       expect.stringContaining('尚未配置 DeepStorm'),
     )
   })
 
-  it('应读取并展示 settings.json 中的 deepstorm 配置', () => {
-    const dotClaude = path.join(tmpDir, '.claude')
-    fs.mkdirSync(dotClaude, { recursive: true })
+  it('应读取并展示 .deepstorm/settings.json 中的配置', () => {
+    const deepstormDir = path.join(tmpDir, '.deepstorm')
+    fs.mkdirSync(deepstormDir, { recursive: true })
     fs.writeFileSync(
-      path.join(dotClaude, 'settings.json'),
+      path.join(deepstormDir, 'settings.json'),
       JSON.stringify({
-        deepstorm: {
-          reef: { frontend: { framework: 'angular' } },
-          installedSkills: ['reef-style-frontend'],
-        },
+        reef: { frontend: { framework: 'angular' } },
+        installedSkills: ['reef-style-frontend'],
       }),
       'utf-8',
     )
 
     viewConfig(tmpDir)
-    // 应该以 JSON 格式打印配置
     expect(consoleLogSpy).toHaveBeenCalledWith('DeepStorm 配置:')
     expect(consoleLogSpy).toHaveBeenCalledWith(
       expect.stringContaining('"framework": "angular"'),
     )
   })
 
-  it('settings.json 无 deepstorm 字段时应输出提示', () => {
-    const dotClaude = path.join(tmpDir, '.claude')
-    fs.mkdirSync(dotClaude, { recursive: true })
+  it('.deepstorm/settings.json 为空时应输出提示', () => {
+    const deepstormDir = path.join(tmpDir, '.deepstorm')
+    fs.mkdirSync(deepstormDir, { recursive: true })
     fs.writeFileSync(
-      path.join(dotClaude, 'settings.json'),
-      JSON.stringify({ someOtherConfig: 'value' }),
+      path.join(deepstormDir, 'settings.json'),
+      JSON.stringify({}),
       'utf-8',
     )
 

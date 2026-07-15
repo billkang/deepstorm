@@ -6,6 +6,7 @@ import { renderToolAssets, installMcpSkills } from './setup'
 import { buildTemplateVariables } from '../template/registry'
 import { mergeHooks } from '../merger/hooks'
 import { ensureDir } from '../utils/fs'
+import { getDeepStormConfigPath } from '../merger/settings'
 import type { Registry } from '../types/registry'
 
 // ─── Checkpoint utilities ────────────────────────────────────────
@@ -288,32 +289,33 @@ export function detectToolsFromConfig(
 }
 
 /**
- * 从 settings.json 的 deepstorm.* 中提取嵌套配置，展平为 Record<string, string>。
+ * 从 .deepstorm/settings.json 中提取嵌套配置，展平为 Record<string, string>。
  * 同时过滤掉非配置的元数据字段（installedSkills、installedMcpServers 等）。
  */
 function readSettingsConfig(targetDir: string): {
   config: Record<string, string>
   installedMcpTools: string[]
 } {
-  const settingsPath = path.join(targetDir, '.claude', 'settings.json')
+  const settingsPath = getDeepStormConfigPath(targetDir)
   try {
     const raw = fs.readFileSync(settingsPath, 'utf-8')
-    const settings = JSON.parse(raw)
-    const deepstorm = settings.deepstorm || {}
+    const config = JSON.parse(raw) as Record<string, unknown>
 
     const metaKeys = new Set([
       'installedSkills',
       'installedMcpServers',
+      'installedAgents',
       'installedAt',
       'mcpCapabilities',
+      'configVersion',
     ])
 
-    const config: Record<string, string> = {}
-    flattenNestedConfig(deepstorm, '', config, metaKeys)
+    const flatConfig: Record<string, string> = {}
+    flattenNestedConfig(config, '', flatConfig, metaKeys)
 
-    const installedMcpTools: string[] = deepstorm.installedMcpServers ?? []
+    const installedMcpTools: string[] = (config.installedMcpServers as string[]) ?? []
 
-    return { config, installedMcpTools }
+    return { config: flatConfig, installedMcpTools }
   } catch {
     return { config: {}, installedMcpTools: [] }
   }

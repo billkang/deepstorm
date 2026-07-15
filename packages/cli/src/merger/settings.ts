@@ -1,4 +1,5 @@
 import * as fs from 'node:fs'
+import * as path from 'node:path'
 import { deepMerge } from '../utils/json'
 import type { DeepStormConfig } from '../types/config'
 
@@ -6,58 +7,104 @@ import type { DeepStormConfig } from '../types/config'
 export const CONFIG_VERSION = 1
 
 /**
- * 合并 DeepStorm 配置到 .claude/settings.json 的 deepstormm 命名空间。
- * 文件不存在时自动创建，已有非 deepstorm 字段原样保留。
+ * 返回 DeepStorm 配置文件路径（.deepstorm/settings.json）。
  */
-export function mergeDeepStormConfig(
-  settingsPath: string,
-  config: DeepStormConfig,
-): void {
-  let settings: Record<string, unknown> = {}
-
-  try {
-    if (fs.existsSync(settingsPath)) {
-      const raw = fs.readFileSync(settingsPath, 'utf-8')
-      settings = JSON.parse(raw)
-    }
-  } catch {
-    // 文件损坏或非 JSON，从空对象开始
-    settings = {}
-  }
-
-  const existing = (settings.deepstorm as Record<string, unknown>) || {}
-  settings.deepstorm = deepMerge(existing, config as unknown as Record<string, unknown>)
-
-  fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2) + '\n', 'utf-8')
+export function getDeepStormConfigPath(targetDir: string): string {
+  return path.join(targetDir, '.deepstorm', 'settings.json')
 }
 
 /**
- * 从 .claude/settings.json 的 deepstormm 命名空间读取配置。
- * 读取后自动执行旧配置迁移（如果版本号不匹配）。
+ * 写入 DeepStorm 配置到 .deepstorm/settings.json。
+ * 文件不存在时自动创建目录和文件。
+ */
+export function writeDeepStormConfig(
+  targetDir: string,
+  config: DeepStormConfig,
+): void {
+  const settingsPath = getDeepStormConfigPath(targetDir)
+  ensureDir(path.dirname(settingsPath))
+
+  let existing: Record<string, unknown> = {}
+  try {
+    if (fs.existsSync(settingsPath)) {
+      const raw = fs.readFileSync(settingsPath, 'utf-8')
+      existing = JSON.parse(raw)
+    }
+  } catch {
+    existing = {}
+  }
+
+  const merged = deepMerge(existing, config as unknown as Record<string, unknown>)
+  fs.writeFileSync(settingsPath, JSON.stringify(merged, null, 2) + '\n', 'utf-8')
+}
+
+/**
+ * 从 .deepstorm/settings.json 读取 DeepStorm 配置。
+ * 自动执行旧配置迁移（如果版本号不匹配）。
+ * 如果文件不存在，尝试从 .claude/settings.json 的 deepstorm 命名空间迁移。
  *
- * @returns deepstormm 配置对象，或 null（文件不存在/配置为空）
+ * @returns DeepStorm 配置对象，或 null（文件不存在/配置为空）
  */
 export function readDeepStormConfig(
+  targetDir: string,
+): Record<string, unknown> | null {
+  const settingsPath = getDeepStormConfigPath(targetDir)
+
+  // 1. 优先从 .deepstorm/settings.json 读取
+  if (fs.existsSync(settingsPath)) {
+    return readAndMigrate(settingsPath)
+  }
+
+  // 2. 向后兼容：从 .claude/settings.json 的 deepstorm 命名空间迁移
+  const oldPath = path.join(targetDir, '.claude', 'settings.json')
+  if (fs.existsSync(oldPath)) {
+    try {
+      const raw = fs.readFileSync(oldPath, 'utf-8')
+      const settings = JSON.parse(raw)
+      const config = settings.deepstorm as Record<string, unknown> | undefined
+      if (config && Object.keys(config).length > 0) {
+        // 迁移到新位置
+        const migrated = migrateConfig(config)
+        writeDeepStormConfig(targetDir, migrated as DeepStormConfig)
+        // 从旧配置中移除 deepstorm 命名空间
+        delete settings.deepstorm
+        fs.writeFileSync(oldPath, JSON.stringify(settings, null, 2) + '\n', 'utf-8')
+        return migrated
+      }
+    } catch {
+      // 旧配置不存在或格式错误，忽略
+    }
+  }
+
+  return null
+}
+
+/**
+ * 读取并自动迁移配置。
+ */
+function readAndMigrate(
   settingsPath: string,
 ): Record<string, unknown> | null {
-  if (!fs.existsSync(settingsPath)) return null
-
   try {
     const raw = fs.readFileSync(settingsPath, 'utf-8')
-    const settings = JSON.parse(raw)
-    const deepstorm = settings.deepstorm as Record<string, unknown> | undefined
-    if (!deepstorm) return null
+    const config = JSON.parse(raw)
+    if (!config || Object.keys(config).length === 0) return null
 
-    // 自动迁移旧配置
-    const migrated = migrateConfig(deepstorm)
-    if (migrated !== deepstorm) {
-      settings.deepstorm = migrated
-      fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2) + '\n', 'utf-8')
+    const migrated = migrateConfig(config)
+    if (migrated !== config) {
+      fs.writeFileSync(settingsPath, JSON.stringify(migrated, null, 2) + '\n', 'utf-8')
     }
 
-    return settings.deepstorm as Record<string, unknown>
+    return migrated
   } catch {
     return null
+  }
+}
+
+/** 确保目录存在 */
+function ensureDir(dir: string): void {
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true })
   }
 }
 
@@ -68,7 +115,7 @@ export function readDeepStormConfig(
  * - configVersion 不存在或 < CONFIG_VERSION → 触发迁移
  * - reef 下缺少新维度字段 → 补充为 "none"
  *
- * @param config - deepstormm 命名空间的对象（会被原地修改，也可能返回新对象）
+ * @param config - DeepStorm 配置对象（会被原地修改，也可能返回新对象）
  * @returns 迁移后的配置对象（如果无变更则返回原引用）
  */
 export function migrateConfig(
@@ -101,7 +148,6 @@ export function migrateConfig(
     if (backend) {
       const language = backend.language as string | undefined
       if (language === 'java') {
-        // 确保 Java 子维度存在（多选，展开为对象）
         if (!backend.java || typeof backend.java !== 'object') {
           backend.java = {}
           changed = true
@@ -121,7 +167,6 @@ export function migrateConfig(
           }
         }
       } else if (language) {
-        // 非 Java 语言，确保 java 子维度存在但为 none
         if (!backend.java || typeof backend.java !== 'object') {
           backend.java = {}
           changed = true
@@ -150,4 +195,56 @@ export function migrateConfig(
   }
 
   return config
+}
+
+/**
+ * @deprecated 请使用 writeDeepStormConfig(targetDir, config) 替代。
+ * 保留仅供向后兼容。
+ */
+export function mergeDeepStormConfig(
+  settingsPath: string,
+  config: DeepStormConfig,
+): void {
+  let settings: Record<string, unknown> = {}
+
+  try {
+    if (fs.existsSync(settingsPath)) {
+      const raw = fs.readFileSync(settingsPath, 'utf-8')
+      settings = JSON.parse(raw)
+    }
+  } catch {
+    settings = {}
+  }
+
+  const existing = (settings.deepstorm as Record<string, unknown>) || {}
+  settings.deepstorm = deepMerge(existing, config as unknown as Record<string, unknown>)
+
+  fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2) + '\n', 'utf-8')
+}
+
+/**
+ * @deprecated 请使用 readDeepStormConfig(targetDir) 替代。
+ * 保留仅供向后兼容。
+ */
+export function readDeepStormConfigFromPath(
+  settingsPath: string,
+): Record<string, unknown> | null {
+  if (!fs.existsSync(settingsPath)) return null
+
+  try {
+    const raw = fs.readFileSync(settingsPath, 'utf-8')
+    const settings = JSON.parse(raw)
+    const deepstorm = settings.deepstorm as Record<string, unknown> | undefined
+    if (!deepstorm) return null
+
+    const migrated = migrateConfig(deepstorm)
+    if (migrated !== deepstorm) {
+      settings.deepstorm = migrated
+      fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2) + '\n', 'utf-8')
+    }
+
+    return settings.deepstorm as Record<string, unknown>
+  } catch {
+    return null
+  }
 }

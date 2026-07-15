@@ -2,7 +2,7 @@ import * as fs from 'node:fs'
 import * as path from 'node:path'
 import { parseFrontmatter } from '../utils/frontmatter'
 import { loadValidConfigKeys } from '../utils/config-schema'
-import { readDeepStormConfig } from '../merger/settings'
+import { readDeepStormConfig, getDeepStormConfigPath } from '../merger/settings'
 import { getCliVersion } from '../utils/version'
 
 export interface DoctorReport {
@@ -19,10 +19,11 @@ interface DoctorCheck {
 /**
  * 读取 installedSkills 列表。
  */
-function getInstalledSkills(settingsPath: string): string[] {
+function getInstalledSkills(targetDir: string): string[] {
+  const settingsPath = getDeepStormConfigPath(targetDir)
   try {
     const settings = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'))
-    return settings.deepstorm?.installedSkills || []
+    return settings.installedSkills || []
   } catch {
     return []
   }
@@ -34,10 +35,10 @@ function getInstalledSkills(settingsPath: string): string[] {
 export function runDoctor(targetDir: string): DoctorReport {
   const checks: DoctorCheck[] = []
   const version = getCliVersion()
-  const settingsPath = path.join(targetDir, '.claude', 'settings.json')
+  const settingsPath = getDeepStormConfigPath(targetDir)
 
   // 迁移旧配置（如有）
-  readDeepStormConfig(settingsPath)
+  readDeepStormConfig(targetDir)
 
   // 检查 1: CLI 版本号
   checks.push({
@@ -46,36 +47,36 @@ export function runDoctor(targetDir: string): DoctorReport {
     message: `v${version}（运行 deepstorm update --check 检查最新版本）`,
   })
 
-  // 检查 2: settings.json + deepstormm 命名空间
+  // 检查 2: .deepstorm/settings.json 是否存在
   let hasDeepStorm = false
   if (!fs.existsSync(settingsPath)) {
     checks.push({
       name: '配置文件',
       status: 'warn',
-      message: '.claude/settings.json 不存在',
+      message: '.deepstorm/settings.json 不存在',
     })
   } else {
     try {
-      const settings = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'))
-      if (settings.deepstorm) {
+      const config = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'))
+      if (config && Object.keys(config).length > 0) {
         hasDeepStorm = true
         checks.push({
-          name: 'DeepStorm 命名空间',
+          name: 'DeepStorm 配置',
           status: 'pass',
-          message: '命名空间完整',
+          message: '.deepstorm/settings.json 完整',
         })
       } else {
         checks.push({
-          name: 'DeepStorm 命名空间',
+          name: 'DeepStorm 配置',
           status: 'warn',
-          message: '.claude/settings.json 中无 deepstorm 命名空间',
+          message: '.deepstorm/settings.json 为空',
         })
       }
     } catch {
       checks.push({
         name: '配置文件',
         status: 'fail',
-        message: '.claude/settings.json 格式错误',
+        message: '.deepstorm/settings.json 格式错误',
       })
     }
   }
@@ -126,7 +127,7 @@ export function runDoctor(targetDir: string): DoctorReport {
     }
 
     // 检查 4: 缺少的依赖 skill
-    const installedSkills = getInstalledSkills(settingsPath)
+    const installedSkills = getInstalledSkills(targetDir)
     const missingSkills: string[] = []
 
     for (const skillId of installedSkills) {
@@ -187,8 +188,8 @@ export function runDoctor(targetDir: string): DoctorReport {
   // 检查 5b: MCP 安装一致性 — installedMcpServers 是否与 .mcp.json 匹配
   if (hasDeepStorm && fs.existsSync(settingsPath)) {
     try {
-      const settings = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'))
-      const installedMcp = settings.deepstorm?.installedMcpServers as string[] | undefined
+      const config = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'))
+      const installedMcp = config.installedMcpServers as string[] | undefined
       if (installedMcp && installedMcp.length > 0) {
         const mcpExists = fs.existsSync(mcpPath)
         if (!mcpExists) {
@@ -233,8 +234,7 @@ export function runDoctor(targetDir: string): DoctorReport {
   // 检查 6: 配置异常值校验（config-schema.json）
   if (hasDeepStorm && fs.existsSync(settingsPath)) {
     try {
-      const settings = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'))
-      const config = settings.deepstorm
+      const config = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'))
       const validKeys = loadValidConfigKeys()
 
       if (validKeys.size > 0 && config) {

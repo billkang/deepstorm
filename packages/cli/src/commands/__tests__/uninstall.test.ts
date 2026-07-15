@@ -23,13 +23,12 @@ describe('uninstallDeepStorm', () => {
     fs.rmSync(tmpDir, { recursive: true, force: true })
   })
 
-  function createSettings(deepstorm?: Record<string, unknown>): void {
-    const content: Record<string, unknown> = deepstorm
-      ? { deepstorm }
-      : {}
-    fs.mkdirSync(path.join(tmpDir, '.claude'), { recursive: true })
+  function createSettings(config?: Record<string, unknown>): void {
+    const content = config ?? {}
+    const dotDeepstorm = path.join(tmpDir, '.deepstorm')
+    fs.mkdirSync(dotDeepstorm, { recursive: true })
     fs.writeFileSync(
-      path.join(tmpDir, '.claude', 'settings.json'),
+      path.join(dotDeepstorm, 'settings.json'),
       JSON.stringify(content),
       'utf-8',
     )
@@ -53,7 +52,7 @@ describe('uninstallDeepStorm', () => {
     )
   }
 
-  it('settings.json 不存在时应提示尚未配置', async () => {
+  it('.deepstorm/settings.json 不存在时应提示尚未配置', async () => {
     const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
 
     await uninstallDeepStorm(tmpDir)
@@ -62,8 +61,8 @@ describe('uninstallDeepStorm', () => {
     consoleSpy.mockRestore()
   })
 
-  it('无 deepstorm 命名空间时应提示尚未配置', async () => {
-    createSettings() // 空的 settings.json，无 deepstorm
+  it('空配置时应提示尚未配置', async () => {
+    createSettings({}) // 空的 settings.json
 
     const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
 
@@ -74,8 +73,9 @@ describe('uninstallDeepStorm', () => {
   })
 
   it('settings.json 损坏时应继续执行清理', async () => {
-    fs.mkdirSync(path.join(tmpDir, '.claude'), { recursive: true })
-    fs.writeFileSync(path.join(tmpDir, '.claude', 'settings.json'), '{invalid json', 'utf-8')
+    const dotDeepstorm = path.join(tmpDir, '.deepstorm')
+    fs.mkdirSync(dotDeepstorm, { recursive: true })
+    fs.writeFileSync(path.join(dotDeepstorm, 'settings.json'), '{invalid json', 'utf-8')
 
     const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
 
@@ -85,7 +85,7 @@ describe('uninstallDeepStorm', () => {
     consoleSpy.mockRestore()
   })
 
-  it('完整卸载：清理 skill、MCP 并删除 deepstorm 命名空间', async () => {
+  it('完整卸载：清理 skill、MCP 并删除 .deepstorm/settings.json', async () => {
     createSettings({
       installedSkills: ['reef-style'],
       installedMcpServers: ['github'],
@@ -106,9 +106,8 @@ describe('uninstallDeepStorm', () => {
     expect(mcpAfter.mcpServers).not.toHaveProperty('deepstorm-github')
     expect(mcpAfter.mcpServers['user-manual']).toEqual({ command: 'python' })
 
-    // deepstorm 命名空间应被删除
-    const settingsAfter = JSON.parse(fs.readFileSync(path.join(tmpDir, '.claude', 'settings.json'), 'utf-8'))
-    expect(settingsAfter.deepstorm).toBeUndefined()
+    // .deepstorm/settings.json 应被删除
+    expect(fs.existsSync(path.join(tmpDir, '.deepstorm', 'settings.json'))).toBe(false)
 
     expect(consoleSpy).toHaveBeenCalledWith('✔ DeepStorm 已卸载')
     consoleSpy.mockRestore()

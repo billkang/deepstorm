@@ -9,7 +9,6 @@ describe('cleanInstalled', () => {
 
   beforeEach(() => {
     tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'deepstorm-reconfigure-'))
-    fs.mkdirSync(path.join(tmpDir, '.claude'), { recursive: true })
   })
 
   afterEach(() => {
@@ -17,8 +16,10 @@ describe('cleanInstalled', () => {
   })
 
   function writeSettings(json: Record<string, unknown>): void {
+    const dir = path.join(tmpDir, '.deepstorm')
+    fs.mkdirSync(dir, { recursive: true })
     fs.writeFileSync(
-      path.join(tmpDir, '.claude', 'settings.json'),
+      path.join(dir, 'settings.json'),
       JSON.stringify(json),
       'utf-8',
     )
@@ -41,10 +42,8 @@ describe('cleanInstalled', () => {
 
   it('应清理 deepstorm-* MCP server 条目，保留其他条目', () => {
     writeSettings({
-      deepstorm: {
-        installedMcpServers: ['jira', 'github'],
-        installedSkills: [],
-      },
+      installedMcpServers: ['jira', 'github'],
+      installedSkills: [],
     })
     writeMcp({
       mcpServers: {
@@ -64,10 +63,8 @@ describe('cleanInstalled', () => {
 
   it('无 mcpServers 时不应报错', () => {
     writeSettings({
-      deepstorm: {
-        installedMcpServers: ['jira'],
-        installedSkills: [],
-      },
+      installedMcpServers: ['jira'],
+      installedSkills: [],
     })
     writeMcp({})
 
@@ -76,9 +73,7 @@ describe('cleanInstalled', () => {
 
   it('无 installedMcpServers 时不应修改 .mcp.json', () => {
     writeSettings({
-      deepstorm: {
-        installedSkills: [],
-      },
+      installedSkills: [],
     })
     writeMcp({
       mcpServers: {
@@ -92,16 +87,14 @@ describe('cleanInstalled', () => {
     expect((mcp.mcpServers as any)['deepstorm-jira']).toBeDefined()
   })
 
-  it('settings.json 不存在时不应报错', () => {
+  it('.deepstorm/settings.json 不存在时不应报错', () => {
     expect(() => cleanInstalled(tmpDir)).not.toThrow()
   })
 
   it('.mcp.json 不存在时不应报错', () => {
     writeSettings({
-      deepstorm: {
-        installedMcpServers: ['jira'],
-        installedSkills: [],
-      },
+      installedMcpServers: ['jira'],
+      installedSkills: [],
     })
 
     expect(() => cleanInstalled(tmpDir)).not.toThrow()
@@ -109,15 +102,12 @@ describe('cleanInstalled', () => {
 
   it('应清理 .mcp.json 中所有 deepstorm-* 前缀条目，含服务名与 MCP JSON 中 serverName 不同的情况', () => {
     writeSettings({
-      deepstorm: {
-        installedMcpServers: ['jira', 'feishu-wiki'],
-        installedSkills: [],
-      },
+      installedMcpServers: ['jira', 'feishu-wiki'],
+      installedSkills: [],
     })
     writeMcp({
       mcpServers: {
         'deepstorm-jira': { command: 'npx', args: [] },
-        // feishu-wiki 的 mcpServers key 是 "feishu-wiki"，所以 deepstormm key 是 "deepstorm-feishu-wiki"
         'deepstorm-feishu-wiki': { command: 'npx', args: [] },
         'user-manual': { command: 'python', args: [] },
       },
@@ -133,10 +123,8 @@ describe('cleanInstalled', () => {
 
   it('应清理已安装的 hooks（.claude/hooks.json + .claude/hooks/ 脚本）', () => {
     writeSettings({
-      deepstorm: {
-        installedMcpServers: [],
-        installedSkills: ['reef'],
-      },
+      installedMcpServers: [],
+      installedSkills: ['reef'],
     })
     writeHooksHook()
 
@@ -150,24 +138,23 @@ describe('cleanInstalled', () => {
 
   it('hooks 目录不存在时不应报错', () => {
     writeSettings({
-      deepstorm: {
-        installedMcpServers: [],
-        installedSkills: ['reef'],
-      },
+      installedMcpServers: [],
+      installedSkills: ['reef'],
     })
 
     expect(() => cleanInstalled(tmpDir)).not.toThrow()
   })
 
-  it('无 deepstorm 命名空间时不应清理 hooks', () => {
-    writeSettings({ other: true })
-    writeHooksHook()
+  it('.deepstorm/settings.json 不存在时不应清理 hooks', () => {
+    const hooksDir = path.join(tmpDir, '.claude', 'hooks')
+    fs.mkdirSync(hooksDir, { recursive: true })
+    fs.writeFileSync(path.join(tmpDir, '.claude', 'hooks.json'), JSON.stringify({ hooks: {} }), 'utf-8')
+    fs.writeFileSync(path.join(hooksDir, 'reef-block-dangerous.sh'), 'echo ok', 'utf-8')
 
     cleanInstalled(tmpDir)
 
     const hooksRootJson = path.join(tmpDir, '.claude', 'hooks.json')
     expect(fs.existsSync(hooksRootJson)).toBe(true)
-    const hooksDir = path.join(tmpDir, '.claude', 'hooks')
     expect(fs.existsSync(hooksDir)).toBe(true)
   })
 })

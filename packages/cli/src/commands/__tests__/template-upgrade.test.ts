@@ -230,15 +230,13 @@ describe('syncToolAssets', () => {
     )
 
     // settings.json 有 reef.* 配置但 installedSkills 为空
-    const settingsDir = path.join(tmpDir, '.claude')
+    const settingsDir = path.join(tmpDir, '.deepstorm')
     fs.mkdirSync(settingsDir, { recursive: true })
     fs.writeFileSync(
       path.join(settingsDir, 'settings.json'),
       JSON.stringify({
-        deepstorm: {
-          'reef.techs': 'frontend,backend',
-          'reef.frontend.framework': 'angular',
-        },
+        'reef.techs': 'frontend,backend',
+        'reef.frontend.framework': 'angular',
       }),
       'utf-8',
     )
@@ -314,15 +312,13 @@ describe('syncToolAssets', () => {
     )
 
     // settings.json 包含 installedMcpServers，表示用户已配置 jira MCP 服务
-    const settingsDir = path.join(tmpDir, '.claude')
+    const settingsDir = path.join(tmpDir, '.deepstorm')
     fs.mkdirSync(settingsDir, { recursive: true })
     fs.writeFileSync(
       path.join(settingsDir, 'settings.json'),
       JSON.stringify({
-        deepstorm: {
-          installedSkills: ['reef-gen-code'],
-          installedMcpServers: ['jira'],
-        },
+        installedSkills: ['reef-gen-code'],
+        installedMcpServers: ['jira'],
       }),
       'utf-8',
     )

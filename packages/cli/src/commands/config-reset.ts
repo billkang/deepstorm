@@ -1,21 +1,19 @@
 import * as fs from 'node:fs'
 import * as path from 'node:path'
+import { getDeepStormConfigPath } from '../merger/settings'
 
 /**
- * 删除 .claude/settings.json 中的 deepstormm 命名空间。
+ * 删除 .deepstorm/settings.json（DeepStorm 配置）。
  */
 export function resetConfig(targetDir: string): void {
-  const settingsPath = path.join(targetDir, '.claude', 'settings.json')
+  const settingsPath = path.join(targetDir, '.deepstorm', 'settings.json')
 
   if (!fs.existsSync(settingsPath)) return
 
   try {
-    const settings = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'))
-    if (!settings.deepstorm) return
-
-    delete settings.deepstorm
-    fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2) + '\n', 'utf-8')
+    fs.unlinkSync(settingsPath)
+    console.log('✔ 已清除 DeepStorm 配置')
   } catch {
-    // 文件损坏，忽略
+    // 无法删除，忽略
   }
 }

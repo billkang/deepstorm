@@ -5,7 +5,7 @@ import { renderTemplate, copyVariants } from '../template/renderer'
 import { findAffectedTemplates, buildTemplateVariables } from '../template/registry'
 import { ensureDir } from '../utils/fs'
 import { validateConfigKey } from '../utils/config-schema'
-import { readDeepStormConfig } from '../merger/settings'
+import { readDeepStormConfig, getDeepStormConfigPath } from '../merger/settings'
 import type { Registry } from '../types/registry'
 
 // 打包后 __dirname = dist/
@@ -28,31 +28,25 @@ export async function setConfigValue(
     return
   }
 
-  const settingsPath = path.join(targetDir, '.claude', 'settings.json')
+  const settingsPath = getDeepStormConfigPath(targetDir)
 
-  // 先触发配置迁移（补全新维度字段），确保 deepstorm 命名空间存在
-  readDeepStormConfig(settingsPath)
+  // 先触发配置迁移（补全新维度字段），确保配置存在
+  readDeepStormConfig(targetDir)
 
-  let settings: Record<string, unknown> = {}
+  let config: Record<string, unknown> = {}
 
   if (fs.existsSync(settingsPath)) {
     try {
-      settings = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'))
+      config = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'))
     } catch {
-      settings = {}
+      config = {}
     }
   }
 
-  if (!settings.deepstorm) {
-    settings.deepstorm = {} as Record<string, unknown>
-  }
-
-  const deepstorm = settings.deepstorm as Record<string, unknown>
-  const parts = key.split('.')
-
   // 读取旧值，判断是否真的变更
+  const parts = key.split('.')
   let oldValue: string | undefined
-  let current = deepstorm
+  let current = config as Record<string, unknown>
   for (let i = 0; i < parts.length - 1; i++) {
     const val = current[parts[i]]
     if (!val || typeof val !== 'object') {
@@ -65,7 +59,7 @@ export async function setConfigValue(
     }
   }
   if (parts.length === 1) {
-    oldValue = deepstorm[key] as string | undefined
+    oldValue = config[key] as string | undefined
   }
 
   // 值相同 → 跳过
@@ -75,7 +69,7 @@ export async function setConfigValue(
   }
 
   // 写入新配置
-  let writePointer = deepstorm
+  let writePointer = config
   for (let i = 0; i < parts.length - 1; i++) {
     if (!writePointer[parts[i]] || typeof writePointer[parts[i]] !== 'object') {
       writePointer[parts[i]] = {}
@@ -84,7 +78,7 @@ export async function setConfigValue(
   }
   writePointer[parts[parts.length - 1]] = value
 
-  fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2) + '\n', 'utf-8')
+  fs.writeFileSync(settingsPath, JSON.stringify(config, null, 2) + '\n', 'utf-8')
   console.log(`✔ ${key} 已更新为 ${value}`)
 
   // 查找受影响模板
@@ -118,8 +112,8 @@ export async function setConfigValue(
 
   // 构建完整的 config 对象（含旧值用于 affectedTemplates 的完整变量解析）
   const fullConfig: Record<string, string> = {}
-  // 从当前 settings 中提取所有 deepstorm 配置
-  for (const [toolKey, toolVal] of Object.entries(deepstorm)) {
+  // 从当前配置中提取所有值
+  for (const [toolKey, toolVal] of Object.entries(config)) {
     if (typeof toolVal === 'object' && toolVal !== null && !Array.isArray(toolVal)) {
       for (const [subKey, subVal] of Object.entries(toolVal as Record<string, unknown>)) {
         if (typeof subVal === 'string') {
@@ -132,7 +126,7 @@ export async function setConfigValue(
   fullConfig[key] = value
 
   // 读取已安装的 MCP 服务列表，一并注入模板变量
-  const installedMcpServers = (deepstorm.installedMcpServers as string[]) ?? []
+  const installedMcpServers = (config.installedMcpServers as string[]) ?? []
 
   const templateVariables = buildTemplateVariables(registry, fullConfig, installedMcpServers)
 

@@ -46,14 +46,13 @@ describe('setConfigValue', () => {
 
   beforeEach(() => {
     tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'deepstorm-config-'))
-    fs.mkdirSync(path.join(tmpDir, '.claude'), { recursive: true })
+    const dotDeepstorm = path.join(tmpDir, '.deepstorm')
+    fs.mkdirSync(dotDeepstorm, { recursive: true })
     fs.writeFileSync(
-      path.join(tmpDir, '.claude', 'settings.json'),
+      path.join(dotDeepstorm, 'settings.json'),
       JSON.stringify({
-        deepstorm: {
-          reef: { frontend: { framework: 'react' } },
-          installedSkills: ['reef-react-lint'],
-        },
+        reef: { frontend: { framework: 'react' } },
+        installedSkills: ['reef-react-lint'],
       }),
       'utf-8',
     )
@@ -69,35 +68,30 @@ describe('setConfigValue', () => {
 
   it('sets a config value at a nested path', async () => {
     await setConfigValue(tmpDir, 'reef.frontend.framework', 'vue', mockRegistry)
-    const settings = JSON.parse(
-      fs.readFileSync(path.join(tmpDir, '.claude', 'settings.json'), 'utf-8'),
+    const config = JSON.parse(
+      fs.readFileSync(path.join(tmpDir, '.deepstorm', 'settings.json'), 'utf-8'),
     )
-    expect(settings.deepstorm.reef.frontend.framework).toBe('vue')
+    expect(config.reef.frontend.framework).toBe('vue')
   })
 
-  it('creates deepstorm namespace if missing', async () => {
-    fs.writeFileSync(
-      path.join(tmpDir, '.claude', 'settings.json'),
-      JSON.stringify({ mcpServers: {} }),
-      'utf-8',
-    )
+  it('creates config file if missing', async () => {
+    fs.rmSync(path.join(tmpDir, '.deepstorm', 'settings.json'))
 
     await setConfigValue(tmpDir, 'reef.frontend.framework', 'react', mockRegistry)
-    const settings = JSON.parse(
-      fs.readFileSync(path.join(tmpDir, '.claude', 'settings.json'), 'utf-8'),
+    const config = JSON.parse(
+      fs.readFileSync(path.join(tmpDir, '.deepstorm', 'settings.json'), 'utf-8'),
     )
-    expect(settings.deepstorm.reef.frontend.framework).toBe('react')
-    expect(settings.mcpServers).toEqual({})
+    expect(config.reef.frontend.framework).toBe('react')
   })
 
   it('handles non-existent settings.json', async () => {
-    fs.rmSync(path.join(tmpDir, '.claude', 'settings.json'))
+    fs.rmSync(path.join(tmpDir, '.deepstorm', 'settings.json'))
 
     await setConfigValue(tmpDir, 'reef.frontend.framework', 'react', mockRegistry)
-    const settings = JSON.parse(
-      fs.readFileSync(path.join(tmpDir, '.claude', 'settings.json'), 'utf-8'),
+    const config = JSON.parse(
+      fs.readFileSync(path.join(tmpDir, '.deepstorm', 'settings.json'), 'utf-8'),
     )
-    expect(settings.deepstorm.reef.frontend.framework).toBe('react')
+    expect(config.reef.frontend.framework).toBe('react')
   })
 
   it('logs unchanged message when value is the same', async () => {
@@ -166,25 +160,24 @@ describe('setConfigValue', () => {
   it('rejects unknown config keys and returns early', async () => {
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
     await setConfigValue(tmpDir, 'invalid.key', 'value', mockRegistry)
-    // validateConfigKey returns false, so value is not written
-    const settings = JSON.parse(
-      fs.readFileSync(path.join(tmpDir, '.claude', 'settings.json'), 'utf-8'),
+    const config = JSON.parse(
+      fs.readFileSync(path.join(tmpDir, '.deepstorm', 'settings.json'), 'utf-8'),
     )
-    expect(settings.deepstorm.reef.frontend.framework).toBe('react')
+    expect(config.reef.frontend.framework).toBe('react')
     expect(logSpy).not.toHaveBeenCalledWith(expect.stringContaining('已更新'))
     logSpy.mockRestore()
   })
 
   it('recovers from corrupt settings.json', async () => {
     fs.writeFileSync(
-      path.join(tmpDir, '.claude', 'settings.json'),
+      path.join(tmpDir, '.deepstorm', 'settings.json'),
       '{corrupt',
       'utf-8',
     )
     await setConfigValue(tmpDir, 'reef.frontend.framework', 'vue', mockRegistry)
-    const settings = JSON.parse(
-      fs.readFileSync(path.join(tmpDir, '.claude', 'settings.json'), 'utf-8'),
+    const config = JSON.parse(
+      fs.readFileSync(path.join(tmpDir, '.deepstorm', 'settings.json'), 'utf-8'),
     )
-    expect(settings.deepstorm.reef.frontend.framework).toBe('vue')
+    expect(config.reef.frontend.framework).toBe('vue')
   })
 })

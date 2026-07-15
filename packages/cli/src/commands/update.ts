@@ -4,6 +4,7 @@ import * as path from 'node:path'
 import { execSync } from 'node:child_process'
 import { getCliVersion } from '../utils/version'
 import { upgradeTemplates } from './template-upgrade'
+import { getDeepStormConfigPath } from '../merger/settings'
 
 export interface NpmVersionResult {
   /** 本地当前版本号 */
@@ -154,15 +155,14 @@ export async function updateCLI(fetchFn?: typeof fetch): Promise<NpmVersionResul
 }
 
 /**
- * 从 .claude/settings.json 读取已安装的 skill ID 列表。
- * 仅在 `deepstorm.setup` 时写入 installedSkills，update 命令以此判断哪些是用户已安装的内容。
+ * 从 .deepstorm/settings.json 读取已安装的 skill ID 列表。
  */
 function getInstalledSkillIds(targetDir: string): string[] {
-  const settingsPath = path.join(targetDir, '.claude', 'settings.json')
+  const settingsPath = getDeepStormConfigPath(targetDir)
   try {
     const raw = fs.readFileSync(settingsPath, 'utf-8')
-    const settings = JSON.parse(raw)
-    return settings.deepstorm?.installedSkills ?? []
+    const config = JSON.parse(raw)
+    return config.installedSkills ?? []
   } catch {
     return []
   }
