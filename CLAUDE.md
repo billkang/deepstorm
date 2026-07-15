@@ -23,6 +23,7 @@ DeepStorm 是一套 AI 协同工具集，覆盖产品→开发→测试→运维
 - **流程图约定**：所有流程图必须使用 **Mermaid** 语法（` ```mermaid `），禁止使用 ASCII 字符画流程图（` ```text `）
 - **需求讨论优先**：当用户输入需求、功能描述或变更意图时，必须先通过 `/deepstorm-discuss` 或 BMAD 相关 skill 进入需求讨论环节，将需求讨论清楚后再进入后续开发流程，不得跳过讨论直接进入实现
 - **套件-CLI 联动**：修改 reef/tide/sweep/atoll 套件内容（hooks、templates、skills、agents、wizard.json）时，**必须同步检查并更新 `packages/cli/src/commands/` 下对应的消费命令**（setup、update、doctor、template-upgrade 等），确保 CLI 资产同步逻辑与套件变更一致
+- **项目事实**：`.deepstorm/context.md` 记录项目的技术栈、关键模块、历史踩坑和外部引用，由 reef-start 阶段一结束时按需维护
 
 ## 开发工作流
 
@@ -50,7 +51,7 @@ flowchart LR
 
 - **CLI 验证**：`deepstorm setup`、`deepstorm update`、`deepstorm doctor` 等命令的 E2E 测试（`pnpm playground:verify`）
 - **插件验证**：`playground/.deepstorm/` 为插件目录，插件能力在此验证（待建）
-- **配置格式**：settings.json 使用 `deepstorm.*` 命名空间，MCP server 使用 `deepstorm-*` 前缀
+- **配置格式**：`.deepstorm/settings.json` 存 DeepStorm 自有配置，`.claude/settings.json` 存 Claude Code 原生配置，MCP server 使用 `deepstorm-*` 前缀
 - **当前配置**：已安装 skills（jira-read、feishu-wiki-read、sweep-init/plan/run）、MCP servers（github、context7、jira、figma、playwright）、reef 配置（frontend: angular, backend: java）
 
 ## gstack
