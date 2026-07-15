@@ -126,7 +126,6 @@ graph TD
 /**
  * 初始化 .deepstorm/context.md 模板。
  * 如果文件已存在，不覆盖。
- * 同时确保 CLAUDE.md 包含项目上下文引用行。
  */
 export function initContextMap(targetDir: string, opts: InitOptions): void {
   const deepstormDir = path.join(targetDir, '.deepstorm')
@@ -143,27 +142,58 @@ export function initContextMap(targetDir: string, opts: InitOptions): void {
 
   fs.writeFileSync(contextPath, content, 'utf-8')
   console.log('✔ 已创建 .deepstorm/context.md 项目上下文地图')
-  appendClaudeMdRef(targetDir)
 }
 
 /**
- * 在 CLAUDE.md 末尾追加项目上下文引用行。
- * 如果已有引用则不重复追加。
+ * 在 CLAUDE.md 末尾追加项目上下文引用行（已废弃，不再创建根目录 CLAUDE.md）。
+ * 保留空实现以兼容已有调用。
  */
-function appendClaudeMdRef(targetDir: string): void {
-  const claudeMdPath = path.join(targetDir, 'CLAUDE.md')
-  const refLine = '\n> 项目事实见 .deepstorm/context.md\n'
+function appendClaudeMdRef(_targetDir: string): void {
+  // 不再创建根目录 CLAUDE.md，所有项目信息通过 .claude/claude.md 提供
+}
 
-  if (!fs.existsSync(claudeMdPath)) {
-    fs.writeFileSync(claudeMdPath, refLine, 'utf-8')
-    return
+/**
+ * 初始化 .claude/claude.md 项目信息文件。
+ * 写入项目名称、技术栈概览和对 .deepstorm/context.md 的引用。
+ * 如果文件已存在，不覆盖。
+ */
+export function initClaudeMd(targetDir: string, opts: InitOptions): void {
+  const claudeDir = path.join(targetDir, '.claude')
+  const claudeMdPath = path.join(claudeDir, 'CLAUDE.md')
+  if (fs.existsSync(claudeMdPath)) return
+
+  ensureDir(claudeDir)
+
+  const projectName = opts.projectName || 'unknown'
+  const lines: string[] = [
+    `# ${projectName}`,
+    '',
+  ]
+
+  // 技术栈区块
+  const techLines: string[] = []
+  if (opts.frontend) {
+    techLines.push(`- **前端**：${opts.frontend}`)
+    if (opts.uiLib) techLines.push(`- **UI 库**：${opts.uiLib}`)
+    if (opts.cssFramework) techLines.push(`- **CSS 方案**：${opts.cssFramework}`)
+  }
+  if (opts.backend) {
+    techLines.push(`- **后端**：${opts.backend}`)
+    if (opts.orm) techLines.push(`- **ORM**：${opts.orm}`)
+    if (opts.migration) techLines.push(`- **数据库迁移**：${opts.migration}`)
+    if (opts.ai) techLines.push(`- **AI 框架**：${opts.ai}`)
+  }
+  if (techLines.length > 0) {
+    lines.push('## 技术栈', '')
+    lines.push(...techLines)
+    lines.push('')
   }
 
-  const existing = fs.readFileSync(claudeMdPath, 'utf-8')
-  if (existing.includes('.deepstorm/context.md')) return
+  lines.push('> 项目事实见 .deepstorm/context.md')
+  lines.push('')
 
-  fs.appendFileSync(claudeMdPath, refLine, 'utf-8')
-  console.log('✔ 已在 CLAUDE.md 追加项目上下文引用')
+  fs.writeFileSync(claudeMdPath, lines.join('\n'), 'utf-8')
+  console.log('✔ 已创建 .claude/claude.md 项目信息')
 }
 
 /**
@@ -195,8 +225,9 @@ export function writeInitTechStack(baseDir: string, opts: InitOptions): void {
   const nested = buildInitNestedConfig(config)
   writeDeepStormConfig(baseDir, nested)
 
-  // 同步初始化 .deepstorm/context.md
+  // 同步初始化 .deepstorm/context.md 和 .claude/claude.md
   initContextMap(baseDir, opts)
+  initClaudeMd(baseDir, opts)
 }
 
 function buildInitNestedConfig(flat: Record<string, string>): Record<string, any> {
@@ -303,9 +334,10 @@ interface TemplateContext {
 }
 
 function buildContext(opts: InitOptions): TemplateContext {
+  const projectName = opts.projectName || 'project'
   return {
-    projectName: opts.projectName!,
-    packageName: opts.projectName!.replace(/[_-]/g, '').toLowerCase(),
+    projectName,
+    packageName: projectName.replace(/[_-]/g, '').toLowerCase(),
     groupId: 'com.example',
     frontend: opts.frontend || false,
     backend: opts.backend || false,
@@ -331,18 +363,37 @@ export async function runInteractiveMode(targetDir: string): Promise<InitOptions
 
   intro('🚀 DeepStorm Init — 项目脚手架初始化')
 
-  const projectName = await text({
-    message: '项目名称：',
-    placeholder: 'my-project',
-    validate: (value) => {
-      if (!value) return '请输入项目名称'
-      if (!VALID_PROJECT_NAME.test(value)) return '项目名仅支持字母、数字、下划线和短横线'
-      return undefined
-    },
+  const isProjectDir = await confirm({
+    message: '当前路径是否为项目目录？',
+    initialValue: false,
   })
-  if (isCancel(projectName) || typeof projectName !== 'string') {
+  if (isCancel(isProjectDir)) {
     outro('已取消')
     return
+  }
+
+  let projectName: string | undefined
+
+  if (isProjectDir) {
+    // 用户已在项目目录 → 跳过项目名询问，原地初始化
+    console.log('✓ 将在当前目录直接生成脚手架')
+    projectName = undefined
+  } else {
+    // 需要创建新目录 → 询问项目名
+    const name = await text({
+      message: '项目名称：',
+      placeholder: 'my-project',
+      validate: (value) => {
+        if (!value) return '请输入项目名称'
+        if (!VALID_PROJECT_NAME.test(value)) return '项目名仅支持字母、数字、下划线和短横线'
+        return undefined
+      },
+    })
+    if (isCancel(name) || typeof name !== 'string') {
+      outro('已取消')
+      return
+    }
+    projectName = name
   }
 
   const frontendChoice = await select({
@@ -360,23 +411,25 @@ export async function runInteractiveMode(targetDir: string): Promise<InitOptions
   let uiLib: string | undefined
   let cssFramework: string | undefined
   if (frontendChoice === 'angular') {
-    uiLib = await select({
+    const uiLibResult = await select({
       message: '选择 UI 库：',
       options: [
         { value: 'primeng', label: 'PrimeNG' },
         { value: 'none', label: '无（仅 Angular 核心）' },
       ],
     })
-    if (isCancel(uiLib)) { outro('已取消'); return }
+    if (isCancel(uiLibResult)) { outro('已取消'); return }
+    uiLib = uiLibResult
 
-    cssFramework = await select({
+    const cssResult = await select({
       message: '选择 CSS 方案：',
       options: [
         { value: 'tailwind', label: 'Tailwind CSS' },
         { value: 'none', label: '标准 CSS' },
       ],
     })
-    if (isCancel(cssFramework)) { outro('已取消'); return }
+    if (isCancel(cssResult)) { outro('已取消'); return }
+    cssFramework = cssResult
   }
 
   const backendChoice = await select({
@@ -395,32 +448,35 @@ export async function runInteractiveMode(targetDir: string): Promise<InitOptions
   let migration: string | undefined
   let aiChoice: string | undefined
   if (backendChoice === 'java') {
-    orm = await select({
+    const ormResult = await select({
       message: '选择 ORM 框架：',
       options: [
         { value: 'hibernate', label: 'Hibernate' },
         { value: 'none', label: '无' },
       ],
     })
-    if (isCancel(orm)) { outro('已取消'); return }
+    if (isCancel(ormResult)) { outro('已取消'); return }
+    orm = ormResult
 
-    migration = await select({
+    const migrationResult = await select({
       message: '选择数据库迁移工具：',
       options: [
         { value: 'liquibase', label: 'Liquibase' },
         { value: 'none', label: '无' },
       ],
     })
-    if (isCancel(migration)) { outro('已取消'); return }
+    if (isCancel(migrationResult)) { outro('已取消'); return }
+    migration = migrationResult
 
-    aiChoice = await select({
+    const aiResult = await select({
       message: '选择 AI 框架：',
       options: [
         { value: 'spring-ai', label: 'Spring AI' },
         { value: 'none', label: '无' },
       ],
     })
-    if (isCancel(aiChoice)) { outro('已取消'); return }
+    if (isCancel(aiResult)) { outro('已取消'); return }
+    aiChoice = aiResult
   }
 
   if ((!frontendChoice || frontendChoice === 'none') && (!backendChoice || backendChoice === 'none')) {
@@ -448,25 +504,28 @@ export async function runInteractiveMode(targetDir: string): Promise<InitOptions
 
 /**
  * 运行 init，生成项目脚手架。
+ * - 有 `projectName` 时：创建子目录并生成
+ * - 无 `projectName` 时：原地初始化（当前目录即项目目录）
  */
 export async function runInit(baseDir: string, opts: InitOptions): Promise<void> {
-  if (!opts.projectName) {
-    throw new Error('项目名称为必填项')
+  const inPlace = !opts.projectName
+  const projectName = inPlace ? 'project' : opts.projectName!
+
+  if (!inPlace && !VALID_PROJECT_NAME.test(projectName)) {
+    throw new Error(`项目名 "${projectName}" 包含非法字符。仅支持字母、数字、下划线和短横线。`)
   }
 
-  if (!VALID_PROJECT_NAME.test(opts.projectName)) {
-    throw new Error(`项目名 "${opts.projectName}" 包含非法字符。仅支持字母、数字、下划线和短横线。`)
-  }
+  const projectDir = inPlace ? baseDir : path.join(baseDir, projectName)
 
-  const projectDir = path.join(baseDir, opts.projectName)
-
-  if (fs.existsSync(projectDir)) {
+  if (!inPlace && fs.existsSync(projectDir)) {
     throw new Error(`目标目录 ${projectDir} 已存在。请删除后重试或使用其他项目名。`)
   }
 
-  const ctx = buildContext(opts)
-  fs.mkdirSync(projectDir, { recursive: true })
+  if (!inPlace) {
+    fs.mkdirSync(projectDir, { recursive: true })
+  }
 
+  const ctx = buildContext(opts)
   const hasFrontend = opts.frontend === 'angular'
   const hasBackend = opts.backend === 'java'
 
@@ -481,14 +540,21 @@ export async function runInit(baseDir: string, opts: InitOptions): Promise<void>
 
     console.log(`\n✔ 项目已创建: ${projectDir}`)
     console.log('\n下一步:')
-    console.log(`  cd ${opts.projectName}`)
+    if (!inPlace) {
+      console.log(`  cd ${opts.projectName}`)
+    }
     if (opts.frontend) console.log(`  pnpm install        # 安装前端依赖`)
     if (opts.backend) console.log(`  ./gradlew build      # 构建后端`)
     console.log()
     printProjectTree(projectDir, hasFrontend, hasBackend)
+
+    // 原地初始化模式末尾兜底生成 claude.md
+    if (inPlace) {
+      initClaudeMd(baseDir, opts)
+    }
   } catch (err) {
-    // 清理：如果渲染失败，删除已创建的项目目录
-    if (fs.existsSync(projectDir)) {
+    // 清理：如果渲染失败，删除已创建的项目目录（原地模式不删除 baseDir）
+    if (!inPlace && fs.existsSync(projectDir)) {
       fs.rmSync(projectDir, { recursive: true, force: true })
     }
     throw err
@@ -1143,6 +1209,11 @@ function ensureDir(dir: string): void {
 
 function writeTemplate(baseDir: string, relativePath: string, content: string): void {
   const fullPath = path.join(baseDir, relativePath)
+  // 文件已存在时跳过，不覆盖
+  if (fs.existsSync(fullPath)) {
+    console.log(`  ℹ 跳过已有文件: ${relativePath}`)
+    return
+  }
   ensureDir(path.dirname(fullPath))
   fs.writeFileSync(fullPath, content, 'utf-8')
 }

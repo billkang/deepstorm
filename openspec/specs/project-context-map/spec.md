@@ -10,7 +10,7 @@ TBD - created by archiving change reef-start-lattice-adaptation. Update Purpose 
 #### Scenario: CLI setup 时初始化模板
 - **WHEN** `deepstorm setup` 执行初始化
 - **THEN** CLI SHALL 在 `.deepstorm/context.md` 写入模板结构，含技术栈、关键模块、历史踩坑、外部引用四个空节
-- **AND** CLAUDE.md 末尾附加一行 `> 项目事实见 .deepstorm/context.md`
+- **AND** `.claude/CLAUDE.md` 末尾附加一行 `> 项目事实见 .deepstorm/context.md`
 
 ### Requirement: 上下文更新时机
 
@@ -25,6 +25,22 @@ TBD - created by archiving change reef-start-lattice-adaptation. Update Purpose 
 #### Scenario: 无实质变化时跳过
 - **WHEN** 阶段一采集的信息与现有 context.md 内容一致
 - **THEN** Agent SHALL NOT 修改文件，避免无意义的 git 变动
+
+### Requirement: claude.md 作为项目入口、context.md 作为详细上下文
+
+`.claude/CLAUDE.md` 和 `.deepstorm/context.md` SHALL 承担不同角色：`claude.md` 是 AI 会话的快速入口，提供项目概览；`context.md` 是详细上下文地图，供 `reef-start` 按需维护。
+
+#### Scenario: init 时只创建 claude.md 入口
+- **WHEN** `deepstorm init` 执行初始化
+- **THEN** CLI SHALL 在 `.claude/CLAUDE.md` 写入项目基础信息 + 技术栈概览
+- **AND** SHALL 在 `.claude/CLAUDE.md` 末尾引用 `.deepstorm/context.md`
+- **AND** SHALL 在 `.deepstorm/context.md` 写入详细上下文模板（已有行为）
+
+#### Scenario: 单入口引用链路
+- **WHEN** Claude Code 读取项目信息
+- **THEN** SHALL 直接读取 `.claude/CLAUDE.md`（Claude Code 自动加载）
+- **AND** 通过 `.claude/CLAUDE.md` 中的引用找到 `.deepstorm/context.md`
+- **AND** 形成 `.claude/CLAUDE.md → .deepstorm/context.md` 的单向引用链路
 
 ### Requirement: 上下文地图内容结构
 

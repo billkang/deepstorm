@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import * as fs from 'node:fs'
 import * as path from 'node:path'
-import { parseInitArgs, runInit, writeInitTechStack } from '../init'
+import { parseInitArgs, runInit, writeInitTechStack, initClaudeMd } from '../init'
 
 function tmpDir(): string {
   return path.join(process.env.TMPDIR || '/tmp', `.init-test-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`)
@@ -313,6 +313,34 @@ describe('runInit', () => {
     expect(cfg.tide.issueTracker).toBe('jira') // 保留
   })
 
+  it('应当支持空 projectName（原地初始化模式）', async () => {
+    await runInit(testDir, { frontend: 'angular' })
+
+    // 应在 testDir 直接生成，不含子目录
+    expect(fileExists(path.join(testDir, 'angular.json'))).toBe(true)
+    expect(fileExists(path.join(testDir, 'package.json'))).toBe(true)
+    expect(fileExists(path.join(testDir, 'src/main/web/main.ts'))).toBe(true)
+
+    // 不应有以项目名命名的子目录
+    expect(dirExists(path.join(testDir, 'undefined'))).toBe(false)
+  })
+
+  it('原地初始化模式下已有文件应被跳过不覆盖', async () => {
+    // 先写入一个已有的 angular.json
+    fs.mkdirSync(path.join(testDir, 'src/main/web/app'), { recursive: true })
+    fs.writeFileSync(path.join(testDir, 'angular.json'), JSON.stringify({ original: true }), 'utf-8')
+
+    // 执行原地初始化
+    await runInit(testDir, { frontend: 'angular' })
+
+    // 已有文件不被覆盖
+    const content = JSON.parse(fs.readFileSync(path.join(testDir, 'angular.json'), 'utf-8'))
+    expect(content.original).toBe(true)
+
+    // 不存在的文件应正常创建
+    expect(fileExists(path.join(testDir, 'package.json'))).toBe(true)
+  })
+
   it('生成的 Angular + Java 项目结构应与 chatbi 风格一致', async () => {
     await runInit(testDir, {
       projectName: 'verify-structure',
@@ -366,5 +394,97 @@ describe('runInit', () => {
     expect(buildGradle).toContain('liquibase')
 
     expect(dirExists(path.join(root, 'src/main/resources/db/changelog'))).toBe(true)
+  })
+})
+
+describe('initClaudeMd', () => {
+  let testDir: string
+
+  beforeEach(() => {
+    testDir = tmpDir()
+  })
+
+  afterEach(() => {
+    if (fs.existsSync(testDir)) {
+      fs.rmSync(testDir, { recursive: true, force: true })
+    }
+  })
+
+  it('应当创建 .claude/CLAUDE.md 并包含项目名和技术栈', () => {
+    initClaudeMd(testDir, {
+      projectName: 'my-app',
+      frontend: 'angular',
+      backend: 'java',
+    })
+
+    const claudeMdPath = path.join(testDir, '.claude', 'CLAUDE.md')
+    expect(fileExists(claudeMdPath)).toBe(true)
+    const content = fs.readFileSync(claudeMdPath, 'utf-8')
+    expect(content).toContain('# my-app')
+    expect(content).toContain('- **前端**：angular')
+    expect(content).toContain('- **后端**：java')
+    expect(content).toContain('.deepstorm/context.md')
+  })
+
+  it('当 .claude/CLAUDE.md 已存在时应跳过', () => {
+    const claudeDir = path.join(testDir, '.claude')
+    fs.mkdirSync(claudeDir, { recursive: true })
+    fs.writeFileSync(path.join(claudeDir, 'CLAUDE.md'), '# existing', 'utf-8')
+
+    initClaudeMd(testDir, {
+      projectName: 'my-app',
+      frontend: 'angular',
+    })
+
+    const content = fs.readFileSync(path.join(claudeDir, 'CLAUDE.md'), 'utf-8')
+    expect(content).toBe('# existing') // 不被覆盖
+  })
+
+  it('无 projectName 时 CLAUDE.md 标题使用 unknown', () => {
+    initClaudeMd(testDir, { frontend: 'angular' })
+
+    const content = fs.readFileSync(path.join(testDir, '.claude', 'CLAUDE.md'), 'utf-8')
+    expect(content).toContain('# unknown')
+  })
+
+  it('不创建根目录 CLAUDE.md', () => {
+    initClaudeMd(testDir, {
+      projectName: 'test',
+      frontend: 'angular',
+    })
+
+    // 根目录 CLAUDE.md 不应被创建
+    const rootClaudeMd = path.join(testDir, 'CLAUDE.md')
+    expect(fileExists(rootClaudeMd)).toBe(false)
+
+    // 只有 .claude/CLAUDE.md 存在
+    expect(fileExists(path.join(testDir, '.claude', 'CLAUDE.md'))).toBe(true)
+  })
+})
+
+describe('writeInitTechStack with initClaudeMd', () => {
+  let testDir: string
+
+  beforeEach(() => {
+    testDir = tmpDir()
+  })
+
+  afterEach(() => {
+    if (fs.existsSync(testDir)) {
+      fs.rmSync(testDir, { recursive: true, force: true })
+    }
+  })
+
+  it('writeInitTechStack 应当同时生成 .claude/CLAUDE.md', () => {
+    writeInitTechStack(testDir, {
+      projectName: 'test',
+      frontend: 'angular',
+      backend: 'java',
+    })
+
+    const claudeMdPath = path.join(testDir, '.claude', 'CLAUDE.md')
+    expect(fileExists(claudeMdPath)).toBe(true)
+    const content = fs.readFileSync(claudeMdPath, 'utf-8')
+    expect(content).toContain('# test')
   })
 })
