@@ -1,6 +1,6 @@
 {
   "name": "@deepstorm/reef",
-  "version": "0.6.4",
+  "version": "0.6.5",
   "private": true,
   "description": "DeepStorm 开发侧套件 — 规范生成、代码实现、架构合规",
   "license": "MIT",

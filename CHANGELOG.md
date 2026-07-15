@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.6.5] - 2026-07-15
+
+### Code Refactoring
+
+- 将 DeepStorm 配置存储从 `.claude/settings.json` 迁移至 `.deepstorm/settings.json`，统一配置管理路径 (`89421d9`)
+
+### Documentation
+
+- 重构 DeepStorm 幻灯片架构，丰富 Tide/Reef 内容 (`0a6f518`)
+- Lattice 适配相关文档更新 (`2719fdf`)
+
+### Maintenance
+
+- 重构 reef-start SKILL.md.tmpl 结构，拆分引用文件，提升模板可维护性 (`16cc3f7`)
+
 ## [0.6.4] - 2026-07-13
 
 ### Features

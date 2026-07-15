@@ -391,11 +391,11 @@ cp .env.example .env
 | **API Keys** | 通过 `.env` 文件配置（`DEEPSTORM_*` 前缀），不会提交到 Git |
 | **featureId 格式** | `MODULE-FEATURE-SUBFEATURE`（全大写 + 连字符，可含数字） |
 | **sessionId 格式** | `tide-YYYYMMDD-NNN` |
-| **Feature Toggle** | 各套件的能力可通过 `.claude/settings.local.json` / `.claude/settings.json` 控制，嵌套路径 `deepstorm.<module>.<feature>.enabled`（如 `deepstorm.tide.feishuUpload.enabled`），`settings.local.json` 优先，默认开启 |
+| **Feature Toggle** | 各套件的能力可通过 `.deepstorm/settings.json` 控制，嵌套路径 `deepstorm.<module>.<feature>.enabled`（如 `deepstorm.tide.feishuUpload.enabled`），`.deepstorm/settings.local.json` 优先，默认开启 |
 
 ### Feature Toggle 示例
 
-以关闭 Tide 的飞书知识库上传为例，在项目 `.claude/settings.local.json` 中：
+以关闭 Tide 的飞书知识库上传为例，在项目 `.deepstorm/settings.local.json` 中：
 
 ```json
 {
