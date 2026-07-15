@@ -355,7 +355,14 @@ openspec instructions tasks --change "$CHANGE" --json
 
 #### 3.8 语言规范
 
-中文正文 + 英文专有名词。
+**所有 SDD 文档（proposal/specs/design/tasks）正文必须使用中文。** 英文仅限专有名词和技术引用。
+
+| 组件 | 使用中文 | 保留英文原文 |
+|------|---------|-------------|
+| SDD 文档（proposal/specs/design/tasks） | 正文、场景描述、WHEN/THEN 描述 | 代码实体名、字段名、类名、枚举值、API 路径、技术术语 |
+| 代码注释 | 注释正文 | 专有名词（Signal、DTO、MapStruct、PrimeNG 等） |
+| 提交信息 | 描述性 message | JIRA URL、PRD 链接、技术术语 |
+| 变更名/分支名 | 输入为中文 | 输出为 kebab-case（3-6 词），如 `feat/add-user-auth` |
 
 #### 3.9 用户确认
 
