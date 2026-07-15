@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.7.2] - 2026-07-15
+
+### Features
+
+- 为 reef 代码生成套件添加注释标准要求，覆盖后端（Java/Python Entity/Schema/Service/Controller/Router）和前端（React/Vue/Angular 关键组件/Hooks/Service）的生成指令、审查和风格参考 (`74c63c4`)
+
+### Documentation
+
+- 将 DeepStorm 幻灯片从 docs/slides 迁移至 docs/ppt 目录 (`32fd1b8`)
+
+### Maintenance
+
+- 统一 DeepStorm 生成内容语言为中文，涉及 opsx:continue 文档、reef-start SKILL.md.tmpl、deepstorm-release SKILL.md、release.ts、reef-pr SKILL.md (`4eda078`)
+
 ## [0.7.1] - 2026-07-15
 
 ### Maintenance
