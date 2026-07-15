@@ -1,0 +1,1845 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DeepStorm 深澜 — Spec 驱动的 AI 协同软件工程实践</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Noto+Sans+SC:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#faf8f6;
+  --bg-alt:#f5f2ef;
+  --surface:#ffffff;
+  --deepstorm-600:#e85a3a;
+  --deepstorm-500:#ff6b4a;
+  --deepstorm-400:#ff7f5e;
+  --deepstorm-300:#ffa68a;
+  --deepstorm-200:#ffc8b8;
+  --deepstorm-100:#ffe8e0;
+  --deepstorm-50:#fff5f0;
+  --teal-600:#0d9488;
+  --teal-500:#14b8a6;
+  --teal-400:#2dd4bf;
+  --teal-100:#ccfbf1;
+  --teal-50:#f0fdfa;
+  --gold-600:#b45309;
+  --gold-500:#d97706;
+  --gold-400:#f59e0b;
+  --gold-100:#fef3c7;
+  --gold-50:#fffbeb;
+  --indigo-600:#4f46e5;
+  --indigo-500:#6366f1;
+  --indigo-400:#818cf8;
+  --indigo-100:#e0e7ff;
+  --indigo-50:#eef2ff;
+  --green-600:#16a34a;
+  --green-100:#dcfce7;
+  --text:#1c1917;
+  --text-80:rgba(28,25,23,0.8);
+  --text-60:rgba(28,25,23,0.6);
+  --text-40:rgba(28,25,23,0.35);
+  --text-20:rgba(28,25,23,0.12);
+  --text-10:rgba(28,25,23,0.06);
+  --text-05:rgba(28,25,23,0.03);
+  --radius-outer:2rem;
+  --radius-inner:calc(2rem - 0.375rem);
+  --bezier-smooth:cubic-bezier(0.32,0.72,0,1);
+}
+html,body{height:100%;overflow:hidden}
+body{
+  font-family:'Plus Jakarta Sans','Noto Sans SC',sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  -webkit-font-smoothing:antialiased;
+}
+::selection{background:var(--deepstorm-200);color:var(--text)}
+
+/* === SLIDE CONTAINER === */
+.slides{position:relative;height:100vh;width:100vw}
+.slide{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:4rem 3rem;
+  opacity:0;visibility:hidden;
+  transition:opacity 0.6s var(--bezier-smooth), visibility 0s 0.6s;
+  overflow-y:auto;
+}
+.slide.active{opacity:1;visibility:visible;transition:opacity 0.6s var(--bezier-smooth), visibility 0s 0s;z-index:2}
+.slide.exit{opacity:0;visibility:hidden;transition:opacity 0.4s var(--bezier-smooth), visibility 0s 0.4s;z-index:1}
+
+.slide-inner{max-width:1100px;width:100%;margin:auto}
+
+/* === SLIDE SPECIFICS === */
+/* Title Slide */
+.slide-title{
+  text-align:center;
+  background:
+    radial-gradient(ellipse 80% 60% at 50% -10%, var(--deepstorm-100) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 50% at 20% 80%, var(--teal-50) 0%, transparent 50%),
+    radial-gradient(ellipse 50% 50% at 80% 80%, var(--deepstorm-50) 0%, transparent 50%),
+    var(--bg);
+}
+.slide-title .badge{
+  display:inline-flex;align-items:center;gap:0.5rem;
+  padding:0.375rem 1rem 0.375rem 0.5rem;border-radius:999px;
+  background:var(--surface);border:1px solid var(--text-10);
+  font-size:0.7rem;font-weight:500;letter-spacing:0.15em;text-transform:uppercase;
+  color:var(--text-60);margin-bottom:2rem;
+  box-shadow:0 2px 8px rgba(28,25,23,0.04);
+}
+.slide-title .badge .dot{width:6px;height:6px;border-radius:50%;background:var(--deepstorm-500);animation:pulse-dot 2s ease-in-out infinite}
+@keyframes pulse-dot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.5;transform:scale(0.8)}}
+.slide-title h1{
+  font-size:clamp(3.5rem,10vw,7rem);font-weight:800;
+  letter-spacing:-0.04em;line-height:0.92;
+  background:linear-gradient(135deg,var(--text)25%,var(--deepstorm-500)50%,var(--teal-500)75%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  margin-bottom:1.2rem;
+}
+.slide-title .tagline{
+  font-size:clamp(0.95rem,1.8vw,1.2rem);color:var(--text-60);
+  max-width:600px;line-height:1.7;font-weight:400;letter-spacing:0.01em;
+  text-align:center;margin:0 auto;
+}
+.slide-title .ecosystem-meta{
+  margin-top:2.5rem;padding-top:1.5rem;border-top:1px solid var(--text-10);
+  display:flex;gap:2.5rem;flex-wrap:wrap;justify-content:center;
+}
+.slide-title .eco-item{text-align:center}
+.slide-title .eco-item .num{font-size:1.8rem;font-weight:700;color:var(--deepstorm-500);line-height:1}
+.slide-title .eco-item .label{font-size:0.7rem;color:var(--text-60);margin-top:0.25rem;letter-spacing:0.05em}
+
+/* Mission Banner */
+.mission-banner{
+  display:inline-flex;align-items:center;gap:0.75rem;
+  padding:1rem 1.75rem;margin:1.5rem auto;
+  border-radius:1rem;
+  background:linear-gradient(135deg,var(--deepstorm-50),var(--teal-50),var(--gold-50));
+  border:1px solid var(--text-10);
+  text-align:left;max-width:640px;
+}
+.mission-banner .mission-icon{
+  font-size:1.4rem;color:var(--deepstorm-500);flex-shrink:0;
+  animation:mission-pulse 3s ease-in-out infinite;
+}
+@keyframes mission-pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.6;transform:scale(1.1)}}
+.mission-banner .mission-text{
+  font-size:clamp(0.78rem,1.1vw,0.9rem);color:var(--text-80);line-height:1.7;font-weight:500;
+}
+.mission-banner .mission-text .highlight{
+  color:var(--deepstorm-500);font-weight:700;
+}
+
+/* Section slides */
+.eyebrow{
+  display:inline-flex;align-items:center;gap:0.5rem;
+  padding:0.25rem 0.75rem 0.25rem 0.5rem;border-radius:999px;
+  background:var(--surface);border:1px solid var(--text-10);
+  font-size:0.65rem;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;
+  color:var(--deepstorm-500);margin-bottom:0.75rem;
+}
+.eyebrow .dash{width:1.5rem;height:1px;background:var(--deepstorm-400);opacity:0.5}
+.slide-title-h2{
+  font-size:clamp(1.6rem,3.5vw,2.6rem);font-weight:700;
+  letter-spacing:-0.03em;line-height:1.15;margin-bottom:0.6rem;color:var(--text);
+}
+.slide-sub{
+  font-size:clamp(0.8rem,1.2vw,0.95rem);color:var(--text-60);
+  line-height:1.6;max-width:900px;margin-bottom:2rem;font-weight:400;
+}
+
+/* Problem Grid */
+.p-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem}
+.p-card{
+  padding:2rem 1.5rem;border-radius:1.5rem;
+  background:var(--surface);border:1px solid var(--text-10);
+  display:flex;flex-direction:column;align-items:flex-start;
+  transition:all 0.5s var(--bezier-smooth);
+}
+.p-card:hover{transform:translateY(-3px);border-color:var(--deepstorm-200);box-shadow:0 8px 32px rgba(28,25,23,0.06)}
+.p-card .icon-box{
+  width:2.5rem;height:2.5rem;border-radius:0.75rem;
+  background:var(--deepstorm-50);display:flex;align-items:center;justify-content:center;
+  font-size:1.1rem;margin-bottom:0.8rem;flex-shrink:0;
+}
+.p-card h3{font-size:0.95rem;font-weight:600;margin-bottom:0.4rem;color:var(--text)}
+.p-card p{font-size:0.82rem;color:var(--text-60);line-height:1.6}
+
+/* Principles */
+.principles-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem}
+.principle-card{text-align:center;padding:2rem 1.5rem;border-radius:1.5rem;background:var(--surface);border:1px solid var(--text-10);transition:all 0.5s var(--bezier-smooth)}
+.principle-card:hover{transform:translateY(-3px);border-color:var(--teal-200);box-shadow:0 8px 32px rgba(28,25,23,0.06)}
+.principle-card .num{
+  font-size:2.5rem;font-weight:800;
+  background:linear-gradient(135deg,var(--deepstorm-500),var(--teal-500));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  line-height:1;margin-bottom:0.5rem;
+}
+.principle-card h3{font-size:1rem;font-weight:600;margin-bottom:0.4rem}
+.principle-card p{font-size:0.82rem;color:var(--text-60);line-height:1.6}
+
+/* Three-Layer Spec */
+.spec-flow{display:grid;grid-template-columns:1fr auto 1fr auto 1fr;align-items:stretch;gap:0;margin:1rem 0}
+.spec-layer{padding:1.8rem 1.5rem;border-radius:1.25rem;display:flex;flex-direction:column}
+.spec-layer.business{background:linear-gradient(135deg,var(--deepstorm-50),var(--surface));border:1px solid var(--deepstorm-200)}
+.spec-layer.technical{background:linear-gradient(135deg,var(--teal-50),var(--surface));border:1px solid rgba(45,212,191,0.25)}
+.spec-layer.verification{background:linear-gradient(135deg,var(--gold-50),var(--surface));border:1px solid rgba(245,158,11,0.25)}
+.spec-layer .layer-label{font-size:0.6rem;font-weight:600;letter-spacing:0.18em;text-transform:uppercase;margin-bottom:0.35rem}
+.spec-layer.business .layer-label{color:var(--deepstorm-500)}
+.spec-layer.technical .layer-label{color:var(--teal-500)}
+.spec-layer.verification .layer-label{color:var(--gold-500)}
+.spec-layer h3{font-size:1.05rem;font-weight:700;margin-bottom:0.4rem}
+.spec-layer .layer-desc{font-size:0.78rem;color:var(--text-60);line-height:1.6;flex:1}
+.spec-layer .tool-tag{
+  display:inline-block;padding:0.25rem 0.6rem;border-radius:6px;
+  font-size:0.65rem;font-weight:600;margin-top:0.6rem;align-self:flex-start;
+}
+.business .tool-tag{background:var(--deepstorm-100);color:var(--deepstorm-600)}
+.technical .tool-tag{background:var(--teal-50);color:var(--teal-500)}
+.verification .tool-tag{background:var(--gold-50);color:var(--gold-500)}
+.spec-arrow{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 0.6rem;color:var(--text-40);font-size:0.85rem;gap:0.2rem}
+.spec-arrow span{font-size:0.55rem;letter-spacing:0.08em;text-transform:uppercase;white-space:nowrap}
+.spec-arrow .arrow-icon{font-size:1.5rem;line-height:1}
+
+/* Philosophy + Spec merge layout */
+.phil-spec-wrap{display:flex;flex-direction:column;gap:1.25rem}
+.phil-spec-wrap .ps-spec{min-width:0}
+.ps-principles{display:grid;grid-template-columns:repeat(3,1fr);gap:0.75rem}
+.ps-principle{
+  padding:0.9rem 1rem;border-radius:0.85rem;
+  background:var(--surface);border:1px solid var(--text-10);
+  display:flex;align-items:flex-start;gap:0.7rem;
+  transition:all 0.3s var(--bezier-smooth);
+}
+.ps-principle:hover{transform:translateY(-2px);border-color:var(--deepstorm-200);box-shadow:0 4px 12px rgba(232,90,58,0.06)}
+.ps-principle .ps-num{
+  width:1.8rem;height:1.8rem;border-radius:0.5rem;display:flex;align-items:center;justify-content:center;
+  font-size:0.65rem;font-weight:700;flex-shrink:0;
+}
+.ps-principle .ps-num.c1{background:var(--deepstorm-100);color:var(--deepstorm-600)}
+.ps-principle .ps-num.c2{background:var(--teal-50);color:var(--teal-500)}
+.ps-principle .ps-num.c3{background:var(--gold-50);color:var(--gold-500)}
+.ps-principle .ps-text{flex:1}
+.ps-principle .ps-text strong{display:block;font-size:0.85rem;margin-bottom:0.15rem;color:var(--text)}
+.ps-principle .ps-text span{font-size:0.72rem;color:var(--text-60);line-height:1.5}
+
+/* Feature ID demo */
+.fid-demo{
+  margin-top:1rem;padding:1rem 1.25rem;border-radius:1rem;
+  background:var(--bg-alt);border:1px solid var(--text-10);
+  font-family:monospace;font-size:0.75rem;line-height:1.8;color:var(--text-80);
+}
+.fid-demo .fid{color:var(--deepstorm-500);font-weight:600}
+.fid-demo .indent{padding-left:1.2rem}
+.fid-demo .indent-2{padding-left:2.4rem}
+.fid-demo .bullet{color:var(--text-40)}
+
+/* === ARCHITECTURE SLIDE === */
+.arch-intro{margin-bottom:1.25rem}
+.arch-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem}
+.arch-card{
+  padding:1.5rem;border-radius:1.25rem;
+  background:var(--surface);border:1px solid var(--text-10);
+  display:flex;flex-direction:column;
+  transition:all 0.4s var(--bezier-smooth);
+}
+.arch-card:hover{transform:translateY(-3px);border-color:var(--deepstorm-200);box-shadow:0 8px 32px rgba(28,25,23,0.06)}
+.arch-card .arch-label{
+  font-size:0.6rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;
+  color:var(--text-40);margin-bottom:0.5rem;
+}
+.arch-card h4{font-size:0.9rem;font-weight:700;margin-bottom:0.5rem;color:var(--text)}
+.arch-items{display:flex;flex-direction:column;gap:0.35rem;flex:1}
+.arch-item{
+  display:flex;align-items:center;gap:0.5rem;
+  padding:0.4rem 0.6rem;border-radius:0.5rem;
+  font-size:0.75rem;color:var(--text-70);line-height:1.4;
+  background:var(--text-05);border:1px solid var(--text-10);
+}
+.arch-item .ai-tag{
+  font-size:0.55rem;font-weight:700;padding:0.1rem 0.35rem;border-radius:3px;
+  flex-shrink:0;
+}
+.arch-item .ai-tag.replace{background:var(--deepstorm-50);color:var(--deepstorm-600)}
+.arch-item .ai-tag.extend{background:var(--teal-50);color:var(--teal-600)}
+.arch-item .ai-tag.custom{background:var(--gold-50);color:var(--gold-600)}
+.arch-item .ai-icon{font-size:0.8rem;flex-shrink:0;width:1.2rem;text-align:center}
+.arch-layered{display:flex;flex-direction:column;gap:0}
+.arch-layer{
+  padding:1rem 1.5rem;border-radius:1rem;
+  background:var(--surface);border:1px solid var(--text-10);
+  position:relative;
+}
+.arch-layer::before{
+  content:'';position:absolute;left:0;top:0.75rem;bottom:0.75rem;
+  width:3px;border-radius:2px;
+}
+.arch-layer.layer-gov{border-left:3px solid var(--deepstorm-300)}
+.arch-layer.layer-engine{border-left:3px solid var(--teal-400)}
+.arch-layer.layer-infra{border-left:3px solid var(--indigo-400)}
+.arch-layer.layer-gov::before{background:var(--deepstorm-500)}
+.arch-layer.layer-engine::before{background:var(--teal-500)}
+.arch-layer.layer-infra::before{background:var(--indigo-500)}
+
+.arch-layer .al-header{display:flex;align-items:baseline;gap:0.6rem;margin-bottom:0.5rem}
+.arch-layer .al-badge{
+  font-size:0.55rem;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;
+  padding:0.15rem 0.5rem;border-radius:4px;
+}
+.arch-layer.layer-gov .al-badge{background:var(--deepstorm-50);color:var(--deepstorm-600)}
+.arch-layer.layer-engine .al-badge{background:var(--teal-50);color:var(--teal-600)}
+.arch-layer.layer-infra .al-badge{background:var(--indigo-50);color:var(--indigo-600)}
+.arch-layer .al-title{font-size:0.82rem;font-weight:600;color:var(--text)}
+.arch-layer .al-subtitle{font-size:0.62rem;color:var(--text-40);margin-left:0.3rem}
+
+.arch-layer .al-items{display:flex;flex-wrap:wrap;gap:0.35rem}
+.arch-layer .al-item{
+  padding:0.3rem 0.6rem;border-radius:0.5rem;
+  background:var(--text-05);border:1px solid var(--text-10);
+  font-size:0.7rem;color:var(--text-70);line-height:1.4;
+  display:inline-flex;align-items:center;gap:0.35rem;
+}
+.arch-layer .al-item .ai-icon{font-size:0.7rem;flex-shrink:0;display:inline-block}
+.arch-layer .al-item .ai-tag{
+  font-size:0.5rem;font-weight:700;padding:0.05rem 0.3rem;border-radius:3px;
+  margin-left:0.1rem;
+}
+.arch-layer .al-item .ai-tag.replace{background:var(--deepstorm-50);color:var(--deepstorm-600)}
+.arch-layer .al-item .ai-tag.extend{background:var(--teal-50);color:var(--teal-600)}
+.arch-layer .al-item .ai-tag.custom{background:var(--gold-50);color:var(--gold-600)}
+
+.arch-connect{
+  text-align:center;font-size:0.55rem;color:var(--text-30);
+  letter-spacing:0.12em;font-weight:600;padding:0.2rem 0;
+  position:relative;
+}
+.arch-connect::before,.arch-connect::after{
+  content:'';position:absolute;top:50%;width:calc(50% - 3rem);
+  height:1px;background:var(--text-10);
+}
+.arch-connect::before{left:0}
+.arch-connect::after{right:0}
+
+.arch-banner{
+  margin-top:0.75rem;padding:0.85rem 1.5rem;border-radius:1rem;
+  background:linear-gradient(135deg,var(--deepstorm-50),var(--teal-50),var(--gold-50));
+  border:1px solid var(--text-10);
+  display:flex;align-items:center;gap:1rem;
+  font-size:0.82rem;font-weight:600;color:var(--text-80);line-height:1.6;
+  justify-content:center;text-align:center;
+}
+.arch-banner .ab-icon{font-size:1.1rem;flex-shrink:0}
+
+/* Deployment modes for architecture slide */
+.arch-deploy{
+  padding:1rem 1.5rem;border-radius:1rem;
+  background:var(--surface);border:1px solid var(--text-10);
+  margin-bottom:0.5rem;
+}
+.arch-deploy .ad-header{display:flex;align-items:center;gap:0.6rem;margin-bottom:0.6rem}
+.arch-deploy .ad-badge{
+  font-size:0.55rem;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;
+  padding:0.15rem 0.5rem;border-radius:4px;
+  background:var(--text-05);color:var(--text-60);
+}
+.arch-deploy .ad-title{font-size:0.75rem;font-weight:600;color:var(--text)}
+.arch-deploy .ad-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.5rem}
+.arch-deploy .ad-card{
+  padding:0.6rem 0.75rem;border-radius:0.65rem;
+  display:flex;align-items:center;gap:0.5rem;
+  background:var(--text-05);border:1px solid var(--text-10);
+  font-size:0.7rem;color:var(--text-60);line-height:1.4;
+  transition:all 0.3s var(--bezier-smooth);
+}
+.arch-deploy .ad-card:hover{transform:translateY(-1px);border-color:var(--text-20)}
+.arch-deploy .ad-card .ad-icon{font-size:1rem;flex-shrink:0}
+.arch-deploy .ad-card .ad-body strong{display:block;font-size:0.72rem;color:var(--text);margin-bottom:0.05rem}
+.arch-deploy .ad-cli{
+  margin-top:0.5rem;padding:0.35rem 0.75rem;border-radius:0.5rem;
+  background:var(--bg-alt);border:1px solid var(--text-10);
+  text-align:center;font-family:monospace;font-size:0.68rem;color:var(--text-50);
+  display:flex;align-items:center;justify-content:center;gap:0.4rem;
+}
+.arch-deploy .ad-cli .ad-cli-sep{color:var(--text-20)}
+/* Spec slide — right column layout */
+.ps-right{display:flex;flex-direction:column;gap:0.75rem}
+
+/* === SUITE USAGE === */
+.usage-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;align-items:start}
+.usage-flow,.usage-scenario{
+  padding:1.5rem;border-radius:1.25rem;
+  background:var(--surface);border:1px solid var(--text-10);
+}
+.usage-flow h4,.usage-scenario h4{
+  font-size:0.6rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;
+  color:var(--text-40);margin-bottom:1rem;padding-bottom:0.5rem;border-bottom:1px solid var(--text-10);
+}
+.usage-steps{display:flex;flex-direction:column;gap:0}
+.u-step{
+  display:flex;align-items:flex-start;gap:0.75rem;
+  position:relative;padding-bottom:1rem;
+}
+.u-step:last-child{padding-bottom:0}
+.u-step::before{
+  content:'';position:absolute;left:0.65rem;top:1.5rem;
+  width:1px;height:calc(100% - 1.5rem);background:var(--text-10);
+}
+.u-step:last-child::before{display:none}
+.u-step .u-num{
+  width:1.35rem;height:1.35rem;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:0.6rem;font-weight:700;flex-shrink:0;position:relative;z-index:1;
+}
+.u-step .u-num.tide-n{background:var(--teal-50);color:var(--teal-500)}
+.u-step .u-num.reef-n{background:var(--deepstorm-50);color:var(--deepstorm-600)}
+.u-step .u-num.sweep-n{background:var(--gold-50);color:var(--gold-500)}
+.u-step .u-num.atoll-n{background:var(--indigo-50);color:var(--indigo-500)}
+.u-step .u-text{flex:1;padding-top:0.1rem}
+.u-step .u-text .u-title{font-size:0.82rem;font-weight:600;color:var(--text);margin-bottom:0.1rem}
+.u-step .u-text .u-desc{font-size:0.72rem;color:var(--text-60);line-height:1.5}
+.usage-scenario .u-story{
+  font-size:0.78rem;color:var(--text-70);line-height:1.7;
+  padding:0.75rem;border-radius:0.75rem;background:var(--text-05);border:1px solid var(--text-10);
+}
+.usage-scenario .u-story .tag{
+  display:inline-block;padding:0.15rem 0.45rem;border-radius:4px;
+  font-size:0.6rem;font-weight:600;margin:0 0.15rem;
+}
+.usage-scenario .u-story .tag.tide-tag{background:var(--teal-50);color:var(--teal-600)}
+.usage-scenario .u-story .tag.reef-tag{background:var(--deepstorm-50);color:var(--deepstorm-600)}
+.usage-scenario .u-story .tag.sweep-tag{background:var(--gold-50);color:var(--gold-600)}
+.usage-scenario .u-story .tag.atoll-tag{background:var(--indigo-50);color:var(--indigo-600)}
+.usage-scenario .u-story .hl{color:var(--deepstorm-500);font-weight:600}
+.usage-scenario .u-story .hl-t{color:var(--teal-500);font-weight:600}
+.usage-scenario .u-story .hl-g{color:var(--gold-500);font-weight:600}
+.usage-scenario .u-story .hl-i{color:var(--indigo-500);font-weight:600}
+
+/* Atoll planning placeholder */
+.u-planning{
+  padding:0.75rem;border-radius:0.75rem;background:var(--text-05);
+  border:1px dashed var(--text-20);text-align:center;
+}
+.u-planning .u-plan-icon{font-size:1.4rem;margin-bottom:0.4rem;opacity:0.5}
+.u-planning p{font-size:0.75rem;color:var(--text-40);line-height:1.6;margin:0}
+
+/* Suite identity badge */
+.suite-identity{display:flex;align-items:center;gap:0.75rem;margin-bottom:0.5rem}
+.suite-identity .si-icon{
+  width:2.6rem;height:2.6rem;border-radius:0.85rem;display:flex;align-items:center;justify-content:center;
+  font-size:1.2rem;font-weight:700;flex-shrink:0;
+}
+.suite-identity .si-icon.tide-si{background:linear-gradient(135deg,var(--teal-50),var(--surface));color:var(--teal-500)}
+.suite-identity .si-icon.reef-si{background:linear-gradient(135deg,var(--deepstorm-50),var(--surface));color:var(--deepstorm-500)}
+.suite-identity .si-icon.sweep-si{background:linear-gradient(135deg,var(--gold-50),var(--surface));color:var(--gold-500)}
+.suite-identity .si-icon.atoll-si{background:linear-gradient(135deg,var(--indigo-50),var(--surface));color:var(--indigo-400)}
+.suite-identity .si-text{flex:1}
+.suite-identity .si-text h3{font-size:1.2rem;font-weight:700;line-height:1.2}
+.suite-identity .si-text h3 .zh-name{font-weight:400;font-size:0.8rem;color:var(--text-40);margin-left:0.3rem}
+.suite-identity .si-text .si-role{
+  font-size:0.6rem;color:var(--text-40);letter-spacing:0.06em;margin-top:0.05rem;
+}
+.eco-bottom{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:0.9rem}
+@media(max-width:900px){.eco-bottom{grid-template-columns:1fr;gap:0.75rem}}
+
+.s-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1rem}
+.s-card{
+  padding:1.6rem 1.4rem;border-radius:1.25rem;
+  background:var(--surface);border:1px solid var(--text-10);
+  transition:all 0.5s var(--bezier-smooth);
+  display:flex;flex-direction:column;text-align:left;
+}
+.s-card:hover{transform:translateY(-3px);box-shadow:0 10px 40px rgba(28,25,23,0.08);border-color:var(--text-20)}
+.sd-header{display:flex;align-items:center;gap:0.75rem;margin-bottom:0.75rem}
+.suite-icon{
+  width:2.8rem;height:2.8rem;border-radius:0.9rem;display:flex;align-items:center;justify-content:center;
+  font-size:1.3rem;font-weight:700;flex-shrink:0;
+}
+.suite-icon.tide{background:linear-gradient(135deg,var(--teal-50),var(--surface));color:var(--teal-500)}
+.suite-icon.reef{background:linear-gradient(135deg,var(--deepstorm-50),var(--surface));color:var(--deepstorm-500)}
+.suite-icon.sweep{background:linear-gradient(135deg,var(--gold-50),var(--surface));color:var(--gold-500)}
+.suite-icon.atoll{background:linear-gradient(135deg,var(--indigo-50),var(--surface));color:var(--indigo-400)}
+.suite-icon.pilot{background:linear-gradient(135deg,var(--indigo-100),var(--surface));color:var(--indigo-600)}
+.suite-icon.cli-icon{background:linear-gradient(135deg,var(--deepstorm-50),var(--surface));color:var(--deepstorm-500)}
+.sd-header h3{font-size:1.1rem;font-weight:700;line-height:1.2}
+.sd-header h3 .zh-name{font-weight:400;font-size:0.75rem;color:var(--text-40);margin-left:0.3rem}
+.sd-header .stitle{font-size:0.6rem;color:var(--text-40);letter-spacing:0.06em}
+.sd-body{flex:1;display:flex;flex-direction:column;gap:0.7rem}
+.sd-features h4{font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-40);margin-bottom:0.35rem}
+.sd-features ul{list-style:none;padding:0;display:flex;flex-wrap:wrap;gap:0.25rem}
+.sd-features li{
+  display:inline-flex;align-items:center;gap:0.3rem;
+  padding:0.2rem 0.5rem;border-radius:5px;
+  font-size:0.7rem;color:var(--text-70);line-height:1.4;
+}
+.sd-features li .f-icon{font-size:0.6rem;opacity:0.6;flex-shrink:0}
+.sd-features li.tide-f{background:var(--teal-50);color:var(--teal-600)}
+.sd-features li.reef-f{background:var(--deepstorm-50);color:var(--deepstorm-600)}
+.sd-features li.sweep-f{background:var(--gold-50);color:var(--gold-600)}
+.sd-features li.atoll-f{background:var(--indigo-50);color:var(--indigo-600)}
+.sd-features li.pilot-f{background:var(--indigo-100);color:var(--indigo-700)}
+.sd-scenario{
+  padding:0.65rem 0.75rem;border-radius:0.75rem;
+  background:var(--text-05);border:1px solid var(--text-10);
+}
+.sd-scenario .slabel{font-size:0.6rem;font-weight:700;color:var(--text-40);margin-bottom:0.2rem;letter-spacing:0.05em}
+.sd-scenario p{font-size:0.72rem;color:var(--text-60);line-height:1.6;margin:0}
+.sd-scenario p .hl{color:var(--deepstorm-500);font-weight:600}
+.sd-scenario p .hl-t{color:var(--teal-500);font-weight:600}
+.sd-scenario p .hl-g{color:var(--gold-500);font-weight:600}
+.sd-scenario p .hl-i{color:var(--indigo-500);font-weight:600}
+
+/* Pipeline Key Slide */
+.pipeline-visual{margin-top:0.5rem}
+.phase-row{
+  display:grid;grid-template-columns:repeat(6,1fr);gap:0.6rem;
+  margin-bottom:0.5rem;
+}
+.reef-phase-row{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:0.75rem;
+  margin-bottom:0.5rem;
+}
+.phase-box{
+  padding:0.9rem 0.65rem;border-radius:0.85rem;text-align:center;
+  transition:all 0.4s var(--bezier-smooth);
+  border:1px solid transparent;
+}
+.phase-box:hover{transform:translateY(-2px)}
+.phase-box.phase-product{
+  background:linear-gradient(135deg,rgba(20,184,166,0.10),rgba(20,184,166,0.03));
+  border-color:rgba(20,184,166,0.18);
+}
+.phase-box.phase-dev{
+  background:linear-gradient(135deg,rgba(99,102,241,0.08),rgba(99,102,241,0.02));
+  border-color:rgba(99,102,241,0.12);
+}
+.phase-box.phase-ai{
+  background:linear-gradient(135deg,rgba(255,107,74,0.10),rgba(255,107,74,0.03));
+  border-color:rgba(255,107,74,0.15);
+}
+.phase-box.phase-ci{
+  background:linear-gradient(135deg,rgba(22,163,74,0.08),rgba(22,163,74,0.02));
+  border-color:rgba(22,163,74,0.10);
+}
+.phase-box.phase-manual{
+  background:linear-gradient(135deg,rgba(217,119,6,0.08),rgba(217,119,6,0.02));
+  border-color:rgba(217,119,6,0.12);
+}
+.phase-box.phase-init{
+  background:linear-gradient(135deg,rgba(28,25,23,0.04),rgba(28,25,23,0.01));
+  border-color:rgba(28,25,23,0.08);
+}
+.phase-box .phase-label{
+  font-size:0.58rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;
+  margin-bottom:0.25rem;
+}
+.phase-product .phase-label{color:var(--teal-500)}
+.phase-dev .phase-label{color:var(--indigo-500)}
+.phase-ai .phase-label{color:var(--deepstorm-500)}
+.phase-ci .phase-label{color:var(--green-600)}
+.phase-manual .phase-label{color:var(--gold-500)}
+.phase-init .phase-label{color:var(--text-50)}
+.phase-box .phase-icon{font-size:1.3rem;margin-bottom:0.25rem}
+.phase-box .phase-steps{font-size:0.7rem;color:var(--text-60);line-height:1.5;text-align:left;padding:0 0.25rem}
+.phase-box .phase-steps .s{display:flex;align-items:flex-start;gap:0.3rem;padding:0.2rem 0}
+.phase-box .phase-steps .s .d{
+  width:1.1rem;height:1.1rem;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:0.5rem;font-weight:700;flex-shrink:0;margin-top:0.05rem;
+}
+.phase-product .d{background:var(--teal-50);color:var(--teal-500)}
+.phase-dev .d{background:var(--indigo-50);color:var(--indigo-500)}
+.phase-ai .d{background:var(--deepstorm-50);color:var(--deepstorm-600)}
+.phase-ci .d{background:var(--green-100);color:var(--green-600)}
+.phase-manual .d{background:var(--gold-50);color:var(--gold-500)}
+.phase-box .phase-steps .s .t{font-size:0.65rem;color:var(--text-70);line-height:1.3}
+.phase-arrow-row{
+  display:grid;grid-template-columns:repeat(6,1fr);gap:0.6rem;
+  margin-bottom:0.25rem;
+}
+.reef-phase-arrow-row{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:0.75rem;
+  margin-bottom:0.25rem;
+}
+.phase-arrow{text-align:center;color:var(--text-30);font-size:0.75rem}
+.phase-footer{
+  margin-top:1rem;padding:0.75rem 1.25rem;
+  background:var(--bg-alt);border-radius:1rem;border:1px solid var(--text-10);
+  font-size:0.72rem;color:var(--text-60);line-height:1.6;text-align:center;
+}
+.phase-footer strong{color:var(--text-80)}
+
+/* Comparison Table */
+.table-wrap{overflow-x:auto;border-radius:1.25rem;border:1px solid var(--text-10);background:var(--surface)}
+.table-wrap table{width:100%;border-collapse:collapse;font-size:0.78rem}
+.table-wrap th{
+  text-align:left;padding:0.75rem 1rem;
+  font-weight:600;font-size:0.65rem;letter-spacing:0.06em;text-transform:uppercase;
+  color:var(--text-60);background:var(--text-05);border-bottom:1px solid var(--text-10);white-space:nowrap;
+}
+.table-wrap td{padding:0.65rem 1rem;border-bottom:1px solid var(--text-10);color:var(--text-60);line-height:1.5;vertical-align:top}
+.table-wrap tr:last-child td{border-bottom:none}
+.table-wrap td:first-child{font-weight:600;color:var(--text);white-space:nowrap}
+.table-wrap .highlight-col{color:var(--deepstorm-500)}
+.table-wrap .ds{color:var(--deepstorm-500);font-weight:600}
+.table-wrap .vc{color:var(--text-40)}
+.table-wrap .badge-ds{
+  display:inline-block;padding:0.1rem 0.35rem;border-radius:3px;
+  background:var(--deepstorm-50);color:var(--deepstorm-600);font-size:0.6rem;font-weight:600;
+}
+
+/* Summary Slide */
+.summary-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1rem}
+.summary-item{
+  padding:1.5rem;border-radius:1.25rem;
+  background:var(--surface);border:1px solid var(--text-10);
+  display:flex;align-items:flex-start;gap:0.75rem;
+  transition:all 0.4s var(--bezier-smooth);
+}
+.summary-item:hover{transform:translateY(-2px);border-color:var(--deepstorm-200)}
+.summary-item .si-num{
+  width:1.75rem;height:1.75rem;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:0.65rem;font-weight:700;flex-shrink:0;margin-top:0.1rem;
+}
+.summary-item .si-num.g1{background:var(--deepstorm-100);color:var(--deepstorm-600)}
+.summary-item .si-num.g2{background:var(--teal-50);color:var(--teal-500)}
+.summary-item .si-num.g3{background:var(--gold-50);color:var(--gold-500)}
+.summary-item .si-num.g4{background:var(--indigo-50);color:var(--indigo-500)}
+.summary-item .si-text strong{display:block;font-size:0.85rem;margin-bottom:0.15rem;color:var(--text)}
+.summary-item .si-text span{font-size:0.75rem;color:var(--text-60);line-height:1.5}
+
+/* Pilot / ecosystem status grid */
+.pilot-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem}
+
+/* === REEF MATRIX === */
+.rmatrix-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;margin-top:0.5rem}
+.rmx-col{border-radius:1.25rem;overflow:hidden;border:1px solid var(--text-10);background:var(--surface);display:flex;flex-direction:column}
+.rmx-header{
+  padding:1rem 1.25rem;text-align:center;
+}
+.rmx-header.skills-h{background:linear-gradient(135deg,rgba(255,107,74,0.08),rgba(255,107,74,0.02));border-bottom:1px solid var(--deepstorm-100)}
+.rmx-header.agents-h{background:linear-gradient(135deg,rgba(20,184,166,0.08),rgba(20,184,166,0.02));border-bottom:1px solid rgba(45,212,191,0.2)}
+.rmx-header.hooks-h{background:linear-gradient(135deg,rgba(99,102,241,0.08),rgba(99,102,241,0.02));border-bottom:1px solid rgba(99,102,241,0.15)}
+.rmx-header .rmx-label{font-size:0.6rem;font-weight:700;letter-spacing:0.15em;text-transform:uppercase}
+.rmx-header.skills-h .rmx-label{color:var(--deepstorm-500)}
+.rmx-header.agents-h .rmx-label{color:var(--teal-500)}
+.rmx-header.hooks-h .rmx-label{color:var(--indigo-500)}
+.rmx-header .rmx-subtitle{font-size:0.65rem;color:var(--text-40);margin-top:0.2rem}
+.rmx-body{padding:0.75rem 1rem;flex:1;display:flex;flex-direction:column;gap:0.4rem}
+.rmx-item{
+  padding:0.5rem 0.65rem;border-radius:0.6rem;
+  border:1px solid var(--text-10);
+}
+.rmx-item.rmx-start-bg{background:#ede9fe}
+.rmx-item.rmx-gen-bg{background:#e0f2fe}
+.rmx-item.rmx-test-bg{background:#dcfce7}
+.rmx-item.rmx-scope-bg{background:#fef3c7}
+.rmx-item.rmx-review-bg{background:#fce7f3}
+.rmx-item.rmx-commit-bg{background:#dbeafe}
+.rmx-item.rmx-harden-bg{background:#ffedd5}
+.rmx-item.rmx-auto-bg{background:#e0e7ff}
+.rmx-item.rmx-gate-bg{background:#f1f5f9}
+.rmx-item.rmx-ctx-bg{background:#ccfbf1}
+.rmx-item.rmx-verify-bg{background:#f3e8ff}
+.rmx-item .rmx-name{font-size:0.78rem;font-weight:600;color:var(--text);font-family:monospace}
+.rmx-item .rmx-desc{font-size:0.65rem;color:var(--text-60);line-height:1.4;margin-top:0.15rem}
+.rmx-item .rmx-tag{
+  display:inline-block;padding:0.04rem 0.35rem;border-radius:3px;
+  font-size:0.5rem;font-weight:700;margin-right:0.3rem;letter-spacing:0.04em;
+  white-space:nowrap;
+}
+/* 按类别分配不同颜色，而非按列 */
+.rmx-tag.t-start{background:#ede9fe;color:#7c3aed}
+.rmx-tag.t-gen{background:#e0f2fe;color:#0284c7}
+.rmx-tag.t-test{background:#dcfce7;color:#16a34a}
+.rmx-tag.t-scope{background:#fef3c7;color:#d97706}
+.rmx-tag.t-review{background:#fce7f3;color:#db2777}
+.rmx-tag.t-commit{background:#dbeafe;color:#1d4ed8}
+.rmx-tag.t-harden{background:#ffedd5;color:#ea580c}
+.rmx-tag.t-auto{background:#e0e7ff;color:#4f46e5}
+.rmx-tag.t-gate{background:#f1f5f9;color:#475569}
+.rmx-tag.t-ctx{background:#ccfbf1;color:#0d9488}
+.rmx-tag.t-verify{background:#f3e8ff;color:#9333ea}
+.rmx-item.skills-item{border-left:2px solid var(--deepstorm-300)}
+.rmx-item.agents-item{border-left:2px solid var(--teal-300)}
+.rmx-item.hooks-item{border-left:2px solid var(--indigo-300)}
+
+/* === TIDE PIPELINE (horizontal) === */
+.tide-pipe{display:flex;align-items:stretch;gap:0;margin:1.25rem auto 1.25rem;position:relative}
+.tp-step{flex:1;position:relative;padding:0.85rem 0.6rem;text-align:center;border-radius:0.75rem;background:var(--surface);border:1px solid var(--text-10);transition:all 0.3s var(--bezier-smooth)}
+.tp-step:hover{border-color:var(--teal-200);box-shadow:0 4px 16px rgba(20,184,166,0.08);transform:translateY(-2px)}
+.tp-step .tp-num{display:inline-flex;align-items:center;justify-content:center;width:1.3rem;height:1.3rem;border-radius:50%;background:var(--teal-100);color:var(--teal-600);font-size:0.6rem;font-weight:700;margin-bottom:0.4rem}
+.tp-step .tp-icon{font-size:1.2rem;margin-bottom:0.3rem}
+.tp-step .tp-label{font-size:0.68rem;font-weight:600;color:var(--text);margin-bottom:0.12rem}
+.tp-step .tp-desc{font-size:0.56rem;color:var(--text-50);line-height:1.4;padding:0 0.15rem}
+.tp-arrow{display:flex;align-items:center;justify-content:center;flex-shrink:0;width:1.6rem;color:var(--teal-300);font-size:0.9rem;font-weight:300;position:relative}
+.tp-arrow::after{content:'→';font-size:1rem;color:var(--teal-300)}
+.tide-caps{display:grid;grid-template-columns:repeat(3,1fr);gap:0.75rem}
+.tc-item{
+  padding:0.75rem 1rem;border-radius:0.75rem;
+  background:var(--teal-50);border:1px solid rgba(20,184,166,0.15);
+  text-align:center;
+}
+.tc-item .tc-val{font-size:0.82rem;font-weight:600;color:var(--teal-600)}
+.tc-item .tc-lbl{font-size:0.62rem;color:var(--teal-600);opacity:0.7;margin-top:0.1rem}
+
+/* === SWEEP + ATOLL MERGE === */
+.sa-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem}
+.sa-half{
+  padding:1.5rem;border-radius:1.25rem;
+  background:var(--surface);border:1px solid var(--text-10);
+  display:flex;flex-direction:column;
+}
+.sa-half .sa-header{display:flex;align-items:center;gap:0.75rem;margin-bottom:0.75rem}
+.sa-half .sa-icon{
+  width:2.2rem;height:2.2rem;border-radius:0.7rem;
+  display:flex;align-items:center;justify-content:center;
+  font-size:1rem;font-weight:700;flex-shrink:0;
+}
+.sa-half .sa-icon.sweep-si{background:linear-gradient(135deg,var(--gold-50),var(--surface));color:var(--gold-500)}
+.sa-half .sa-icon.atoll-si{background:linear-gradient(135deg,var(--indigo-50),var(--surface));color:var(--indigo-400)}
+.sa-half .sa-header h4{font-size:1rem;font-weight:700}
+.sa-half .sa-header h4 .zh-name{font-weight:400;font-size:0.7rem;color:var(--text-40);margin-left:0.25rem}
+.sa-body{flex:1;display:flex;flex-direction:column;gap:0.5rem}
+.sa-skill{
+  padding:0.5rem 0.65rem;border-radius:0.6rem;
+  background:var(--gold-50);border:1px solid rgba(217,119,6,0.12);
+}
+.sa-skill .sa-skill-name{font-size:0.75rem;font-weight:600;color:var(--text);font-family:monospace}
+.sa-skill .sa-skill-desc{font-size:0.65rem;color:var(--text-60);line-height:1.4;margin-top:0.1rem}
+.sa-item{display:flex;align-items:flex-start;gap:0.5rem;font-size:0.72rem;color:var(--text-60);line-height:1.5}
+.sa-item .sa-bullet{font-size:0.6rem;margin-top:0.2rem;flex-shrink:0}
+.sa-item.sweep-i .sa-bullet{color:var(--gold-500)}
+.sa-item.atoll-i .sa-bullet{color:var(--indigo-400)}
+.sa-tag{
+  display:inline-block;padding:0.1rem 0.35rem;border-radius:3px;
+  font-size:0.55rem;font-weight:600;margin-left:0.25rem;
+}
+.sa-tag.sweep-t{background:var(--gold-50);color:var(--gold-600)}
+.sa-tag.atoll-p{background:var(--indigo-50);color:var(--indigo-500)}
+
+/* Tile flow for tide pipeline responsive */
+
+/* === NAVIGATION === */
+.slide-nav{
+  position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);
+  display:flex;align-items:center;gap:1rem;
+  padding:0.5rem 1.25rem;border-radius:999px;
+  background:rgba(255,255,255,0.85);backdrop-filter:blur(24px);
+  -webkit-backdrop-filter:blur(24px);
+  border:1px solid var(--text-10);
+  box-shadow:0 4px 24px rgba(28,25,23,0.06);
+  z-index:100;
+  transition:all 0.3s var(--bezier-smooth);
+}
+.slide-nav .dots{display:flex;gap:0.35rem}
+.slide-nav .dot{
+  width:7px;height:7px;border-radius:50%;background:var(--text-20);
+  cursor:pointer;transition:all 0.4s var(--bezier-smooth);border:none;padding:0;
+}
+.slide-nav .dot.active{background:var(--deepstorm-500);width:20px;border-radius:4px}
+.slide-nav .dot:hover{background:var(--text-40)}
+.slide-nav .nav-btn{
+  background:none;border:none;color:var(--text-60);cursor:pointer;
+  padding:0.25rem;display:flex;align-items:center;justify-content:center;
+  transition:all 0.3s var(--bezier-smooth);font-size:0.65rem;
+}
+.slide-nav .nav-btn:hover{color:var(--text);transform:scale(1.15)}
+.slide-nav .counter{font-size:0.65rem;color:var(--text-40);font-weight:500;letter-spacing:0.05em;min-width:3rem;text-align:center;user-select:none}
+.slide-nav .nav-btn.hidden{visibility:hidden;pointer-events:none}
+
+/* Responsive */
+@media(max-width:900px){
+  .slide{padding:3rem 1.5rem}
+  .p-grid{grid-template-columns:1fr;gap:0.75rem}
+  .principles-grid{grid-template-columns:1fr;gap:0.75rem}
+  .spec-flow{grid-template-columns:1fr;gap:0.5rem}
+  .spec-arrow{flex-direction:row;padding:0.3rem 0}
+  .spec-arrow span{display:none}
+  .s-grid{grid-template-columns:1fr;gap:0.75rem}
+  .usage-grid{grid-template-columns:1fr;gap:1rem}
+  .phase-row{grid-template-columns:1fr;gap:0.5rem}
+  .reef-phase-row{grid-template-columns:1fr;gap:0.5rem}
+  .phase-arrow-row{display:none}
+  .reef-phase-arrow-row{display:none}
+  .summary-grid{grid-template-columns:1fr;gap:0.75rem}
+  .table-wrap table{font-size:0.7rem}
+  .table-wrap th,.table-wrap td{padding:0.5rem 0.6rem}
+  .slide-title .ecosystem-meta{gap:1.5rem}
+  .slide-nav{bottom:0.75rem;padding:0.4rem 0.75rem;gap:0.5rem}
+  .slide-nav .counter{font-size:0.55rem;min-width:2rem}
+  .phil-spec-wrap{gap:1rem}
+  .ps-principles{grid-template-columns:1fr}
+  .arch-deploy .ad-grid{grid-template-columns:1fr}
+  .arch-grid{grid-template-columns:1fr;gap:0.75rem}
+  .arch-layered{max-width:100%}
+  .arch-layer .al-items{gap:0.3rem}
+  .arch-layer .al-item{font-size:0.65rem;padding:0.25rem 0.5rem}
+  .rmatrix-grid{grid-template-columns:1fr;gap:0.75rem}
+  .tide-pipe{flex-wrap:wrap;gap:0.4rem}
+  .tide-pipe .tp-step{flex:1 1 28%;min-width:7rem}
+  .tide-pipe .tp-arrow{transform:rotate(90deg);width:1rem}
+  .sa-grid{grid-template-columns:1fr;gap:1rem}
+  .tide-caps{grid-template-columns:1fr;gap:0.5rem}
+  .summary-grid{grid-template-columns:1fr}
+  .pilot-grid{grid-template-columns:1fr}
+}
+@media(max-width:640px){
+  .s-grid{grid-template-columns:1fr;gap:0.6rem}
+  .slide-title h1{font-size:3rem}
+}
+
+/* Section Divider */
+.section-divider{text-align:center}
+.section-divider .divider-line{
+  width:3rem;height:3px;border-radius:2px;
+  background:var(--deepstorm-500);margin:0 auto 1.5rem;
+}
+.section-divider h2{
+  font-size:clamp(2rem,4vw,3rem);font-weight:800;
+  letter-spacing:-0.03em;line-height:1.2;
+  background:linear-gradient(135deg,var(--deepstorm-500),var(--teal-500));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  margin-bottom:0.5rem;
+}
+.section-divider .divider-sub{
+  font-size:clamp(0.85rem,1.2vw,1rem);color:var(--text-60);
+  line-height:1.6;max-width:500px;margin:0 auto;
+}
+.section-divider .suites-mini{
+  display:flex;gap:1.5rem;justify-content:center;margin-top:2rem;
+}
+.section-divider .suites-mini .sm-item{
+  display:flex;flex-direction:column;align-items:center;gap:0.4rem;
+}
+.section-divider .suites-mini .sm-icon{
+  width:3rem;height:3rem;border-radius:0.85rem;
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.3rem;background:var(--surface);border:1px solid var(--text-10);
+}
+.section-divider .suites-mini .sm-label{
+  font-size:0.75rem;font-weight:600;color:var(--text-60);
+}
+
+/* Animated entry */
+.slide.active .anim-fade{animation:fadeUp 0.7s var(--bezier-smooth) both}
+.slide.active .anim-fade-1{animation-delay:0.1s}
+.slide.active .anim-fade-2{animation-delay:0.2s}
+.slide.active .anim-fade-3{animation-delay:0.3s}
+.slide.active .anim-fade-4{animation-delay:0.4s}
+.slide.active .anim-fade-5{animation-delay:0.5s}
+@keyframes fadeUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+
+/* Print styles */
+@media print{
+  @page{margin:0;size:landscape}
+  html{font-size:8pt}
+  body{background:white!important;color:#1c1917!important;overflow:visible!important}
+  .slide{position:static!important;opacity:1!important;visibility:visible!important;height:100vh!important;page-break-after:always!important;padding:2rem 2.5rem!important;overflow:hidden!important}
+  .slide-nav{display:none!important}
+  .slide-title{background:none!important}
+  .anim-fade{animation:none!important;opacity:1!important;transform:none!important}
+  .p-card,.principle-card,.s-card,.summary-item,.phase-box,.spec-layer,.arch-card,.rmx-col,.tp-step{border:0.5px solid #ddd!important;background:white!important;box-shadow:none!important}
+  .slide-title .badge{display:none}
+}
+</style>
+</head>
+<body>
+
+<div class="slides" id="slides">
+
+<!-- ==================== SLIDE 1: TITLE ==================== -->
+<section class="slide slide-title active" id="s0">
+  <div class="slide-inner" style="text-align:center">
+    <div class="badge anim-fade"><span class="dot"></span> AI 协同工程实践 · Spec 驱动开发</div>
+    <h1 class="anim-fade anim-fade-1">
+      DeepStorm
+      <span style="display:block;font-weight:400;font-size:0.5em;margin:0.4em auto 0.25em;width:fit-content;background:linear-gradient(135deg,var(--teal-500),var(--deepstorm-500));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">深澜</span>
+    </h1>
+    <p class="tagline anim-fade anim-fade-2">
+      以结构化规格文档串联需求、规范、测试与实现，<br>
+      让 AI 在持续的工程上下文中系统工作。
+    </p>
+
+    <div class="mission-banner anim-fade anim-fade-3">
+      <div class="mission-icon">✦</div>
+      <div class="mission-text">
+        为企业 AI 编程带来一场<span class="highlight">深度风暴</span><br>用结构化规约重构人机协作范式，让工程智慧持续沉淀。
+      </div>
+    </div>
+
+    <div class="ecosystem-meta anim-fade anim-fade-4">
+      <div class="eco-item">
+        <div class="num">5</div>
+        <div class="label">工具套件</div>
+      </div>
+      <div class="eco-item">
+        <div class="num">3</div>
+        <div class="label">Spec 层级</div>
+      </div>
+      <div class="eco-item">
+        <div class="num">11</div>
+        <div class="label">工程步骤</div>
+      </div>
+      <div class="eco-item">
+        <div class="num">5</div>
+        <div class="label">参与角色</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ==================== SLIDE 2: PROBLEM ==================== -->
+<section class="slide" id="s1">
+  <div class="slide-inner">
+    <div class="eyebrow anim-fade"><span class="dash"></span> 背景与问题</div>
+    <h2 class="slide-title-h2 anim-fade anim-fade-1">AI 辅助开发的三大核心问题</h2>
+    <p class="slide-sub anim-fade anim-fade-2" style="font-size:clamp(0.72rem,1.1vw,0.9rem);max-width:1100px">AI 编码速度已大幅提升，但需求传递、上下文衔接、规范落地的协作方式没有跟上——真正的瓶颈不在代码生成，而在结构化信息的传递效率。</p>
+    <div class="p-grid anim-fade anim-fade-3">
+      <div class="p-card">
+        <div class="icon-box">🔄</div>
+        <h3>需求传递中的信息衰减</h3>
+        <p>PM 在 PRD 描述的功能，开发理解时已偏离 30-50%。口头讨论无结构化记录，团队反复对齐却总有遗漏。最终交付与预期不符，返工成为常态。</p>
+      </div>
+      <div class="p-card">
+        <div class="icon-box">🧩</div>
+        <h3>AI 协作的上下文断裂</h3>
+        <p>每次 AI 会话从零理解，无法感知架构约束和上游决策。开发者需要反复为 AI 补充项目背景。Vibe Coding 模式下，工程知识随会话关闭而消逝，无法沉淀复用。</p>
+      </div>
+      <div class="p-card">
+        <div class="icon-box">🔗</div>
+        <h3>需求·设计·实现·测试脱节</h3>
+        <p>需求变更无法追溯影响范围，测试用例靠人工维护。code-style 依赖口头约定，新人加入后迅速走样。工程最佳实践随人员流动而流失，团队经验留不住。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ==================== SLIDE 3: PHILOSOPHY + SPEC (merged) ==================== -->
+<section class="slide" id="s2">
+  <div class="slide-inner">
+    <div class="eyebrow anim-fade"><span class="dash"></span> 核心思路</div>
+    <h2 class="slide-title-h2 anim-fade anim-fade-1">以 Spec 为轴的 AI 协同工程</h2>
+    <p class="slide-sub anim-fade anim-fade-2">结构化 Spec 将需求、规范、验证串联，让 AI 和人共享一致的工程上下文。</p>
+    <div class="phil-spec-wrap anim-fade anim-fade-3">
+      <!-- Full width top: Three-layer Spec -->
+      <div class="ps-spec" style="grid-column:1/-1">
+        <div class="spec-flow" style="margin:0">
+          <div class="spec-layer business">
+            <div class="layer-label">Business Spec</div>
+            <h3>业务规范</h3>
+            <p class="layer-desc">业务目标、验收标准、Story。产品侧维护，需求驱动。</p>
+            <span class="tool-tag">BMAD</span>
+          </div>
+          <div class="spec-arrow">
+            <span class="arrow-icon">&rarr;</span>
+            <span>驱动</span>
+          </div>
+          <div class="spec-layer technical">
+            <div class="layer-label">Technical Spec</div>
+            <h3>技术规范</h3>
+            <p class="layer-desc">接口、数据模型、约束。开发侧维护，迭代演进。</p>
+            <span class="tool-tag">OpenSpec</span>
+          </div>
+          <div class="spec-arrow">
+            <span class="arrow-icon">&rarr;</span>
+            <span>驱动</span>
+          </div>
+          <div class="spec-layer verification">
+            <div class="layer-label">Verification Spec</div>
+            <h3>验证规范</h3>
+            <p class="layer-desc">测试用例、断言、边界条件。测试侧维护，随功能补充。</p>
+            <span class="tool-tag">Superpowers</span>
+          </div>
+        </div>
+      </div>
+      <!-- Three Principles (full width, horizontal) -->
+      <div class="ps-principles">
+        <div class="ps-principle" style="padding:1rem 1rem">
+          <div class="ps-num c1">01</div>
+          <div class="ps-text">
+            <strong>需求质量前置</strong>
+            <span>AI 辅助结构化追问，在需求进入开发前澄清边界和验收标准，将缺陷拦截在产品阶段。</span>
+          </div>
+        </div>
+        <div class="ps-principle" style="padding:1rem 1rem">
+          <div class="ps-num c2">02</div>
+          <div class="ps-text">
+            <strong>上下文连续性</strong>
+            <span>feature_id 将需求、接口、测试、代码显性关联，AI 在任何步骤都能获取上游结构化信息。</span>
+          </div>
+        </div>
+        <div class="ps-principle" style="padding:1rem 1rem">
+          <div class="ps-num c3">03</div>
+          <div class="ps-text">
+            <strong>人机边界清晰</strong>
+            <span>人负责决策（目标、约束、策略），AI 负责生成与执行。所有 AI 产出均需人工确认。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ==================== SLIDE 4: DEEPSTORM 分层可扩展架构 ==================== -->
+<section class="slide" id="s3">
+  <div class="slide-inner">
+    <div class="eyebrow anim-fade"><span class="dash"></span> 架构思想</div>
+    <h2 class="slide-title-h2 anim-fade anim-fade-1">DeepStorm 分层可扩展架构</h2>
+    <p class="slide-sub anim-fade anim-fade-2">三层架构从基础设施到治理规范逐层构建，每层均按需替换、扩展或定制。</p>
+
+    <div class="arch-layered anim-fade anim-fade-3">
+
+      <!-- 使用方式：Plugin vs 项目集成 -->
+      <div class="arch-deploy">
+        <div class="ad-header">
+          <span class="ad-badge">使用方式</span>
+          <span class="ad-title">两种部署模式，CLI 统一管理安装与更新</span>
+        </div>
+        <div class="ad-grid">
+          <div class="ad-card">
+            <span class="ad-icon">🔌</span>
+            <div class="ad-body">
+              <strong>Plugin 模式</strong>
+              <span>Claude Code 插件注入，skills / hooks / agents 嵌入开发环境</span>
+            </div>
+          </div>
+          <div class="ad-card">
+            <span class="ad-icon">📦</span>
+            <div class="ad-body">
+              <strong>项目集成模式</strong>
+              <span>项目内 CLI 脚手架初始化，按技术栈选工具和规范</span>
+            </div>
+          </div>
+        </div>
+        <div class="ad-cli">
+          <span style="font-size:0.75rem">⚙️</span>
+          deepstorm init <span class="ad-cli-sep">|</span>
+          deepstorm setup <span class="ad-cli-sep">|</span>
+          deepstorm update <span class="ad-cli-sep">|</span>
+          deepstorm doctor
+        </div>
+      </div>
+
+      <!-- 治理层 -->
+      <div class="arch-layer layer-gov">
+        <div class="al-header">
+          <span class="al-badge">治理层</span>
+          <span class="al-title">规范体系与自主可控</span>
+          <span class="al-subtitle">定义规约、约束、策略，完全公司自己说了算</span>
+        </div>
+        <div class="al-items">
+          <span class="al-item"><span class="ai-icon">📏</span> 公司规范可注入 <span class="ai-tag custom">定制</span></span>
+          <span class="al-item"><span class="ai-icon">📝</span> code-style 维度可组合 <span class="ai-tag custom">定制</span></span>
+          <span class="al-item"><span class="ai-icon">🔄</span> 工作流按需调整 <span class="ai-tag custom">适配</span></span>
+          <span class="al-item"><span class="ai-icon">🏠</span> 规范完全本地化 · 不依赖外部平台 <span class="ai-tag custom">可控</span></span>
+        </div>
+      </div>
+
+      <div class="arch-connect">▲ 治理约束 ▲</div>
+
+      <!-- 引擎层 -->
+      <div class="arch-layer layer-engine">
+        <div class="al-header">
+          <span class="al-badge">引擎层</span>
+          <span class="al-title">多语言与扩展能力</span>
+          <span class="al-subtitle">技术栈不绑定，每个项目按需选择</span>
+        </div>
+        <div class="al-items">
+          <span class="al-item"><span class="ai-icon">☕</span> Java (Spring Boot) <span class="ai-tag extend">就绪</span></span>
+          <span class="al-item"><span class="ai-icon">🐍</span> Python (FastAPI) <span class="ai-tag extend">就绪</span></span>
+          <span class="al-item"><span class="ai-icon">📐</span> Angular / React / Vue <span class="ai-tag extend">就绪</span></span>
+          <span class="al-item"><span class="ai-icon">🧩</span> 规范模板自定义 — 按技术栈注入 code-style / 片段 <span class="ai-tag extend">可扩展</span></span>
+          <span class="al-item"><span class="ai-icon">🚀</span> CLI 脚手架 — deepstorm setup / init <span class="ai-tag extend">就绪</span></span>
+        </div>
+      </div>
+
+      <div class="arch-connect">▲ 能力支撑 ▲</div>
+
+      <!-- 基础设施层 -->
+      <div class="arch-layer layer-infra">
+        <div class="al-header">
+          <span class="al-badge">基础设施层</span>
+          <span class="al-title">领域化 MCP 服务体系</span>
+          <span class="al-subtitle">按领域解耦，独立部署、可替换</span>
+        </div>
+        <div class="al-items">
+          <span class="al-item"><span class="ai-icon">📋</span> 项目管理 — Jira <span class="ai-tag replace">可替换</span></span>
+          <span class="al-item"><span class="ai-icon">📖</span> 知识库 — 飞书 <span class="ai-tag replace">可替换</span></span>
+          <span class="al-item"><span class="ai-icon">💻</span> 代码托管 — GitHub <span class="ai-tag replace">可替换</span></span>
+          <span class="al-item"><span class="ai-icon">🎨</span> 设计稿关联 — Figma <span class="ai-tag custom">可扩展</span></span>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="arch-banner anim-fade anim-fade-4">
+      <span class="ab-icon">✦</span>
+      完全自主可控 —— 每层均可按需替换或定制，不被任何平台锁定
+    </div>
+  </div>
+</section>
+
+
+<!-- ==================== SLIDE 5: ECOSYSTEM OVERVIEW ==================== -->
+<section class="slide" id="s4">
+  <div class="slide-inner">
+    <div class="eyebrow anim-fade"><span class="dash"></span> 工具套件</div>
+    <h2 class="slide-title-h2 anim-fade anim-fade-1">DeepStorm 生态体系</h2>
+    <p class="slide-sub anim-fade anim-fade-2">五套件覆盖产品→开发→测试→运维→自动化闭环，在结构化上下文中协作运转。</p>
+
+    <!-- CLI + Pilot 第一行 -->
+    <div class="eco-bottom anim-fade anim-fade-3">
+      <!-- CLI -->
+      <div class="s-card" style="padding:1.25rem 1.5rem;flex-direction:row;align-items:center;gap:1rem">
+        <div class="suite-icon cli-icon" style="width:2.4rem;height:2.4rem;font-size:1.1rem">⚙️</div>
+        <div style="flex:1">
+          <div style="display:flex;align-items:baseline;gap:0.5rem">
+            <h3 style="font-size:1rem;font-weight:700">CLI <span style="font-weight:400;font-size:0.7rem;color:var(--text-40);margin-left:0.3rem">命令行工具</span></h3>
+            <span style="font-size:0.55rem;padding:0.1rem 0.35rem;border-radius:3px;background:var(--deepstorm-100);color:var(--deepstorm-600);font-weight:600">一键安装</span>
+          </div>
+          <div style="font-size:0.72rem;color:var(--text-60);line-height:1.5;margin-top:0.2rem">
+            <code style="color:var(--deepstorm-500);font-weight:600;background:none;padding:0;font-size:inherit">npx @deepstorm/cli setup</code> — 统一安装入口，一键配置所有套件及 MCP 服务
+          </div>
+        </div>
+      </div>
+      <!-- Pilot -->
+      <div class="s-card" style="padding:1.25rem 1.5rem;flex-direction:row;align-items:center;gap:1rem">
+        <div class="suite-icon pilot" style="width:2.4rem;height:2.4rem;font-size:1.1rem">🧭</div>
+        <div style="flex:1">
+          <div style="display:flex;align-items:baseline;gap:0.5rem">
+            <h3 style="font-size:1rem;font-weight:700">Pilot <span style="font-weight:400;font-size:0.7rem;color:var(--text-40);margin-left:0.3rem">领航</span></h3>
+            <span style="font-size:0.55rem;padding:0.1rem 0.35rem;border-radius:3px;background:var(--indigo-100);color:var(--indigo-700);font-weight:600">v0.1 初版已就绪</span>
+          </div>
+          <div style="font-size:0.72rem;color:var(--text-60);line-height:1.5;margin-top:0.2rem">
+            OpenSpec 自动实现 Harness Agent —— 跨套件编排协作，驱动工程链路自动闭环流转。
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="s-grid anim-fade anim-fade-4">
+
+      <!-- Tide -->
+      <div class="s-card">
+        <div class="sd-header">
+          <div class="suite-icon tide">🌊</div>
+          <div>
+            <h3>Tide <span class="zh-name">潮汐</span></h3>
+            <div class="stitle">需求驱动 · 产品角色</div>
+          </div>
+        </div>
+        <div class="sd-body">
+          <div class="sd-features">
+            <ul>
+              <li class="tide-f"><span class="f-icon">▸</span> BMAD 多角色需求讨论</li>
+              <li class="tide-f"><span class="f-icon">▸</span> PRD 自动生成</li>
+              <li class="tide-f"><span class="f-icon">▸</span> 飞书知识库推送</li>
+              <li class="tide-f"><span class="f-icon">▸</span> Jira Issue 创建 &amp; 任务拆分</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Reef -->
+      <div class="s-card">
+        <div class="sd-header">
+          <div class="suite-icon reef">🪸</div>
+          <div>
+            <h3>Reef <span class="zh-name">礁群</span></h3>
+            <div class="stitle">代码构建 · 开发角色</div>
+          </div>
+        </div>
+        <div class="sd-body">
+          <div class="sd-features">
+            <ul>
+              <li class="reef-f"><span class="f-icon">▸</span> OpenSpec SDD 工作流</li>
+              <li class="reef-f"><span class="f-icon">▸</span> 前后端代码生成 &amp; 规范</li>
+              <li class="reef-f"><span class="f-icon">▸</span> Test Case &amp; 代码审查</li>
+              <li class="reef-f"><span class="f-icon">▸</span> 分支范围验证 &amp; PR 创建</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sweep -->
+      <div class="s-card">
+        <div class="sd-header">
+          <div class="suite-icon sweep">🫧</div>
+          <div>
+            <h3>Sweep <span class="zh-name">扫掠</span></h3>
+            <div class="stitle">质量检测 · 测试角色</div>
+          </div>
+        </div>
+        <div class="sd-body">
+          <div class="sd-features">
+            <ul>
+              <li class="sweep-f"><span class="f-icon">▸</span> E2E 测试项目初始化</li>
+              <li class="sweep-f"><span class="f-icon">▸</span> 测试意图文档（.flow.md）</li>
+              <li class="sweep-f"><span class="f-icon">▸</span> Playwright 混合执行 + AI 自愈</li>
+              <li class="sweep-f"><span class="f-icon">▸</span> 多环境 &amp; 批量执行</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Atoll -->
+      <div class="s-card">
+        <div class="sd-header">
+          <div class="suite-icon atoll">🏝️</div>
+          <div>
+            <h3>Atoll <span class="zh-name">环礁</span></h3>
+            <div class="stitle">运维承载 · 运维角色</div>
+          </div>
+          <span style="font-size:0.5rem;padding:0.1rem 0.3rem;border-radius:3px;background:var(--text-10);color:var(--text-50);font-weight:600;margin-left:auto;white-space:nowrap">规划中</span>
+        </div>
+        <div class="sd-body">
+          <div class="sd-features" style="opacity:0.45">
+            <ul>
+              <li class="atoll-f"><span class="f-icon">▸</span> 部署辅助与环境检查</li>
+              <li class="atoll-f"><span class="f-icon">▸</span> 日志与监控 AI 查询</li>
+              <li class="atoll-f"><span class="f-icon">▸</span> 故障排查智能引导</li>
+              <li class="atoll-f"><span class="f-icon">▸</span> 系统健康度看板</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+
+<!-- ==================== SLIDE 6: PIPELINE ==================== -->
+<section class="slide" id="s5">
+  <div class="slide-inner">
+    <div class="eyebrow anim-fade"><span class="dash"></span> 完整工程链路</div>
+    <h2 class="slide-title-h2 anim-fade anim-fade-1">从产品意图到自动化测试的全流程</h2>
+    <p class="slide-sub anim-fade anim-fade-2">六阶段十一链路，项目初始化→产品→开发→质量→CI→人工验证，各套件按链路阶段自然衔接。</p>
+
+    <div class="pipeline-visual anim-fade anim-fade-3">
+      <div class="phase-row">
+        <div class="phase-box phase-init">
+          <div class="phase-icon">⚙️</div>
+          <div class="phase-label">项目初始化</div>
+          <div class="phase-steps">
+            <div class="s"><span class="d">1</span><span class="t"><code style="font-size:inherit;color:var(--text-80);font-weight:500">deepstorm init</code> · <code style="font-size:inherit;color:var(--text-60);font-weight:500">setup</code> → 项目骨架 + 套件安装</span></div>
+          </div>
+        </div>
+        <div class="phase-box phase-product">
+          <div class="phase-icon">📋</div>
+          <div class="phase-label">产品侧</div>
+          <div class="phase-steps">
+            <div class="s"><span class="d">2</span><span class="t">产品意图（自然语言）</span></div>
+            <div class="s"><span class="d">3</span><span class="t">BMAD 结构化 → 澄清边界</span></div>
+            <div class="s"><span class="d">4</span><span class="t">PRD + Business Spec 产出</span></div>
+            <div class="s"><span class="d">5</span><span class="t">Jira 任务创建（含 Figma 链接）</span></div>
+          </div>
+        </div>
+        <div class="phase-box phase-dev">
+          <div class="phase-icon">🔧</div>
+          <div class="phase-label">开发侧</div>
+          <div class="phase-steps">
+            <div class="s"><span class="d">6</span><span class="t">/reef-start → SDD 产出 + grill-me 审查</span></div>
+            <div class="s"><span class="d">7</span><span class="t">code-style 规范 + TDD 逐 task 实现</span></div>
+          </div>
+        </div>
+        <div class="phase-box phase-ai">
+          <div class="phase-icon">🤖</div>
+          <div class="phase-label">质量门禁</div>
+          <div class="phase-steps">
+            <div class="s"><span class="d">8</span><span class="t">四维测试用例 → 分支验证 → 审查</span></div>
+            <div class="s"><span class="d">9</span><span class="t">加固 → 提交 → PR（人确认）</span></div>
+          </div>
+        </div>
+        <div class="phase-box phase-ci">
+          <div class="phase-icon">⚡</div>
+          <div class="phase-label">CI 集成</div>
+          <div class="phase-steps">
+            <div class="s"><span class="d">10</span><span class="t">Sweep E2E 测试（Playwright 混合执行 + AI 自愈）</span></div>
+          </div>
+        </div>
+        <div class="phase-box phase-manual">
+          <div class="phase-icon">👤</div>
+          <div class="phase-label">人工验证</div>
+          <div class="phase-steps">
+            <div class="s"><span class="d">11</span><span class="t">探索性测试 → 部署 → 监控与运维</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="phase-arrow-row">
+        <div class="phase-arrow">▼</div>
+        <div class="phase-arrow">▼</div>
+        <div class="phase-arrow">▼</div>
+        <div class="phase-arrow">▼</div>
+        <div class="phase-arrow">▼</div>
+        <div class="phase-arrow"></div>
+      </div>
+
+      <div class="phase-footer">
+        <strong>CLI</strong>（项目初始化）→ <strong>Tide</strong>（需求结构化）→ <strong>Reef</strong>（设计→代码→质量→交付）→ <strong>Sweep</strong>（E2E 测试）→ <strong>Atoll</strong>（部署与运维）
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ==================== SLIDE 7: TIDE (compressed) ==================== -->
+<section class="slide" id="s6">
+  <div class="slide-inner">
+    <div class="eyebrow anim-fade"><span class="dash"></span> Tide · 需求管道</div>
+    <h2 class="slide-title-h2 anim-fade anim-fade-1">从口述需求到可执行 Issue</h2>
+    <p class="slide-sub anim-fade anim-fade-2">产品经理自然语言描述 → BMAD 结构化讨论 → PRD → 知识库 → Jira，全程 AI 辅助。</p>
+
+    <div class="tide-pipe anim-fade anim-fade-3">
+      <div class="tp-step">
+        <div class="tp-num">1</div>
+        <div class="tp-icon">💬</div>
+        <div class="tp-label">口述需求</div>
+        <div class="tp-desc">产品经理用自然语言<br>描述产品意图</div>
+      </div>
+      <div class="tp-arrow"></div>
+      <div class="tp-step">
+        <div class="tp-num">2</div>
+        <div class="tp-icon">🤝</div>
+        <div class="tp-label">BMAD 讨论</div>
+        <div class="tp-desc"><code style="font-size:inherit;color:var(--text-80);font-weight:500">/tide-discuss</code><br>Mary / John / 架构师多角色追问</div>
+      </div>
+      <div class="tp-arrow"></div>
+      <div class="tp-step">
+        <div class="tp-num">3</div>
+        <div class="tp-icon">📄</div>
+        <div class="tp-label">PRD 生成</div>
+        <div class="tp-desc">AI 整理为规范格式<br>PRD + 验收标准</div>
+      </div>
+      <div class="tp-arrow"></div>
+      <div class="tp-step">
+        <div class="tp-num">4</div>
+        <div class="tp-icon">📘</div>
+        <div class="tp-label">知识库</div>
+        <div class="tp-desc">推送飞书知识库归档<br>团队随时查阅历史需求</div>
+      </div>
+      <div class="tp-arrow"></div>
+      <div class="tp-step">
+        <div class="tp-num">5</div>
+        <div class="tp-icon">📋</div>
+        <div class="tp-label">Jira Issue</div>
+        <div class="tp-desc">自动拆分为 Story + 子任务<br>关联 Figma 设计稿</div>
+      </div>
+    </div>
+
+    <div class="tide-caps anim-fade anim-fade-4">
+      <div class="tc-item">
+        <div class="tc-val">口述 → 结构化 Spec</div>
+        <div class="tc-lbl">模糊需求到可执行 Issue，消除歧义</div>
+      </div>
+      <div class="tc-item">
+        <div class="tc-val">多角色前置对齐</div>
+        <div class="tc-lbl">Mary / John / 架构师提前介入，缺陷拦截在产品阶段</div>
+      </div>
+      <div class="tc-item">
+        <div class="tc-val">知识库 · 模板 · 追溯链</div>
+        <div class="tc-lbl">讨论记录和 PRD 归档沉淀，需求变更完整脉络可查</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ==================== SLIDE 8: REEF · 能力矩阵 ==================== -->
+<section class="slide" id="s8">
+  <div class="slide-inner">
+    <div class="eyebrow anim-fade"><span class="dash"></span> Reef · 工程流程</div>
+    <h2 class="slide-title-h2 anim-fade anim-fade-1">从启动到交付的完整流水线</h2>
+    <p class="slide-sub anim-fade anim-fade-3">一个入口 /reef-start，自动完成设计 → 实现 → 质量门禁 → 交付全流程。</p>
+
+    <div class="pipeline-visual anim-fade anim-fade-3" style="margin-top:0">
+      <div class="reef-phase-row">
+        <div class="phase-box phase-product">
+          <div class="phase-icon">📐</div>
+          <div class="phase-label">SDD 设计</div>
+          <div class="phase-steps">
+            <div class="s"><span class="d">1</span><span class="t">/reef-start → 路由 Issue/自由讨论</span></div>
+            <div class="s"><span class="d">2</span><span class="t">OpenSpec: proposal → design → tasks</span></div>
+            <div class="s"><span class="d">3</span><span class="t">grill-me 审查 → spec-hardener 四道筛加固</span></div>
+          </div>
+        </div>
+        <div class="phase-box phase-dev">
+          <div class="phase-icon">💻</div>
+          <div class="phase-label">代码实现</div>
+          <div class="phase-steps">
+            <div class="s"><span class="d">4</span><span class="t">代码自动生成 → code-style 规范约束</span></div>
+            <div class="s"><span class="d">5</span><span class="t">TDD 逐 task (RED → GREEN → REFACTOR)</span></div>
+            <div class="s"><span class="d">6</span><span class="t">grill-me 确认完成 → 自动引导下一 task</span></div>
+          </div>
+        </div>
+        <div class="phase-box phase-ai">
+          <div class="phase-icon">🛡️</div>
+          <div class="phase-label">质量门禁</div>
+          <div class="phase-steps">
+            <div class="s"><span class="d">7</span><span class="t">reef-testcase 四维用例生成</span></div>
+            <div class="s"><span class="d">8</span><span class="t">reef-scope 分支范围验证 (pre-commit + CI)</span></div>
+            <div class="s"><span class="d">9</span><span class="t">reef-review 多 Agent 并行审查</span></div>
+          </div>
+        </div>
+        <div class="phase-box phase-manual">
+          <div class="phase-icon">📤</div>
+          <div class="phase-label">提交交付</div>
+          <div class="phase-steps">
+            <div class="s"><span class="d">10</span><span class="t">reef-harden 设计加固</span></div>
+            <div class="s"><span class="d">11</span><span class="t">reef-commit 智能提交（继承仓库风格）</span></div>
+            <div class="s"><span class="d">12</span><span class="t">reef-pr 自动 PR + Jira 关联，人确认推送</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="reef-phase-arrow-row">
+        <div class="phase-arrow">▼ 设计完成</div>
+        <div class="phase-arrow">▼ 实现就绪</div>
+        <div class="phase-arrow">▼ 质量通过</div>
+        <div class="phase-arrow">▼ 提交交付</div>
+      </div>
+
+      <div class="phase-footer">
+        <strong>开发者只需一个入口 /reef-start</strong>，后续流程按需自动触发。<br>
+        AI 生成 + 人确认，每步产出链式衔接，全链路可追溯（Issue → Spec → Code → PR）。
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ==================== SLIDE 10: SWEEP + ATOLL ==================== -->
+<section class="slide" id="s7">
+  <div class="slide-inner">
+    <div class="eyebrow anim-fade"><span class="dash"></span> Reef · 能力体系</div>
+    <h2 class="slide-title-h2 anim-fade anim-fade-1">Skills · Agents · Hooks 三层能力矩阵</h2>
+    <p class="slide-sub anim-fade anim-fade-2" style="font-size:clamp(0.7rem,1.05vw,0.85rem);max-width:1100px">每层解决不同维度的问题：<strong style="color:var(--deepstorm-500)">Skills</strong> 解决"用户如何触发能力"，<strong style="color:var(--teal-500)">Agents</strong> 解决"多步骤工作流自动编排"，<strong style="color:var(--indigo-500)">Hooks</strong> 解决"开发流程中自动化门禁"。</p>
+
+    <div class="rmatrix-grid anim-fade anim-fade-3">
+      <!-- Skills Column -->
+      <div class="rmx-col">
+        <div class="rmx-header skills-h">
+          <div class="rmx-label">🪸 Skills</div>
+          <div class="rmx-subtitle">用户主动触发 · 覆盖开发全步骤</div>
+        </div>
+        <div class="rmx-body">
+          <!-- 启动 -->
+          <div class="rmx-item skills-item rmx-start-bg">
+            <div class="rmx-name">/reef-start</div>
+            <div class="rmx-desc"><span class="rmx-tag t-start">启动</span>唯一入口，自动路由 Issue 或自由讨论，拉取 PRD/Figma/上下文，触发完整 SDD 流程</div>
+          </div>
+          <!-- 生成代码 -->
+          <div class="rmx-item skills-item rmx-gen-bg">
+            <div class="rmx-name">/reef-gen-frontend / reef-gen-backend</div>
+            <div class="rmx-desc"><span class="rmx-tag t-gen">生成</span>按 code-style 规范自动生成组件/服务/路由骨架，代码与团队约定自洽</div>
+          </div>
+          <!-- 测试 -->
+          <div class="rmx-item skills-item rmx-test-bg">
+            <div class="rmx-name">/reef-testcase</div>
+            <div class="rmx-desc"><span class="rmx-tag t-test">测试</span>从 Issue + PRD 提取四维测试场景：正常流程 / 边界条件 / 异常场景 / 验收标准</div>
+          </div>
+          <!-- 审查 -->
+          <div class="rmx-item skills-item rmx-review-bg">
+            <div class="rmx-name">/reef-review</div>
+            <div class="rmx-desc"><span class="rmx-tag t-review">审查</span>多子 Agent 并行审查（正确性/性能/安全/可维护性），逐维评分汇总</div>
+          </div>
+          <!-- 加固 -->
+          <div class="rmx-item skills-item rmx-harden-bg">
+            <div class="rmx-name">/reef-harden</div>
+            <div class="rmx-desc"><span class="rmx-tag t-harden">加固</span>实现后审视设计，含"反向 grill"——追问三个月后可能在哪五处后悔</div>
+          </div>
+          <!-- 范围（提交前） -->
+          <div class="rmx-item skills-item rmx-scope-bg">
+            <div class="rmx-name">/reef-scope</div>
+            <div class="rmx-desc"><span class="rmx-tag t-scope">范围</span>AI 语义分析 diff，检测多领域变更并阻断，给出拆分建议。支持 pre-commit + CI</div>
+          </div>
+          <!-- 提交 -->
+          <div class="rmx-item skills-item rmx-commit-bg">
+            <div class="rmx-name">/reef-commit / reef-pr</div>
+            <div class="rmx-desc"><span class="rmx-tag t-commit">提交</span>智能提交信息（继承仓库风格）→ 自动 PR（含变更背景 + Issue 关联），AI 草拟人确认</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Agents Column -->
+      <div class="rmx-col">
+        <div class="rmx-header agents-h">
+          <div class="rmx-label">⚙️ Agents</div>
+          <div class="rmx-subtitle">后台自动编排 · 多步骤工作流</div>
+        </div>
+        <div class="rmx-body">
+          <!-- 生成（SDD 设计） -->
+          <div class="rmx-item agents-item rmx-gen-bg">
+            <div class="rmx-name">OpenSpec Agent</div>
+            <div class="rmx-desc"><span class="rmx-tag t-gen">生成</span>执行 proposal → design → tasks 三阶段 SDD，OpenSpec 格式约束保证文档质量</div>
+          </div>
+          <!-- 审查（逐阶段设计追问） -->
+          <div class="rmx-item agents-item rmx-review-bg">
+            <div class="rmx-name">grill-me Agent</div>
+            <div class="rmx-desc"><span class="rmx-tag t-review">审查</span>逐阶段 SDD 多轮追问，发现遗漏和矛盾才进入下一阶段，确保设计严谨性</div>
+          </div>
+          <!-- 加固（设计加固） -->
+          <div class="rmx-item agents-item rmx-harden-bg">
+            <div class="rmx-name">spec-hardener Agent</div>
+            <div class="rmx-desc"><span class="rmx-tag t-harden">加固</span>四道筛：完整性 / 一致性 / 异常路径 / 反向 grill，将边缘问题消灭在设计阶段</div>
+          </div>
+          <!-- 审查（代码审查） -->
+          <div class="rmx-item agents-item rmx-review-bg">
+            <div class="rmx-name">Review Agents</div>
+            <div class="rmx-desc"><span class="rmx-tag t-review">审查</span>每个维度独立子 Agent 并行执行：正确性 / 性能 / 安全 / 可维护性，综合评分</div>
+          </div>
+          <!-- 自动编排 -->
+          <div class="rmx-item agents-item rmx-auto-bg">
+            <div class="rmx-name">Pilot Agent</div>
+            <div class="rmx-desc"><span class="rmx-tag t-auto">自动</span>Harness 自动化编排 —— 监听 OpenSpec 变更，跨套件自动触发工程全链路流转</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Hooks Column -->
+      <div class="rmx-col">
+        <div class="rmx-header hooks-h">
+          <div class="rmx-label">🔗 Hooks</div>
+          <div class="rmx-subtitle">环境嵌入 · 自动化流程门禁</div>
+        </div>
+        <div class="rmx-body">
+          <!-- Agent 生命周期 -->
+          <div class="rmx-item hooks-item rmx-ctx-bg">
+            <div class="rmx-name">pre-Agent 上下文注入</div>
+            <div class="rmx-desc"><span class="rmx-tag t-ctx">上下文</span>Agent 执行前自动注入当前任务的 PRD / Spec / Figma 上下文</div>
+          </div>
+          <div class="rmx-item hooks-item rmx-verify-bg">
+            <div class="rmx-name">post-Agent 产出校验</div>
+            <div class="rmx-desc"><span class="rmx-tag t-verify">验证</span>Agent 生成结果的格式合规性、规范符合度自动检查</div>
+          </div>
+          <!-- Git 生命周期 -->
+          <div class="rmx-item hooks-item rmx-gate-bg">
+            <div class="rmx-name">pre-commit scope 检查</div>
+            <div class="rmx-desc"><span class="rmx-tag t-gate">门禁</span>提交前自动执行 reef-scope 语义分析，阻断多领域混合提交，确保 commit 粒度纯洁</div>
+          </div>
+          <div class="rmx-item hooks-item rmx-gate-bg">
+            <div class="rmx-name">commit-msg 规范校验</div>
+            <div class="rmx-desc"><span class="rmx-tag t-gate">门禁</span>自动校验提交信息格式和风格一致性，继承仓库历史习惯</div>
+          </div>
+          <div class="rmx-item hooks-item rmx-gate-bg">
+            <div class="rmx-name">pre-push 质量门禁</div>
+            <div class="rmx-desc"><span class="rmx-tag t-gate">门禁</span>推送前自动触发测试执行 + lint 检查，阻断低质量代码流入远端</div>
+          </div>
+          <div class="rmx-item hooks-item rmx-gate-bg">
+            <div class="rmx-name">CI 分支范围验证</div>
+            <div class="rmx-desc"><span class="rmx-tag t-gate">门禁</span>在 GitHub Actions / GitLab CI 中运行，PR 级别检测多领域变更</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ==================== SLIDE 9: REEF · 工程流程 (compressed) ==================== -->
+<section class="slide" id="s9">
+  <div class="slide-inner">
+    <div class="eyebrow anim-fade"><span class="dash"></span> Sweep · Atoll</div>
+    <h2 class="slide-title-h2 anim-fade anim-fade-1">测试与运维能力</h2>
+    <p class="slide-sub anim-fade anim-fade-2">Sweep 保障质量闭环，Atoll 承载运维智能化。</p>
+
+    <div class="sa-grid anim-fade anim-fade-3">
+      <!-- Sweep -->
+      <div class="sa-half">
+        <div class="sa-header">
+          <div class="sa-icon sweep-si">🫧</div>
+          <h4>Sweep <span class="zh-name">扫掠</span></h4>
+        </div>
+        <div class="sa-body">
+          <div class="sa-skill">
+            <div class="sa-skill-name">/sweep-init</div>
+            <div class="sa-skill-desc">一键创建 Playwright 骨架 + 配置，开箱即用。自动集成 CI 模板和环境变量。</div>
+          </div>
+          <div class="sa-skill">
+            <div class="sa-skill-name">/sweep-plan</div>
+            <div class="sa-skill-desc">从 Issue/PRD 提取验收标准，生成 .flow.md 测试意图文档，覆盖功能/边界/异常三要素。</div>
+          </div>
+          <div class="sa-skill">
+            <div class="sa-skill-name">/sweep-run</div>
+            <div class="sa-skill-desc">Playwright 混合执行：预编译原生执行（~20x 加速），失败时 AI 自愈重试。支持 --env / --all / --browser。</div>
+          </div>
+          <div style="margin-top:auto;padding-top:0.5rem;font-size:0.65rem;color:var(--text-40);border-top:1px solid var(--text-10);line-height:1.5">
+            <span class="sa-tag sweep-t">已实现</span> 核心流程验证通过
+          </div>
+        </div>
+      </div>
+
+      <!-- Atoll -->
+      <div class="sa-half">
+        <div class="sa-header">
+          <div class="sa-icon atoll-si">🏝️</div>
+          <h4>Atoll <span class="zh-name">环礁</span></h4>
+        </div>
+        <div class="sa-body">
+          <div class="sa-item atoll-i">
+            <span class="sa-bullet">▸</span>
+            <span><strong>部署辅助</strong> — 发布检查清单生成，依赖分析、配置校验、回滚方案一键查询</span>
+          </div>
+          <div class="sa-item atoll-i">
+            <span class="sa-bullet">▸</span>
+            <span><strong>日志与监控 AI 查询</strong> — 自然语言查日志和指标，AI 自动关联上下文</span>
+          </div>
+          <div class="sa-item atoll-i">
+            <span class="sa-bullet">▸</span>
+            <span><strong>故障排查引导</strong> — 输入错误现象，AI 结合部署历史和变更记录给出根因分析</span>
+          </div>
+          <div class="sa-item atoll-i">
+            <span class="sa-bullet">▸</span>
+            <span><strong>系统健康度看板</strong> — 关键指标聚合展示，异常自动告警，支持深度钻取</span>
+          </div>
+          <div style="margin-top:auto;padding-top:0.5rem;font-size:0.65rem;color:var(--text-40);border-top:1px solid var(--text-10);line-height:1.5">
+            <span class="sa-tag atoll-p">规划中</span> 核心能力持续构建，预计覆盖部署→监控→排障→巡检全流程
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ==================== SLIDE 11: COMPARISON ==================== -->
+<section class="slide" id="s10">
+  <div class="slide-inner">
+    <div class="eyebrow anim-fade"><span class="dash"></span> 模式对比</div>
+    <h2 class="slide-title-h2 anim-fade anim-fade-1">Vibe Coding vs DeepStorm 结构化工程</h2>
+    <p class="slide-sub anim-fade anim-fade-2">核心差异不在于代码生成速度，而在于是否将工程知识沉淀为可持续积累、可系统化管理的资产。</p>
+
+    <div class="table-wrap anim-fade anim-fade-3">
+      <table>
+        <thead>
+          <tr>
+            <th>维度</th>
+            <th>Vibe Coding</th>
+            <th class="highlight-col">DeepStorm 结构化工程</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>工作模式</td>
+            <td class="vc">即兴提示，AI 自由发挥</td>
+            <td class="ds">Spec 驱动的结构化链路，按规约执行</td>
+          </tr>
+          <tr>
+            <td>上下文连续性</td>
+            <td class="vc">每次会话独立，历史即消逝</td>
+            <td class="ds">feature_id 贯穿，Spec 持续传递上下游</td>
+          </tr>
+          <tr>
+            <td>文档资产积累</td>
+            <td class="vc">❌ 无，会话即消逝</td>
+            <td class="ds">✅ OpenSpec 文档持续沉淀，可查阅可继承</td>
+          </tr>
+          <tr>
+            <td>PRD 管理</td>
+            <td class="vc">❌ 无</td>
+            <td class="ds">✅ Tide 全生命周期管理（讨论→发布→变更→归档）</td>
+          </tr>
+          <tr>
+            <td>代码质量</td>
+            <td class="vc">依赖训练数据，风格随机</td>
+            <td class="ds">✅ code-style 规范约束 + 多维 Agent 审查</td>
+          </tr>
+          <tr>
+            <td>项目质量保障</td>
+            <td class="vc">无系统机制，生成即交付</td>
+            <td class="ds">✅ 四维质量门禁：用例→范围验证→审查→加固</td>
+          </tr>
+          <tr>
+            <td>可追溯性</td>
+            <td class="vc">❌ 无，需人工回忆</td>
+            <td class="ds">✅ Issue → Spec → Code → PR 全链路关联</td>
+          </tr>
+          <tr>
+            <td>自主可控</td>
+            <td class="vc">平台锁定，无法定制</td>
+            <td class="ds">✅ 各环节可替换（MCP/语言/规范），公司规范可注入</td>
+          </tr>
+          <tr>
+            <td>规约自定义</td>
+            <td class="vc">❌ 不可</td>
+            <td class="ds">✅ code-style 维度可组合、template 可扩展、工作流按需调整</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+
+<!-- ==================== SLIDE 12: SUMMARY + VALUE (merged) ==================== -->
+<section class="slide" id="s11">
+  <div class="slide-inner">
+    <div class="eyebrow anim-fade"><span class="dash"></span> 总结与愿景</div>
+    <h2 class="slide-title-h2 anim-fade anim-fade-1">让软件工程经验在 AI 时代持续传承</h2>
+
+    <!-- 核心标语 -->
+    <div style="padding:0.6rem 1.2rem;border-radius:0.65rem;background:var(--deepstorm-50);border:1px solid rgba(99,102,241,0.12);text-align:center;margin-bottom:0.6rem" class="anim-fade anim-fade-2">
+      <p style="margin:0;font-size:0.78rem;font-weight:600;color:var(--deepstorm-600);line-height:1.5">
+        <strong style="color:var(--deepstorm-500)">DeepStorm 深澜</strong>，不只是提升 AI 编程效率，而是重新定义 AI 时代的人机协作工程模式。
+      </p>
+    </div>
+
+    <!-- 价值主张 -->
+    <p class="slide-sub anim-fade anim-fade-2" style="margin-bottom:0.6rem">结构化上下文 + AI 执行 → 信息不对齐和重复手工劳动显著降低，团队聚焦高价值决策。</p>
+
+    <!-- 愿景三列 -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.75rem;margin-bottom:0.6rem" class="anim-fade anim-fade-3">
+      <div style="padding:0.75rem;border-radius:0.75rem;background:var(--surface);border:1px solid var(--text-10);text-align:center">
+        <div style="font-size:1.3rem;margin-bottom:0.2rem">📐</div>
+        <div style="font-size:0.8rem;font-weight:700;margin-bottom:0.15rem">有据可依</div>
+        <div style="font-size:0.65rem;color:var(--text-50);line-height:1.4">每一步决策都有 Spec 支撑</div>
+      </div>
+      <div style="padding:0.75rem;border-radius:0.75rem;background:var(--surface);border:1px solid var(--text-10);text-align:center">
+        <div style="font-size:1.3rem;margin-bottom:0.2rem">🔗</div>
+        <div style="font-size:0.8rem;font-weight:700;margin-bottom:0.15rem">有迹可循</div>
+        <div style="font-size:0.65rem;color:var(--text-50);line-height:1.4">需求到交付全链路可追溯</div>
+      </div>
+      <div style="padding:0.75rem;border-radius:0.75rem;background:var(--surface);border:1px solid var(--text-10);text-align:center">
+        <div style="font-size:1.3rem;margin-bottom:0.2rem">🌊</div>
+        <div style="font-size:0.8rem;font-weight:700;margin-bottom:0.15rem">持续传承</div>
+        <div style="font-size:0.65rem;color:var(--text-50);line-height:1.4">工程规范在结构化上下文中代代相传</div>
+      </div>
+    </div>
+
+    <!-- 下一步规划 -->
+    <div style="font-size:0.6rem;font-weight:700;color:var(--text-50);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:0.35rem" class="anim-fade anim-fade-4">下一步规划</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.7rem" class="anim-fade anim-fade-4">
+      <div style="padding:0.65rem 0.9rem;border-radius:0.7rem;background:var(--bg-alt);border:1px solid var(--text-10);display:flex;align-items:center;gap:0.5rem">
+        <span style="font-size:1.1rem">🔌</span>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:0.72rem;font-weight:700;color:var(--text-80);margin-bottom:0.05rem">架构扩展 &amp; 接入</div>
+          <div style="font-size:0.58rem;color:var(--text-50)">更多团队接入共建</div>
+        </div>
+      </div>
+      <div style="padding:0.65rem 0.9rem;border-radius:0.7rem;background:var(--gold-50);border:1px solid rgba(217,119,6,0.12);display:flex;align-items:center;gap:0.5rem">
+        <span style="font-size:1.1rem">📋</span>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:0.72rem;font-weight:700;color:var(--gold-600);margin-bottom:0.05rem">规范沉淀推广</div>
+          <div style="font-size:0.58rem;color:var(--gold-500)">公司级标准规约库</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 扩展路线 -->
+    <div style="margin-top:0.6rem;padding:0.6rem 0.9rem;border-radius:0.55rem;background:var(--surface);border:1px solid var(--text-10);text-align:center" class="anim-fade anim-fade-5">
+      <p style="color:var(--text-60);font-size:0.62rem;line-height:1.5;margin:0">
+        <strong style="color:var(--deepstorm-500)">扩展路线：</strong>
+        Atoll 实现 → Pilot 迭代 → 团队接入 → 从各项目中沉淀共性规范，形成组织级标准规约库
+      </p>
+    </div>
+  </div>
+</section>
+
+</div>
+
+<!-- ==================== NAVIGATION ==================== -->
+<div class="slide-nav" id="slideNav">
+  <button class="nav-btn" id="prevBtn" aria-label="上一页">←</button>
+  <div class="dots" id="dots"></div>
+  <span class="counter" id="counter">1 / 13</span>
+  <button class="nav-btn" id="nextBtn" aria-label="下一页">→</button>
+</div>
+
+<script>
+(function(){
+  const slides = document.querySelectorAll('.slide');
+  const dotsContainer = document.getElementById('dots');
+  const counter = document.getElementById('counter');
+  const prevBtn = document.getElementById('prevBtn');
+  const nextBtn = document.getElementById('nextBtn');
+  const total = slides.length;
+  let current = 0;
+  let isAnimating = false;
+
+  // Create dots
+  for(let i=0; i<total; i++){
+    const dot = document.createElement('button');
+    dot.className = 'dot' + (i===0?' active':'');
+    dot.setAttribute('aria-label','转到第'+(i+1)+'页');
+    dot.addEventListener('click', () => goTo(i));
+    dotsContainer.appendChild(dot);
+  }
+
+  function goTo(index){
+    if(isAnimating || index === current || index < 0 || index >= total) return;
+    isAnimating = true;
+
+    const prev = current;
+    slides[prev].classList.remove('active');
+    slides[prev].classList.add('exit');
+    setTimeout(() => {
+      slides[prev].classList.remove('exit');
+    }, 500);
+
+    current = index;
+    slides[current].classList.add('active');
+    updateNav();
+    setTimeout(() => { isAnimating = false; }, 700);
+  }
+
+  function updateNav(){
+    const dots = dotsContainer.children;
+    for(let i=0; i<total; i++){
+      if(i === current){
+        dots[i].classList.add('active');
+      } else {
+        dots[i].classList.remove('active');
+      }
+    }
+    counter.textContent = (current+1) + ' / ' + total;
+    prevBtn.classList.toggle('hidden', current === 0);
+    nextBtn.classList.toggle('hidden', current === total-1);
+  }
+
+  prevBtn.addEventListener('click', () => goTo(current-1));
+  nextBtn.addEventListener('click', () => goTo(current+1));
+
+  document.addEventListener('keydown', (e) => {
+    if(e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' '){
+      e.preventDefault();
+      goTo(current+1);
+    } else if(e.key === 'ArrowLeft' || e.key === 'ArrowUp'){
+      e.preventDefault();
+      goTo(current-1);
+    } else if(e.key === 'Home'){
+      e.preventDefault();
+      goTo(0);
+    } else if(e.key === 'End'){
+      e.preventDefault();
+      goTo(total-1);
+    }
+  });
+
+  // Touch/swipe support
+  let touchStartX = 0;
+  let touchStartY = 0;
+  document.addEventListener('touchstart', (e) => {
+    touchStartX = e.changedTouches[0].screenX;
+    touchStartY = e.changedTouches[0].screenY;
+  }, {passive:true});
+  document.addEventListener('touchend', (e) => {
+    const dx = e.changedTouches[0].screenX - touchStartX;
+    const dy = e.changedTouches[0].screenY - touchStartY;
+    if(Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 50){
+      if(dx < 0) goTo(current+1);
+      else goTo(current-1);
+    } else if(Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 50){
+      if(dy < 0) goTo(current+1);
+      else goTo(current-1);
+    }
+  }, {passive:true});
+
+  updateNav();
+})();
+</script>
+</body>
+</html>
