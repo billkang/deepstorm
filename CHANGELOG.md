@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.8.0] - 2026-07-16
+
+### Features
+
+- 将 sweep 的 `readFramework()` 配置读源迁移至 `.deepstorm/settings.json`，统一 DeepStorm 配置管理路径 (`b214093`)
+
+### Documentation
+
+- 优化 DeepStorm PPT 样式：16:9 布局、暖调米白背景、全屏模式、翻页栏跟随内容流 (`6afe00b`)
+
 ## [0.7.2] - 2026-07-15
 
 ### Features
