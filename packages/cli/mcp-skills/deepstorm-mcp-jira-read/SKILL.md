@@ -24,7 +24,7 @@ description: Use when you need to read Jira Issue data — get issue details, se
 操作前先确认 Jira MCP 是否可用：
 
 ```
-检查 `.claude/settings.json` → `deepstorm.mcpCapabilities` 中 issue_tracker.available === true（providers 包含 jira）
+检查 `.deepstorm/settings.json` → `mcpCapabilities` 中 issue_tracker.available === true（providers 包含 jira）
 ```
 
 ---

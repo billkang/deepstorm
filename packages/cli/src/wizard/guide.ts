@@ -108,7 +108,7 @@ export async function printGuide(options: GuideOptions): Promise<void> {
   const { installedSkills, config, targetDir, mcpTools, mcpEnvStubs } = options
 
   console.log('')
-  console.log('  ✔ 配置已保存到 .claude/settings.json')
+  console.log('  ✔ 配置已保存（DeepStorm → .deepstorm/settings.json，Claude Code → .claude/settings.json）')
 
   // 输出 MCP 安装摘要
   if (mcpTools && mcpTools.length > 0) {

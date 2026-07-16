@@ -2,96 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import * as fs from 'node:fs'
 import * as path from 'node:path'
 import * as os from 'node:os'
-import { mergeDeepStormConfig, migrateConfig, CONFIG_VERSION, readDeepStormConfig } from '../settings'
-import type { DeepStormConfig } from '../../types/config'
-
-describe('mergeDeepStormConfig', () => {
-  let tmpDir: string
-  let settingsPath: string
-
-  beforeEach(() => {
-    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'deepstorm-settings-'))
-    settingsPath = path.join(tmpDir, 'settings.json')
-  })
-
-  afterEach(() => {
-    fs.rmSync(tmpDir, { recursive: true, force: true })
-  })
-
-  function readSettings(): Record<string, unknown> {
-    return JSON.parse(fs.readFileSync(settingsPath, 'utf-8'))
-  }
-
-  it('creates settings.json if it does not exist', () => {
-    const config: DeepStormConfig = {
-      reef: { frontend: { framework: 'angular' } },
-      installedSkills: ['reef-test-lint'],
-    }
-
-    mergeDeepStormConfig(settingsPath, config)
-
-    expect(fs.existsSync(settingsPath)).toBe(true)
-    const settings = readSettings()
-    expect(settings.deepstorm).toBeDefined()
-    expect((settings.deepstorm as any).reef.frontend.framework).toBe('angular')
-    expect((settings.deepstorm as any).installedSkills).toEqual(['reef-test-lint'])
-  })
-
-  it('preserves existing non-deepstorm fields', () => {
-    fs.writeFileSync(
-      settingsPath,
-      JSON.stringify({ mcpServers: { existing: true }, otherField: 'keep' }),
-      'utf-8',
-    )
-
-    mergeDeepStormConfig(settingsPath, {
-      reef: { frontend: { framework: 'angular' } },
-    })
-
-    const settings = readSettings()
-    expect(settings.mcpServers).toEqual({ existing: true })
-    expect(settings.otherField).toBe('keep')
-    expect((settings.deepstorm as any).reef.frontend.framework).toBe('angular')
-  })
-
-  it('merges with existing deepstorm config', () => {
-    // 已有部分 deepstorm 配置
-    fs.writeFileSync(
-      settingsPath,
-      JSON.stringify({
-        deepstorm: {
-          reef: { frontend: { framework: 'angular' } },
-          installedSkills: ['reef-test-lint'],
-          installedAt: '2024-01-01',
-        },
-      }),
-      'utf-8',
-    )
-
-    mergeDeepStormConfig(settingsPath, {
-      tide: { issueTracker: 'jira' },
-      installedSkills: ['reef-test-lint', 'tide-jira'],
-    })
-
-    const settings = readSettings()
-    const df = settings.deepstorm as any
-    // 已有字段保留
-    expect(df.reef.frontend.framework).toBe('angular')
-    expect(df.installedAt).toBe('2024-01-01')
-    // 新字段合并
-    expect(df.tide.issueTracker).toBe('jira')
-    // installedSkills 数组覆盖（非追加）
-    expect(df.installedSkills).toEqual(['reef-test-lint', 'tide-jira'])
-  })
-
-  it('handles non-JSON settings file gracefully', () => {
-    fs.writeFileSync(settingsPath, 'not-json', 'utf-8')
-
-    expect(() => {
-      mergeDeepStormConfig(settingsPath, { reef: { frontend: { framework: 'angular' } } })
-    }).not.toThrow()
-  })
-})
+import { migrateConfig, CONFIG_VERSION, readDeepStormConfig } from '../settings'
 
 // ─── readDeepStormConfig ─────────────────────────────────────────
 
@@ -138,35 +49,6 @@ describe('readDeepStormConfig', () => {
   it('文件格式错误时返回 null', () => {
     fs.writeFileSync(deepstormSettingsPath, 'not-json', 'utf-8')
     expect(readDeepStormConfig(tmpDir)).toBeNull()
-  })
-
-  it('从旧 .claude/settings.json deepstorm 命名空间自动迁移', () => {
-    const dotClaude = path.join(tmpDir, '.claude')
-    fs.mkdirSync(dotClaude, { recursive: true })
-    fs.writeFileSync(
-      path.join(dotClaude, 'settings.json'),
-      JSON.stringify({
-        deepstorm: {
-          reef: { frontend: { framework: 'angular' } },
-          installedSkills: ['reef-test'],
-        },
-      }),
-      'utf-8',
-    )
-
-    // 应自动迁移到 .deepstorm/settings.json
-    const result = readDeepStormConfig(tmpDir)
-    expect(result).not.toBeNull()
-    expect((result as any).reef.frontend.framework).toBe('angular')
-
-    // 旧配置应被清理
-    const oldSettings = JSON.parse(
-      fs.readFileSync(path.join(dotClaude, 'settings.json'), 'utf-8'),
-    )
-    expect((oldSettings as any).deepstorm).toBeUndefined()
-
-    // 新文件应存在
-    expect(fs.existsSync(deepstormSettingsPath)).toBe(true)
   })
 })
 

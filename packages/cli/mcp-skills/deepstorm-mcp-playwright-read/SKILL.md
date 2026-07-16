@@ -24,7 +24,7 @@ description: Use when you need to perform browser automation — navigate pages,
 操作前先确认 Playwright MCP 是否可用：
 
 ```
-检查 `.claude/settings.json` → `deepstorm.mcpCapabilities` 中 browser-automation.available === true（providers 包含 playwright）
+检查 `.deepstorm/settings.json` → `mcpCapabilities` 中 browser-automation.available === true（providers 包含 playwright）
 ```
 
 ---
