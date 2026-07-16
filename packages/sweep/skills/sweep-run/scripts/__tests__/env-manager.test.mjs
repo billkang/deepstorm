@@ -311,20 +311,20 @@ describe('Env Manager — readFramework', () => {
     process.chdir(origCwd);
   });
 
-  it('should read playwright framework from settings', () => {
+  it('should read playwright from .deepstorm/settings.json', () => {
     const tmpDir = mkdtempSync(join(tmpdir(), 'env-manager-test-'));
-    mkdirSync(join(tmpDir, '.claude'), { recursive: true });
-    writeFileSync(join(tmpDir, '.claude/settings.json'), JSON.stringify({
-      deepstorm: { sweep: { e2eFramework: 'playwright' } },
+    mkdirSync(join(tmpDir, '.deepstorm'), { recursive: true });
+    writeFileSync(join(tmpDir, '.deepstorm/settings.json'), JSON.stringify({
+      sweep: { e2eFramework: 'playwright' },
     }));
     process.chdir(tmpDir);
 
     const result = readFramework();
     assert.equal(result.framework, 'playwright');
-    assert.equal(result.source, 'settings');
+    assert.equal(result.source, 'deepstorm-settings');
   });
 
-  it('should return null when .claude/settings.json is missing', () => {
+  it('should return null when .deepstorm/settings.json is missing', () => {
     const tmpDir = mkdtempSync(join(tmpdir(), 'env-manager-test-'));
     process.chdir(tmpDir);
 
@@ -335,8 +335,8 @@ describe('Env Manager — readFramework', () => {
 
   it('should handle malformed JSON gracefully', () => {
     const tmpDir = mkdtempSync(join(tmpdir(), 'env-manager-test-'));
-    mkdirSync(join(tmpDir, '.claude'), { recursive: true });
-    writeFileSync(join(tmpDir, '.claude/settings.json'), 'not-json{');
+    mkdirSync(join(tmpDir, '.deepstorm'), { recursive: true });
+    writeFileSync(join(tmpDir, '.deepstorm/settings.json'), 'not-json{');
     process.chdir(tmpDir);
 
     const result = readFramework();
@@ -346,26 +346,37 @@ describe('Env Manager — readFramework', () => {
 
   it('should return null when e2eFramework key is missing', () => {
     const tmpDir = mkdtempSync(join(tmpdir(), 'env-manager-test-'));
-    mkdirSync(join(tmpDir, '.claude'), { recursive: true });
-    writeFileSync(join(tmpDir, '.claude/settings.json'), JSON.stringify({
-      deepstorm: { sweep: {} },
+    mkdirSync(join(tmpDir, '.deepstorm'), { recursive: true });
+    writeFileSync(join(tmpDir, '.deepstorm/settings.json'), JSON.stringify({
+      sweep: {},
     }));
     process.chdir(tmpDir);
 
     const result = readFramework();
     assert.equal(result.framework, null);
-    assert.equal(result.source, 'default');
+    assert.equal(result.source, 'not-configured');
   });
 
-  it('should return null when deepstorm.sweep is missing', () => {
+  it('should return null when sweep config is missing', () => {
     const tmpDir = mkdtempSync(join(tmpdir(), 'env-manager-test-'));
-    mkdirSync(join(tmpDir, '.claude'), { recursive: true });
-    writeFileSync(join(tmpDir, '.claude/settings.json'), JSON.stringify({}));
+    mkdirSync(join(tmpDir, '.deepstorm'), { recursive: true });
+    writeFileSync(join(tmpDir, '.deepstorm/settings.json'), JSON.stringify({}));
     process.chdir(tmpDir);
 
     const result = readFramework();
     assert.equal(result.framework, null);
-    assert.equal(result.source, 'default');
+    assert.equal(result.source, 'not-configured');
+  });
+
+  it('should return not-configured when .deepstorm/settings.json has no e2eFramework', () => {
+    const tmpDir = mkdtempSync(join(tmpdir(), 'env-manager-test-'));
+    mkdirSync(join(tmpDir, '.deepstorm'), { recursive: true });
+    writeFileSync(join(tmpDir, '.deepstorm/settings.json'), JSON.stringify({ reef: {} }));
+    process.chdir(tmpDir);
+
+    const result = readFramework();
+    assert.equal(result.framework, null);
+    assert.equal(result.source, 'not-configured');
   });
 });
 

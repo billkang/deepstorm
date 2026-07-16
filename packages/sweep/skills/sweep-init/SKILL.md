@@ -28,10 +28,10 @@ deepstorm:
 
 ### 步骤 0：读取框架配置
 
-在执行初始化前，先读取 `.claude/settings.json` 中的 `deepstorm.sweep.e2eFramework` 配置，确定当前项目使用的 E2E 框架。
+在执行初始化前，先读取 `.deepstorm/settings.json` 中的 `sweep.e2eFramework` 配置，确定当前项目使用的 E2E 框架。
 
 ```bash
-cat .claude/settings.json 2>/dev/null | grep -o '"e2eFramework"[^,]*' | head -1 | cut -d'"' -f4
+cat .deepstorm/settings.json 2>/dev/null | grep -o '"e2eFramework"[^,]*' | head -1 | cut -d'"' -f4
 ```
 
 如果配置不存在或为空，使用默认值 `playwright` 并输出提示。
@@ -230,7 +230,7 @@ cat .mcp.json 2>/dev/null | grep -c "deepstorm-playwright"
 - **THEN** 输出提示："⚠️ Playwright MCP 未配置。建议运行 `deepstorm setup` 并选择 Playwright MCP 服务以启用浏览器自动化。"
 - **THEN** 不阻塞初始化流程，继续执行
 
-> **注意：** Playwright MCP 配置由 CLI setup wizard 统一管理，不再由本 skill 在 `.claude/settings.json` 中独立配置。
+> **注意：** Playwright MCP 配置由 CLI setup wizard 统一管理，不再由本 skill 单独配置。
 
 ---
 

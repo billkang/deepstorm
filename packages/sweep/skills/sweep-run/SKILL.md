@@ -43,14 +43,14 @@ deepstorm:
 
 ### 前置检查：读取框架配置
 
-在执行前，先读取 `.claude/settings.json` 中 `deepstorm.sweep.e2eFramework` 配置，确定当前项目使用的 E2E 框架。
+在执行前，先读取 `.deepstorm/settings.json` → `sweep.e2eFramework` 配置，确定当前项目使用的 E2E 框架。
 
 ```bash
 node scripts/env-manager.mjs --framework
 ```
 
 ```json
-{"framework":"playwright","source":"settings"}
+{"framework":"playwright","source":"deepstorm-settings"}
 ```
 
 - **playwright** → 通过 Playwright MCP（`deepstorm-playwright`）执行浏览器操作
@@ -425,7 +425,7 @@ Flow: L01 - 正常登录成功
 
 ## 检查清单
 
-- [ ] 前置检查：框架配置已读取 `.claude/settings.json`
+- [ ] 前置检查：框架配置已读取（`.deepstorm/settings.json` → `sweep.e2eFramework`）
 - [ ] 项目已初始化（`.sweep-init` 存在）
 - [ ] 执行范围已确定（--all / --path / 交互选择）
 - [ ] 执行模式已选择（hybrid / native / no-parallel / browser）

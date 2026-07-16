@@ -4,7 +4,7 @@ PRD 生成后（`status: prd_ready`），分三步完成发布流程。每步根
 
 ## MCP 能力发现
 
-进入 Step 4 时，AI 先读取 `.claude/settings.json` → `deepstorm.mcpCapabilities` 确定可用的 provider。
+进入 Step 4 时，AI 先读取 `.deepstorm/settings.json` → `mcpCapabilities` 确定可用的 provider。
 
 能力映射结构示例（安装时渲染）：
 ```json

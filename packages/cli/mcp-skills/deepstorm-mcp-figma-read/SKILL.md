@@ -24,7 +24,7 @@ description: Use when you need to read Figma design data — get file info, read
 操作前先确认 Figma MCP 是否可用：
 
 ```
-检查 `.claude/settings.json` → `deepstorm.mcpCapabilities` 中 design_tools.available === true
+检查 `.deepstorm/settings.json` → `mcpCapabilities` 中 design_tools.available === true
 ```
 
 ---

@@ -24,9 +24,6 @@ import { resolve } from 'node:path';
 function getEnvPath() {
   return resolve(process.cwd(), '.env');
 }
-function getSettingsPath() {
-  return resolve(process.cwd(), '.claude/settings.json');
-}
 function getMcpPath() {
   return resolve(process.cwd(), '.mcp.json');
 }
@@ -119,22 +116,23 @@ export function resolveEnv(envName) {
 // ── Framework config ──────────────────────────────────────────────
 
 /**
- * Read E2E framework config from .claude/settings.json.
+ * Read E2E framework config from .deepstorm/settings.json → sweep.e2eFramework.
  *
  * @returns {{ framework: string|null, source: string }}
  *   framework: 'playwright' | 'cypress' | null
- *   source: 'settings' | 'default' | 'missing-file'
+ *   source: 'deepstorm-settings' | 'missing-file' | 'not-configured' | 'parse-error'
  */
 export function readFramework() {
-  if (!existsSync(getSettingsPath())) {
+  const deepstormPath = resolve(process.cwd(), '.deepstorm', 'settings.json');
+  if (!existsSync(deepstormPath)) {
     return { framework: null, source: 'missing-file' };
   }
 
   try {
-    const content = readFileSync(getSettingsPath(), 'utf-8');
+    const content = readFileSync(deepstormPath, 'utf-8');
     const config = JSON.parse(content);
-    const framework = config.deepstorm?.sweep?.e2eFramework || null;
-    return { framework, source: framework ? 'settings' : 'default' };
+    const framework = config.sweep?.e2eFramework || null;
+    return { framework, source: framework ? 'deepstorm-settings' : 'not-configured' };
   } catch {
     return { framework: null, source: 'parse-error' };
   }
