@@ -58,10 +58,65 @@ node scripts/env-manager.mjs --framework
 
 ---
 
-### 步骤 1：检查初始化状态
+### 步骤 1：检查初始化状态与路径导航
 
-- **WHEN** `.sweep-init` 不存在
-- **THEN** 提示"当前目录尚未初始化为 Sweep 测试项目。请先运行 /sweep-init 初始化。"并退出
+从 `.deepstorm/settings.json` 读取 `sweep.e2eProjectPath`，确定 E2E 测试项目的位置，如非根目录则自动切换。支持从子目录向上查找以兼容用户在 E2E 项目子目录中执行的情况。
+
+```bash
+# 向上查找 .deepstorm/settings.json
+DEEPSTORM_DIR=""
+CUR="$PWD"
+while [ "$CUR" != "/" ]; do
+  if [ -f "$CUR/.deepstorm/settings.json" ]; then
+    DEEPSTORM_DIR="$CUR"
+    break
+  fi
+  CUR=$(dirname "$CUR")
+done
+
+if [ -n "$DEEPSTORM_DIR" ]; then
+  E2E_PATH=$(grep -o '"e2eProjectPath"[^,]*' "$DEEPSTORM_DIR/.deepstorm/settings.json" | head -1 | cut -d'"' -f4)
+else
+  E2E_PATH=""
+fi
+```
+
+#### 1.1 配置存在 → 路径导航
+
+- **WHEN** `E2E_PATH` 不为空
+- **THEN** 判断路径值。注意 `E2E_PATH` 是基于 `DEEPSTORM_DIR`（settings.json 所在目录）的相对路径，若当前在子目录则需拼接：
+  ```bash
+  if [ "$E2E_PATH" != "." ]; then
+    # 若从子目录找到的 settings.json，E2E_PATH 相对于 DEEPSTORM_DIR
+    TARGET_DIR="$E2E_PATH"
+    if [ -n "$DEEPSTORM_DIR" ] && [ "$DEEPSTORM_DIR" != "$PWD" ]; then
+      TARGET_DIR="$DEEPSTORM_DIR/$E2E_PATH"
+    fi
+    if [ -d "$TARGET_DIR" ]; then
+      echo "📂 切换到 E2E 项目目录: $E2E_PATH"
+      cd "$TARGET_DIR"
+    else
+      echo "❌ E2E 项目目录不存在: $E2E_PATH，请重新运行 /sweep-init"
+      exit 1
+    fi
+  fi
+  ```
+
+#### 1.2 配置不存在 → 向后兼容检查
+
+- **WHEN** `E2E_PATH` 为空
+- **THEN** 检查旧 `.sweep-init` 文件是否存在（从当前目录和 DEEPSTORM_DIR 向上查找）：
+  ```bash
+  if [ -f ".sweep-init" ]; then
+    echo "ℹ️ 检测到旧版 .sweep-init 标记。建议运行 /sweep-init 刷新配置。"
+    # 继续执行（兼容旧项目）
+  elif [ -n "$DEEPSTORM_DIR" ] && [ -f "$DEEPSTORM_DIR/.sweep-init" ]; then
+    echo "ℹ️ 检测到旧版 .sweep-init 标记（项目根: $DEEPSTORM_DIR）。建议运行 /sweep-init 刷新配置。"
+  else
+    echo "❌ 未检测到 E2E 项目。请先运行 /sweep-init 初始化。"
+    exit 1
+  fi
+  ```
 
 ---
 
@@ -162,9 +217,9 @@ node scripts/env-manager.mjs --env staging
 ]}
 ```
 
-- `--env staging` → 从 `.env` 读 `BASE_URL_STAGING`
-- `--env test` → 从 `.env` 读 `BASE_URL_TEST`
-- 不传参 → 使用 `.env` 中的 `DEFAULT_ENV`，未设置则默认 `test`
+- `--env staging` → 从 `settings.json` 的 `sweep.environments.staging` 读取（回退到 `.env`）
+- `--env test` → 从 `settings.json` 的 `sweep.environments.test` 读取（回退到 `.env`）
+- 不传参 → 使用 `settings.json` 的 `sweep.environments.default`（回退到 `.env` 的 `DEFAULT_ENV`），未设置则默认 `test`
 
 #### 4.2 设置环境变量
 
@@ -426,7 +481,7 @@ Flow: L01 - 正常登录成功
 ## 检查清单
 
 - [ ] 前置检查：框架配置已读取（`.deepstorm/settings.json` → `sweep.e2eFramework`）
-- [ ] 项目已初始化（`.sweep-init` 存在）
+- [ ] 项目已初始化（读取 settings.json → sweep.e2eProjectPath）
 - [ ] 执行范围已确定（--all / --path / 交互选择）
 - [ ] 执行模式已选择（hybrid / native / no-parallel / browser）
 - [ ] MCP 服务按模式正确启动（available → headless / headed / 不启动）

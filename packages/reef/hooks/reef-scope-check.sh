@@ -27,7 +27,8 @@ LLM_MODEL="${LLM_MODEL:-claude-sonnet-4-20250514}"
 # 项目根目录（自动检测 git 仓库根目录）
 PROJECT_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || echo "$PWD")"
 
-# 项目配置文件
+# 项目配置文件（优先读取 settings.json 的 reef.scope，回退到旧 scope-config.json）
+DEEPSTORM_SETTINGS="${PROJECT_ROOT}/.deepstorm/settings.json"
 SCOPE_CONFIG="${PROJECT_ROOT}/.deepstorm/scope-config.json"
 
 # diff 大小限制（字符数），超过则截断采样
@@ -36,7 +37,34 @@ MAX_DIFF_CHARS="${MAX_DIFF_CHARS:-20000}"
 # ── 辅助函数 ─────────────────────────────────────────────────────
 
 # 读取配置文件（支持 enable/disable、领域对齐列表）
+# 优先读取 settings.json 的 reef.scope，回退到旧 scope-config.json
 read_config() {
+  # 尝试从新位置读取：settings.json → reef.scope
+  if [ -f "$DEEPSTORM_SETTINGS" ]; then
+    local scope_config
+    scope_config=$(python3 -c "
+import json, sys
+try:
+    with open('$DEEPSTORM_SETTINGS') as f:
+        s = json.load(f)
+    scope = s.get('reef', {}).get('scope', None)
+    if scope:
+        # 转换为旧格式兼容
+        result = {'enabled': scope.get('enabled', True), 'ciEnabled': scope.get('ciEnabled', True), 'domains': scope.get('domains', [])}
+        print(json.dumps(result))
+    else:
+        print('NOT_FOUND')
+except:
+    print('NOT_FOUND')
+" 2>/dev/null) || scope_config="NOT_FOUND"
+
+    if [ "$scope_config" != "NOT_FOUND" ]; then
+      echo "$scope_config"
+      return
+    fi
+  fi
+
+  # 回退到旧 scope-config.json
   if [ -f "$SCOPE_CONFIG" ]; then
     cat "$SCOPE_CONFIG"
   else

@@ -59,10 +59,28 @@ export interface ReefConfig {
       test?: 'junit5' | 'none'
     }
   }
+
+  /** 分支范围检查配置 */
+  scope?: {
+    enabled: boolean
+    ciEnabled: boolean
+    domains: string[]
+  }
 }
 
 export interface SweepConfig {
   ciProvider?: 'github-actions' | 'gitlab-ci' | 'jenkins' | 'none'
+
+  /** E2E 测试项目路径。'.' 表示当前目录（独立项目），'e2e' 等为子目录（混放） */
+  e2eProjectPath?: string
+
+  /** 多环境配置 */
+  environments?: {
+    test: { baseUrl: string }
+    staging: { baseUrl: string }
+    prod: { baseUrl: string }
+    default: 'test' | 'staging' | 'prod'
+  }
 }
 
 export interface AtollConfig {

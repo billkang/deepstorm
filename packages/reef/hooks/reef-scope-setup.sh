@@ -22,23 +22,54 @@ install() {
   echo "🔧 [Scope] 正在安装分支范围检查..."
   echo ""
 
-  # 1. 创建配置文件
+  # 1. 创建/迁移配置文件到 settings.json
   echo "[1/3] 创建配置文件..."
+
+  # 检查旧 scope-config.json 是否存在，存在则迁移
+  if [ -f "$SCOPE_CONFIG" ]; then
+    echo "  ℹ️  检测到旧版 scope-config.json，正在迁移到 settings.json..."
+    OLD_SCOPE=$(cat "$SCOPE_CONFIG")
+    # 删除旧文件
+    rm "$SCOPE_CONFIG"
+    echo "  ✅ 旧 scope-config.json 已迁移并删除"
+  else
+    OLD_SCOPE='{"enabled": true, "ciEnabled": true, "domains": []}'
+  fi
+
+  # 写入/合并到 settings.json
+  SETTINGS_FILE="${SCOPE_CONFIG_DIR}/settings.json"
   mkdir -p "$SCOPE_CONFIG_DIR"
 
-  if [ ! -f "$SCOPE_CONFIG" ]; then
-    cat > "$SCOPE_CONFIG" <<CONFIG
-{
-  "enabled": true,
-  "ciEnabled": true,
-  "domains": [],
-  "description": "分支范围检查配置",
-  "note": "domains 为空时使用 AI 自由分类。可在此列出项目业务领域以实现对齐。"
-}
-CONFIG
-    echo "  ✅ 配置文件已创建: $SCOPE_CONFIG"
+  if command -v jq &>/dev/null; then
+    # 用 jq 合并写入
+    if [ -f "$SETTINGS_FILE" ]; then
+      # 合并到现有 settings.json
+      REEF_SCOPE=$(echo "$OLD_SCOPE" | jq '{scope: .}')
+      cat "$SETTINGS_FILE" | jq --argjson scope "$(echo "$OLD_SCOPE" | jq '{enabled, ciEnabled, domains}')" '.reef.scope = $scope.scope' > "$SETTINGS_FILE.tmp" && mv "$SETTINGS_FILE.tmp" "$SETTINGS_FILE"
+    else
+      # 创建新的 settings.json
+      echo "$OLD_SCOPE" | jq '{reef: {scope: {enabled: .enabled, ciEnabled: .ciEnabled, domains: .domains}}}' > "$SETTINGS_FILE"
+    fi
+    echo "  ✅ 配置文件已写入: $SETTINGS_FILE (reef.scope)"
   else
-    echo "  ℹ️  配置文件已存在，跳过"
+    # jq 不可用时使用 python3 回退
+    echo "  ⚠️  jq 未安装，使用 python3 写入..."
+    if [ -f "$SETTINGS_FILE" ]; then
+      python3 -c "
+import json, sys
+with open('$SETTINGS_FILE') as f: settings = json.load(f)
+old = json.loads('''$OLD_SCOPE''')
+settings.setdefault('reef', {})['scope'] = old
+with open('$SETTINGS_FILE', 'w') as f: json.dump(settings, f, indent=2)
+" 2>/dev/null || echo "  ❌ 写入失败，请手动配置"
+    else
+      python3 -c "
+import json
+with open('$SETTINGS_FILE', 'w') as f:
+    json.dump({'reef': {'scope': json.loads('''$OLD_SCOPE''')}}, f, indent=2)
+" 2>/dev/null || echo "  ❌ 写入失败，请手动配置"
+    fi
+    echo "  ✅ 配置文件已写入: $SETTINGS_FILE (reef.scope)"
   fi
 
   # 2. 安装 pre-commit hook
@@ -85,7 +116,7 @@ HOOK
       cat >> "$PRE_COMMIT_HOOK" <<'APPEND'
 
 # --- reef-scope branch scope check ---
-if [ -f "$(dirname "$0")/../.deepstorm/scope-config.json" ]; then
+if [ -f "$(dirname "$0")/../.deepstorm/settings.json" ]; then
   export DEEPSTORM_PLUGIN_ROOT="$REEF_SCOPE_GATE"
   bash "$(dirname "$0")/../.deepstorm/hooks/reef-scope-gate.sh" 2>/dev/null || true
 fi
@@ -115,7 +146,7 @@ APPEND
   echo ""
   echo "✅ Scope 检查安装完成！"
   echo ""
-  echo "  配置文件: $SCOPE_CONFIG"
+  echo "  配置文件: ${SCOPE_CONFIG_DIR}/settings.json → reef.scope"
   echo "  编辑配置可启用/禁用或设置领域对齐"
   echo ""
   echo "  测试命令:"
@@ -143,11 +174,9 @@ uninstall() {
     fi
   fi
 
-  # 2. 保留配置文件（用户可选择手动删除）
-  if [ -f "$SCOPE_CONFIG" ]; then
-    echo "  ℹ️  配置文件保留: $SCOPE_CONFIG"
-    echo "  如需删除: rm $SCOPE_CONFIG"
-  fi
+  # 2. 保留配置在 settings.json 中（用户可选择手动删除）
+  echo "  ℹ️  配置保留在 .deepstorm/settings.json → reef.scope"
+  echo "  如需删除，可编辑 settings.json 移除 reef.scope 字段"
 
   echo ""
   echo "✅ Scope 检查已卸载！"
@@ -157,10 +186,11 @@ status() {
   echo "🔍 [Scope] 当前状态："
   echo ""
 
-  if [ -f "$SCOPE_CONFIG" ]; then
-    echo "  配置文件: ✅ 已安装 ($SCOPE_CONFIG)"
+  SETTINGS_FILE="${SCOPE_CONFIG_DIR}/settings.json"
+  if [ -f "$SETTINGS_FILE" ] && python3 -c "import json; s=json.load(open('$SETTINGS_FILE')); print(s.get('reef',{}).get('scope'))" 2>/dev/null | grep -q "enabled"; then
+    echo "  配置文件: ✅ 已安装 ($SETTINGS_FILE → reef.scope)"
     echo "  内容:"
-    cat "$SCOPE_CONFIG" | python3 -m json.tool 2>/dev/null || cat "$SCOPE_CONFIG"
+    python3 -c "import json; s=json.load(open('$SETTINGS_FILE')); print(json.dumps(s['reef']['scope'], indent=2))" 2>/dev/null
   else
     echo "  配置文件: ❌ 未安装"
   fi
