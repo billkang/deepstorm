@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.9.1] - 2026-07-17
+
+### Maintenance
+
+- 集中化旧数据源迁移到 update 命令，清除凌驾于 settings.json 之上的分散 fallback 逻辑，确保 `.deepstorm/settings.json` 为唯一事实源 (`e1f35cb`)
+
 ## [0.9.0] - 2026-07-17
 
 ### Features
