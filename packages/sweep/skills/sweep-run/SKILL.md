@@ -24,8 +24,6 @@ deepstorm:
 /sweep-run flows/login.flow.md           # 单文件
 /sweep-run flows/login.flow.md --flow L02  # 单 Flow
 /sweep-run --env staging                 # 指定测试环境
-/sweep-run --text                        # 强制使用文本输入模式选择（不启动 TTY checkbox）
-/sweep-run --all --text                  # 全量 + 文本模式
 ```
 
 ### 执行模式说明
@@ -113,18 +111,30 @@ fi
 
 根据用户输入参数或交互选择，确定要执行的 .flow.md 文件列表。
 
-#### 2.1 交互模式（无参数）
+#### 2.1 交互模式（无参数） — 对话式选择
 
-**必须运行** `node scripts/flow-selector.mjs` 进行选择。
+不使用 `@inquirer/checkbox` 交互选择器（在 Claude Code 环境中 TTY/TUI 不可靠），改为**对话式选择**：
 
-1. 先检查 `scripts/flow-selector.mjs` 是否存在
-2. 运行 `node scripts/flow-selector.mjs`
-3. 脚本自动检测 TTY 可用性：
-   - **TTY 可用** → 展示 `@inquirer/checkbox` 勾选列表（空格勾选、回车确认、a=全选）
-   - **TTY 不可用** → 自动回退到 **readline 文本输入模式**（序号选择、逗号分隔、输入 a 全选）
-   - 也可通过 `--text` 强制文本模式、`--tui` 强制 checkbox 模式
-4. 读取 `.sweep-selection.json` 获取选中结果
-5. 列出将要执行的文件，让用户确认后开始执行（**以下为示例格式，实际内容根据项目动态生成**）
+1. 运行 `node scripts/flow-selector.mjs --list` 获取可用 .flow.md 文件列表
+2. 检查输出是否为有效 JSON（含 `files[]`），若脚本报错则提示用户后退出
+3. 在消息中直接列出可用文件供用户选择，参考格式：
+
+   ```markdown
+   📋 可用测试模块：
+
+     1. user-system/register（3 个用例：L01-L03）
+     2. user-system/login（2 个用例：L01-L02）
+     3. tasks/crud（4 个用例：T01-T04）
+
+   请选择：全部执行 / 输入序号（如 1,3） / 输入模块名
+   ```
+
+4. 等待用户在聊天中回复选择
+5. 根据用户选择，直接写入 `.sweep-selection.json`：
+   - **全部执行** → `{"type":"all"}`
+   - **指定文件全部 Flow** → `{"type":"selection","files":[{"file":"/abs/path/to/file.flow.md","flows":[],"all":true}]}`
+   - **指定文件的特定 Flow** → `{"type":"selection","files":[{"file":"/abs/path/to/file.flow.md","flows":["L01"],"all":false}]}`
+6. 输出选中文件的总览，确认后继续执行（**以下为示例格式，实际内容根据项目动态生成**）：
 
 ```
 选中的模块：user-system, tasks
@@ -147,8 +157,6 @@ fi
 | `--env {env}` | 切换目标环境 | `/sweep-run --all --env staging` |
 | `--browser` | 打开浏览器窗口逐步骤调试 | `/sweep-run --all --browser` |
 | `--no-parallel` | 使用批量但不并行 | `/sweep-run --all --no-parallel` |
-| `--text` | 强制文本输入模式选择（跳过 TTY checkbox） | `/sweep-run --text` |
-| `--tui` | 强制 TUI checkbox 模式 | `/sweep-run --tui` |
 
 #### 2.3 文件不存在处理
 
