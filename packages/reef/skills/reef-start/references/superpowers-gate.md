@@ -16,6 +16,7 @@
 | 技能 | 类型 | 对本变更的要求 |
 |------|------|---------------|
 | {skill-name} | {类型} | {要求描述} |
+| `reef:reef-style-backend` / `reef:reef-style-frontend` | 🟢 **Code Style** | 所有新增/修改的代码必须遵循项目编码规范，加载后阅读 `quick-reference.md` 和必要维度规范 |
 
 ### Plan Mode 纪律确认
 
@@ -39,6 +40,7 @@
 | 技能 | 类型 | 对本变更的要求 |
 |------|------|---------------|
 | test-driven-development | 🔴 **Rigid** | 每个代码行为改动必须先写测试、看失败、再写实现 |
+| `reef:reef-style-backend` / `reef:reef-style-frontend` | 🟢 **Code Style** | 所有新增/修改的代码必须遵循项目编码规范，加载后阅读 `quick-reference.md` 和必要维度规范 |
 
 ### TDD 纪律确认
 
@@ -57,6 +59,7 @@
 - [ ] 📝 **实现计划已生成**（superpowers:writing-plans 完成，存于 `docs/superpowers/plans/`）
 - [ ] 用户已审阅并批准所有 SDD 文档及实现计划
 - [ ] 🔍 **Superpowers 技能已加载**（Skill 工具已调用）
+- [ ] 🎨 **Code-Style 技能已加载**（`reef:reef-style-backend`/`reef:reef-style-frontend` 已通过 Skill 工具加载并阅读规范）
 - [ ] 🚨 **Rigid 纪律已向用户声明并获得确认**
 - [ ] Path A 检查项：Git 分支已从 main 岔出
 - [ ] Path B 检查项：OpenSpec change 已创建，brainstorming 文件已产出

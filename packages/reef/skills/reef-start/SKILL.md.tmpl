@@ -377,6 +377,7 @@ openspec instructions tasks --change "$CHANGE" --json
 ### 流程
 
 1. **调用 Skill 工具** — 根据 tasks.md 的任务范围，加载可能适用的 superpowers：
+   - `reef:reef-style-backend` 或 `reef:reef-style-frontend`（如果 tasks 涉及后端/前端**代码改动**，**必须**加载对应 code-style 技能，未加载不得进入阶段四）
    - `superpowers:test-driven-development`（如果 tasks 涉及 TypeScript/Java/Python 等代码改动）
    - `superpowers:verification-before-completion`
    - 根据 tasks.md 内容判断是否适用其他 superpowers

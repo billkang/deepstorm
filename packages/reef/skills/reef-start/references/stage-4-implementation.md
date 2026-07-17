@@ -36,11 +36,14 @@ PLAN_FILE="docs/superpowers/plans/$(date +%Y-%m-%d)-$CHANGE.md"
 适用于：文档修改、配置文件调整、SKILL.md 流程修改、测试框架搭建、简单重构（测试覆盖充分）
 
 ```
-1. 直接实现代码变更
-2. 执行后置验证：build → lint → test
-3. 如果验证失败 → 修复 → 重新验证 → 通过后才标完成
-4. 如果发现复杂度超预期 → 暂停并向用户建议升级为 tdd mode
-5. ✅ 标记 task 为完成
+1. 🔴 确认 code-style 已加载 — 检查 `reef:reef-style-backend` 或 `reef:reef-style-frontend` 是否已通过 Skill tool 加载
+   - 已加载 → 进入步骤 2
+   - 未加载 → 暂停并先通过 Skill tool 加载对应技能，阅读 quick-reference.md 后再继续
+2. 直接实现代码变更
+3. 执行后置验证：build → lint → test
+4. 如果验证失败 → 修复 → 重新验证 → 通过后才标完成
+5. 如果发现复杂度超预期 → 暂停并向用户建议升级为 tdd mode
+6. ✅ 标记 task 为完成
 ```
 
 > **⚠️ Plan mode 风险预警：** plan mode 不要求前置测试，但**后置验证不可跳过**。如果 build/lint/test 任何一步失败，该 task **不得**被标记为完成。
@@ -50,6 +53,7 @@ PLAN_FILE="docs/superpowers/plans/$(date +%Y-%m-%d)-$CHANGE.md"
 适用于：新增业务逻辑、Bug 修复、权限/安全变更、资金/幂等性变更、状态机/并发逻辑
 
 **🔴 RED — 先写测试**
+- 先确认 code-style 已加载：检查 `reef:reef-style-backend` 或 `reef:reef-style-frontend` 是否已通过 Skill tool 加载，未加载则先加载
 - 根据 spec 的 Scenario 编写单元测试
 - 运行测试，确认失败（红）
 - 如果测试意外通过了，说明测试写的太弱，需改进
