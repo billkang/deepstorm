@@ -29,20 +29,19 @@
 - **THEN** 不生成 `.env` 文件
 
 ### Requirement: `env-manager.mjs` 配置源迁移
-`sweep-run` 的 `env-manager.mjs` SHALL 从 `settings.json` 读取多环境配置，同时支持 `.env` 回退以兼容旧项目。
+`sweep-run` 的 `env-manager.mjs` SHALL 仅从 `settings.json` 读取多环境配置，不再支持 `.env` 回退（旧 `.env` 数据由 `deepstorm update` 统一迁移）。
 
-#### Scenario: 优先读取 settings.json
+#### Scenario: 读取 settings.json
 - **WHEN** `env-manager.mjs` 的 `resolveEnv()` 或 `listEnvs()` 被调用
-- **THEN** 优先读取 `.deepstorm/settings.json` 的 `sweep.environments`
-- **THEN** 仅当 `settings.json` 中无 `sweep.environments` 时，回退读取 `.env`
+- **THEN** 从 `.deepstorm/settings.json` 的 `sweep.environments` 读取配置
+- **THEN** 若 settings.json 中无 `sweep.environments` 则返回空/默认值，不读 `.env`
 
 #### Scenario: 统一返回格式
-- **WHEN** 无论配置来源是 `settings.json` 还是 `.env`
-- **THEN** `resolveEnv()` 返回的格式保持一致：`{ env, baseUrl, availableEnvs }`
-- **THEN** `listEnvs()` 返回的格式保持一致：`[{ name, key, url }]`
+- **WHEN** `resolveEnv()` 或 `listEnvs()` 被调用
+- **THEN** 返回格式保持一致：`resolveEnv()` → `{ env, baseUrl, availableEnvs }`，`listEnvs()` → `[{ name, key, url }]`
 
 ### Requirement: `reef-scope-setup.sh` 写入 `settings.json`
-`reef-scope-setup.sh` SHALL 将 scope 配置写入 `.deepstorm/settings.json` 的 `reef.scope` 字段，不再创建独立的 `scope-config.json`。
+`reef-scope-setup.sh` SHALL 将 scope 配置写入 `.deepstorm/settings.json` 的 `reef.scope` 字段，不再创建独立的 `scope-config.json`（旧 scope-config.json 迁移由 `deepstorm update` 统一处理）。
 
 #### Scenario: install 时写入 settings.json
 - **WHEN** `reef-scope-setup.sh install` 执行
@@ -50,23 +49,18 @@
 - **THEN** 合并 `reef.scope` 字段（`{ enabled: true, ciEnabled: true, domains: [] }`）
 - **THEN** 原子写入（先写 `.tmp` 文件再 rename）
 
-#### Scenario: 旧 scope-config.json 迁移
-- **WHEN** `reef-scope-setup.sh install` 执行，且旧 `scope-config.json` 存在
-- **THEN** 读取旧文件内容并迁移到 `settings.json` 的 `reef.scope`
-- **THEN** 删除旧 `scope-config.json`
-
 ### Requirement: `reef-scope-check.sh` 读取 `settings.json`
-`reef-scope-check.sh` SHALL 从 `.deepstorm/settings.json` 的 `reef.scope` 读取 scope 配置。
+`reef-scope-check.sh` SHALL 仅从 `.deepstorm/settings.json` 的 `reef.scope` 读取 scope 配置（旧 scope-config.json 的读取由 `deepstorm update` 统一迁移）。
 
 #### Scenario: 读取 settings.json
 - **WHEN** `reef-scope-check.sh` 的 `read_config()` 或 `is_enabled()` 被调用
 - **THEN** 读取 `.deepstorm/settings.json` 的 `reef.scope` 字段
-- **THEN** 兼容旧 `scope-config.json` 作为回退
+- **THEN** 不读取旧 `scope-config.json`
 
 ### Requirement: `reef-scope-gate.sh` 配置源一致
 `reef-scope-gate.sh` SHALL 与 `reef-scope-check.sh` 使用相同的配置读取逻辑。
 
 #### Scenario: 配置源一致
 - **WHEN** `reef-scope-gate.sh` 执行
-- **THEN** 优先读取 `settings.json` 的 `reef.scope`
-- **THEN** 回退到旧 `scope-config.json`
+- **THEN** 仅读取 `settings.json` 的 `reef.scope`
+- **THEN** 不回退到旧 `scope-config.json`

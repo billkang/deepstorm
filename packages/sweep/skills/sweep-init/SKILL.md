@@ -93,18 +93,12 @@ E2E_PATH=$(cat .deepstorm/settings.json 2>/dev/null | grep -o '"e2eProjectPath"[
 
 #### 1.2 已初始化 → 退出
 
-- **WHEN** `sweep.e2eProjectPath` 已设置（或旧 `.sweep-init` 文件存在）
-- **THEN** 提示"当前项目已初始化为 Sweep 测试项目。如需重新初始化，请删除 `sweep.e2eProjectPath` 配置或 `.sweep-init` 文件后重试。"并退出
+- **WHEN** `sweep.e2eProjectPath` 已设置
+- **THEN** 提示"当前项目已初始化为 Sweep 测试项目。如需重新初始化，请删除 `sweep.e2eProjectPath` 配置后重试。"并退出
 
-#### 1.3 向后兼容：旧 .sweep-init 文件检测
+#### 1.3 未初始化 → 继续
 
-- **WHEN** `settings.json` 中 `sweep.e2eProjectPath` 未设置，但 `.sweep-init` 文件存在
-- **THEN** 提示"ℹ️ 检测到旧版 .sweep-init 标记。建议删除该文件后重新运行 /sweep-init 以使用新版配置。"
-- **THEN** 提示已初始化，退出
-
-#### 1.4 未初始化 → 继续
-
-- **WHEN** 以上均不满足
+- **WHEN** `sweep.e2eProjectPath` 未设置
 - **THEN** 继续执行初始化流程
 
 ---
@@ -375,7 +369,7 @@ fi
 
 - [ ] 已读取框架配置（`deepstorm.sweep.e2eFramework`）
 - [ ] 步骤 0A：已选择目标目录（`TARGET_DIR` 已确定）
-- [ ] 步骤 1：检查通过（`e2eProjectPath` 未设置，且 `.sweep-init` 不存在）
+- [ ] 步骤 1：检查通过（`e2eProjectPath` 未设置）
 - [ ] 项目目录结构已创建（`{TARGET_DIR}/flows/`、`{TARGET_DIR}/flows/reports/`、`{TARGET_DIR}/scripts/`）
 - [ ] package.json 已写入（含对应框架的依赖）
 - [ ] 框架配置文件已生成（如 playwright.config.ts）

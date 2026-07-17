@@ -3,8 +3,12 @@
 /**
  * Env Manager — 测试环境配置管理
  *
- * 读取 .env 文件，解析目标环境的 BASE_URL，输出结构化结果。
+ * 从 .deepstorm/settings.json 读取目标环境配置，输出结构化结果。
  * 支持检查 E2E 框架配置和 MCP 可用性。
+ *
+ * 所有旧数据源（.env BASE_URL、.sweep-init、scope-config.json 等）
+ * 已由 `deepstorm update` 统一迁移到 .deepstorm/settings.json，
+ * 本文件无需再做兼容处理。
  *
  * Usage:
  *   node env-manager.mjs --env test                   # 解析指定环境
@@ -126,49 +130,35 @@ export function readDotEnv() {
 }
 
 /**
- * Get the default environment name.
- * Priority: settings.json > .env
+ * Get the default environment name from .deepstorm/settings.json.
  * Falls back to 'test' if not configured.
  */
-export function getDefaultEnv(envMap) {
+export function getDefaultEnv() {
   const dsEnvs = readDeepstormEnvironments();
   if (dsEnvs && dsEnvs.default) {
     return dsEnvs.default;
   }
-  return envMap.DEFAULT_ENV || 'test';
+  return 'test';
 }
 
 /**
- * List all available environments.
- * Priority: settings.json > .env
- * Detects BASE_URL_{ENV} patterns and returns their names.
+ * List all available environments from .deepstorm/settings.json.
+ *
+ * Reads sweep.environments and returns environment name + URL pairs.
+ * Returns empty array if not configured.
  */
-export function listEnvs(envMap) {
+export function listEnvs() {
   const dsEnvs = readDeepstormEnvironments();
-  if (dsEnvs) {
-    const envs = [];
-    for (const [name, config] of Object.entries(dsEnvs)) {
-      if (name === 'default') continue;
-      if (config && config.baseUrl) {
-        envs.push({
-          name: name.toLowerCase(),
-          key: `BASE_URL_${name.toUpperCase()}`,
-          url: config.baseUrl,
-        });
-      }
-    }
-    return envs;
-  }
+  if (!dsEnvs) return [];
 
-  // Fallback to .env-based envMap
   const envs = [];
-  for (const key of Object.keys(envMap)) {
-    const match = key.match(/^BASE_URL_(.+)$/);
-    if (match) {
+  for (const [name, config] of Object.entries(dsEnvs)) {
+    if (name === 'default') continue;
+    if (config && config.baseUrl) {
       envs.push({
-        name: match[1].toLowerCase(),
-        key: key,
-        url: envMap[key],
+        name: name.toLowerCase(),
+        key: `BASE_URL_${name.toUpperCase()}`,
+        url: config.baseUrl,
       });
     }
   }
@@ -176,36 +166,27 @@ export function listEnvs(envMap) {
 }
 
 /**
- * Resolve target environment config.
- *
- * Priority: settings.json > .env
+ * Resolve target environment config from .deepstorm/settings.json.
  *
  * @param {string} [envName] - Target environment name (e.g. 'staging', 'test')
  * @returns {{ env: string, baseUrl: string|null, availableEnvs: Array<{name:string,url:string}> }}
  *
  * If envName is omitted, uses DEFAULT_ENV (or 'test').
+ * If settings.json has no environments config, baseUrl is null and availableEnvs is empty.
  * If the environment is not found, baseUrl is null and availableEnvs lists alternatives.
  */
 export function resolveEnv(envName) {
-  // Try settings.json first
   const dsEnvs = readDeepstormEnvironments();
-  if (dsEnvs) {
-    const { envMap, defaultEnv } = deepstormEnvsToEnvMap(dsEnvs);
-    const name = envName || defaultEnv;
-    const availableEnvs = listEnvs(envMap);
-    const baseUrlKey = `BASE_URL_${name.toUpperCase()}`;
-    const baseUrl = envMap[baseUrlKey] || null;
-    return { env: name, baseUrl, availableEnvs };
+  if (!dsEnvs) {
+    const name = envName || 'test';
+    return { env: name, baseUrl: null, availableEnvs: [] };
   }
 
-  // Fallback to .env
-  const envMap = readDotEnv();
-  const name = envName || getDefaultEnv(envMap);
-  const availableEnvs = listEnvs(envMap);
-
+  const { envMap, defaultEnv } = deepstormEnvsToEnvMap(dsEnvs);
+  const name = envName || defaultEnv;
+  const availableEnvs = listEnvs();
   const baseUrlKey = `BASE_URL_${name.toUpperCase()}`;
   const baseUrl = envMap[baseUrlKey] || null;
-
   return { env: name, baseUrl, availableEnvs };
 }
 
@@ -263,9 +244,8 @@ if (process.argv[1] === import.meta.filename) {
   const args = process.argv.slice(2);
 
   if (args.includes('--list')) {
-    const envMap = readDotEnv();
-    const envs = listEnvs(envMap);
-    const defaultEnv = getDefaultEnv(envMap);
+    const envs = listEnvs();
+    const defaultEnv = getDefaultEnv();
     console.log(JSON.stringify({ default: defaultEnv, environments: envs }));
     process.exit(0);
   }

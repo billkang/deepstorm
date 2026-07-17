@@ -27,9 +27,8 @@ LLM_MODEL="${LLM_MODEL:-claude-sonnet-4-20250514}"
 # 项目根目录（自动检测 git 仓库根目录）
 PROJECT_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || echo "$PWD")"
 
-# 项目配置文件（优先读取 settings.json 的 reef.scope，回退到旧 scope-config.json）
+# 项目配置文件（读取 settings.json 的 reef.scope）
 DEEPSTORM_SETTINGS="${PROJECT_ROOT}/.deepstorm/settings.json"
-SCOPE_CONFIG="${PROJECT_ROOT}/.deepstorm/scope-config.json"
 
 # diff 大小限制（字符数），超过则截断采样
 MAX_DIFF_CHARS="${MAX_DIFF_CHARS:-20000}"
@@ -37,9 +36,8 @@ MAX_DIFF_CHARS="${MAX_DIFF_CHARS:-20000}"
 # ── 辅助函数 ─────────────────────────────────────────────────────
 
 # 读取配置文件（支持 enable/disable、领域对齐列表）
-# 优先读取 settings.json 的 reef.scope，回退到旧 scope-config.json
+# 从 settings.json → reef.scope 读取
 read_config() {
-  # 尝试从新位置读取：settings.json → reef.scope
   if [ -f "$DEEPSTORM_SETTINGS" ]; then
     local scope_config
     scope_config=$(python3 -c "
@@ -49,7 +47,6 @@ try:
         s = json.load(f)
     scope = s.get('reef', {}).get('scope', None)
     if scope:
-        # 转换为旧格式兼容
         result = {'enabled': scope.get('enabled', True), 'ciEnabled': scope.get('ciEnabled', True), 'domains': scope.get('domains', [])}
         print(json.dumps(result))
     else:
@@ -64,12 +61,7 @@ except:
     fi
   fi
 
-  # 回退到旧 scope-config.json
-  if [ -f "$SCOPE_CONFIG" ]; then
-    cat "$SCOPE_CONFIG"
-  else
-    echo '{"enabled": true, "domains": [], "ciEnabled": true}'
-  fi
+  echo '{"enabled": true, "domains": [], "ciEnabled": true}'
 }
 
 # 检查 scope 检查是否启用
@@ -314,7 +306,7 @@ main() {
   local enabled
   enabled="$(is_enabled "$mode")"
   if [ "$enabled" != "true" ]; then
-    [ "$raw_output" = false ] && echo "ℹ️  Scope 检查已禁用（可通过 .deepstorm/scope-config.json 启用）"
+    [ "$raw_output" = false ] && echo "ℹ️  Scope 检查已禁用（可通过 settings.json → reef.scope.enabled 启用）"
     echo "{\"enabled\":false,\"domains\":[],\"summary\":\"检查已禁用\",\"suggested_split\":[]}"
     exit 0
   fi

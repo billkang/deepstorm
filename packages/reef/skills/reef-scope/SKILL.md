@@ -89,8 +89,6 @@ bash packages/reef/hooks/reef-scope-split.sh
 - `ciEnabled`: CI 门禁开关（独立控制）
 - `domains`: 项目业务领域列表（空 = AI 自由分类，非空 = AI 对齐到这些领域）
 
-> **注意：** 旧版 `.deepstorm/scope-config.json` 已不再使用。如果存在该文件，运行 `deepstorm scope setup` 会自动迁移到 `settings.json`。
-
 ## 使用流程
 
 1. **安装**: 运行一次 `reef-scope-setup.sh install`
@@ -128,7 +126,7 @@ scope-check:
 ## 常见问题
 
 **Q: 我不想在所有项目上都启用这个检查？**
-A: 每个项目独立安装和配置，`scope-config.json` 中的 `enabled: false` 可关闭。
+A: 每个项目独立安装和配置，settings.json 中 `reef.scope.enabled: false` 可关闭。
 
 **Q: 我改了文档也要被阻断吗？**
 A: 不会。文档（markdown、README 等）变更会被归类为 `documentation` 领域，不计入多领域阻断判断。
