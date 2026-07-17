@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.9.2] - 2026-07-17
+
+### Bug Fixes
+
+- sweep-run 交互选择器改为对话式选择 (`90d87a1`)
+
+### Maintenance
+
+- 优化 init 模板——migration ID 改为时间戳格式，groupId 改用项目名 (`8886ce6`)
+- 增加 reef code-style 三层门禁，代码编写前强制加载编码规范 (`626f4f5`)
+
 ## [0.9.1] - 2026-07-17
 
 ### Maintenance
