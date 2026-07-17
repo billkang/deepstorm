@@ -202,6 +202,13 @@ describe('runInit', () => {
     const buildGradle = fs.readFileSync(path.join(root, 'build.gradle.kts'), 'utf-8')
     expect(buildGradle).toContain('liquibase')
     expect(dirExists(path.join(root, 'src/main/resources/db/changelog'))).toBe(true)
+
+    const changelog = fs.readFileSync(
+      path.join(root, 'src/main/resources/db/changelog/db.changelog-master.xml'),
+      'utf-8'
+    )
+    expect(changelog).toMatch(/changeSet id="\d{12}-001" author="/)
+    expect(changelog).toContain('flyway_schema_history')
   })
 
   it('应当处理 Spring AI 集成选项', async () => {
