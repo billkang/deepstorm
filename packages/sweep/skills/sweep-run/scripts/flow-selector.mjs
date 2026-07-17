@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Sweep Flow Selector — 基于 @inquirer/checkbox 的层级选择工具
+ * Sweep Flow Selector — 交互/非交互式选择工具
  *
  * 支持选择粒度：
  *   1. 模块级别（eg. user-system）
@@ -13,6 +13,7 @@
  * 将选中结果写入 .sweep-selection.json 并输出到 stdout。
  *
  * 使用方式：
+ *   node scripts/flow-selector.mjs --list       # 非交互：列出可用文件（JSON）
  *   node scripts/flow-selector.mjs              # 自动检测 TTY（checkbox 或文本回退）
  *   node scripts/flow-selector.mjs --tui        # 强制 TUI checkbox 模式
  *   node scripts/flow-selector.mjs --text       # 强制文本输入模式
@@ -140,6 +141,45 @@ function scanFlowFiles(dir) {
   }
 
   return result;
+}
+
+// ── 非交互模式：构建文件列表 JSON ─────────────────────────
+
+function buildFileList(baseFlowsDir) {
+  const topologyPath = join(baseFlowsDir, 'topology.yaml');
+  const files = [];
+
+  if (existsSync(topologyPath)) {
+    const yaml = readFileSync(topologyPath, 'utf-8');
+    const modules = parseTopology(yaml);
+
+    function walkModules(mods, prefix = '') {
+      for (const mod of mods) {
+        const path = prefix ? `${prefix}/${mod.name}` : mod.name;
+        if (mod.children && mod.children.length > 0) {
+          walkModules(mod.children, path);
+        } else {
+          const flowFile = resolveFlowFile(path, baseFlowsDir);
+          if (flowFile) {
+            const content = readFileSync(flowFile, 'utf-8');
+            const flows = parseFlows(content);
+            files.push({ file: flowFile, relative: path, flows });
+          }
+        }
+      }
+    }
+    walkModules(modules);
+  } else {
+    const scanned = scanFlowFiles(baseFlowsDir);
+    for (const file of scanned) {
+      const content = readFileSync(file, 'utf-8');
+      const flows = parseFlows(content);
+      const rel = relative(baseFlowsDir, file);
+      files.push({ file, relative: rel, flows });
+    }
+  }
+
+  return { files, totalFiles: files.length, totalFlows: files.reduce((s, f) => s + f.flows.length, 0) };
 }
 
 // ── 构建 Choice 树 ──────────────────────────────────────────
@@ -341,6 +381,22 @@ async function main() {
   const cliArgs = process.argv.slice(2);
   const forceText = cliArgs.includes('--text');
   const forceTui = cliArgs.includes('--tui');
+  const listMode = cliArgs.includes('--list');
+
+  // ── 非交互模式：直接输出可用文件列表 JSON ──────────────
+  if (listMode) {
+    if (!existsSync(BASE_FLOWS_DIR)) {
+      console.error(JSON.stringify({ error: 'flows/ 目录不存在' }));
+      process.exit(1);
+    }
+    const list = buildFileList(BASE_FLOWS_DIR);
+    if (list.files.length === 0) {
+      console.error(JSON.stringify({ error: '没有找到任何 .flow.md 文件' }));
+      process.exit(1);
+    }
+    console.log(JSON.stringify(list, null, 2));
+    return;
+  }
 
   try {
     let modules = [];
@@ -471,6 +527,7 @@ export {
   buildChoicesWithFlows,
   normalizeSelection,
   buildFlatFileChoices,
+  buildFileList,
   askTextSelection,
   isTtyAvailable,
   getCheckbox,
