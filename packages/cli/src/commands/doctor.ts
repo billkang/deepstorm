@@ -44,7 +44,7 @@ export function runDoctor(targetDir: string): DoctorReport {
   checks.push({
     name: 'CLI 版本',
     status: 'pass',
-    message: `v${version}（运行 deepstorm update --check 检查最新版本）`,
+    message: `v${version}（运行 deepstorm update 检查最新版本）`,
   })
 
   // 检查 2: .deepstorm/settings.json 是否存在

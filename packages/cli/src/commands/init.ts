@@ -335,10 +335,11 @@ interface TemplateContext {
 
 function buildContext(opts: InitOptions): TemplateContext {
   const projectName = opts.projectName || 'project'
+  const packageName = projectName.replace(/[_-]/g, '').toLowerCase()
   return {
     projectName,
-    packageName: projectName.replace(/[_-]/g, '').toLowerCase(),
-    groupId: 'com.example',
+    packageName,
+    groupId: `com.${packageName}`,
     frontend: opts.frontend || false,
     backend: opts.backend || false,
     uiLib: opts.uiLib || false,
@@ -884,7 +885,7 @@ tasks.withType<Test> {
 `)
 
   // Java 应用入口
-  const appPackage = `${ctx.groupId}.${ctx.packageName}`.replace(/[.-]/g, '.')
+  const appPackage = ctx.groupId.replace(/[.-]/g, '.')
   const appDir = `src/main/java/${appPackage.replace(/\./g, '/')}`
   ensureDir(path.join(projectDir, appDir))
 
@@ -995,6 +996,8 @@ logging:
 `)
 
   if (hasLiquibase) {
+    const now = new Date()
+    const ts = now.toISOString().replace(/\D/g, '').slice(0, 12)
     ensureDir(path.join(projectDir, 'src/main/resources/db/changelog'))
     writeTemplate(projectDir, 'src/main/resources/db/changelog/db.changelog-master.xml', `<?xml version="1.0" encoding="UTF-8"?>
 <databaseChangeLog
@@ -1003,7 +1006,7 @@ logging:
   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
     http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
 
-  <changeSet id="001" author="deepstorm">
+  <changeSet id="${ts}-001" author="deepstorm">
     <createTable tableName="flyway_schema_history">
       <column name="version" type="VARCHAR(50)"/>
     </createTable>
