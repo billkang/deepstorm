@@ -27,6 +27,65 @@ function getEnvPath() {
 function getMcpPath() {
   return resolve(process.cwd(), '.mcp.json');
 }
+function getDeepstormSettingsPath() {
+  return resolve(process.cwd(), '.deepstorm', 'settings.json');
+}
+
+// ── settings.json reading ─────────────────────────────────────────
+
+/**
+ * Read .deepstorm/settings.json and extract environments config.
+ * Returns the sweep.environments object or null if not configured.
+ */
+export function readDeepstormEnvironments() {
+  const settingsPath = getDeepstormSettingsPath();
+  if (!existsSync(settingsPath)) return null;
+  try {
+    const content = readFileSync(settingsPath, 'utf-8');
+    const config = JSON.parse(content);
+    return config.sweep?.environments || null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Read .deepstorm/settings.json and extract e2eProjectPath.
+ * Returns the project path string or null if not configured.
+ */
+export function readE2eProjectPath() {
+  const settingsPath = getDeepstormSettingsPath();
+  if (!existsSync(settingsPath)) return null;
+  try {
+    const content = readFileSync(settingsPath, 'utf-8');
+    const config = JSON.parse(content);
+    return config.sweep?.e2eProjectPath || null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Convert settings.json environments format to the same structure
+ * that listEnvs() returns from .env, for a unified return format.
+ *
+ * Input:  { test: { baseUrl: "..." }, staging: { baseUrl: "..." }, default: "test" }
+ * Output: { envMap: { BASE_URL_TEST: "...", BASE_URL_STAGING: "...", DEFAULT_ENV: "test" },
+ *           defaultEnv: "test" }
+ */
+function deepstormEnvsToEnvMap(envs) {
+  if (!envs) return { envMap: {}, defaultEnv: 'test' };
+  const envMap = {};
+  const defaultEnv = envs.default || 'test';
+  for (const [name, config] of Object.entries(envs)) {
+    if (name === 'default') continue;
+    if (config && config.baseUrl) {
+      envMap[`BASE_URL_${name.toUpperCase()}`] = config.baseUrl;
+    }
+  }
+  envMap.DEFAULT_ENV = defaultEnv;
+  return { envMap, defaultEnv };
+}
 
 // ── .env parsing ──────────────────────────────────────────────────
 
@@ -68,17 +127,40 @@ export function readDotEnv() {
 
 /**
  * Get the default environment name.
+ * Priority: settings.json > .env
  * Falls back to 'test' if not configured.
  */
 export function getDefaultEnv(envMap) {
+  const dsEnvs = readDeepstormEnvironments();
+  if (dsEnvs && dsEnvs.default) {
+    return dsEnvs.default;
+  }
   return envMap.DEFAULT_ENV || 'test';
 }
 
 /**
- * List all available environments from .env.
+ * List all available environments.
+ * Priority: settings.json > .env
  * Detects BASE_URL_{ENV} patterns and returns their names.
  */
 export function listEnvs(envMap) {
+  const dsEnvs = readDeepstormEnvironments();
+  if (dsEnvs) {
+    const envs = [];
+    for (const [name, config] of Object.entries(dsEnvs)) {
+      if (name === 'default') continue;
+      if (config && config.baseUrl) {
+        envs.push({
+          name: name.toLowerCase(),
+          key: `BASE_URL_${name.toUpperCase()}`,
+          url: config.baseUrl,
+        });
+      }
+    }
+    return envs;
+  }
+
+  // Fallback to .env-based envMap
   const envs = [];
   for (const key of Object.keys(envMap)) {
     const match = key.match(/^BASE_URL_(.+)$/);
@@ -96,13 +178,27 @@ export function listEnvs(envMap) {
 /**
  * Resolve target environment config.
  *
+ * Priority: settings.json > .env
+ *
  * @param {string} [envName] - Target environment name (e.g. 'staging', 'test')
  * @returns {{ env: string, baseUrl: string|null, availableEnvs: Array<{name:string,url:string}> }}
  *
- * If envName is omitted, uses DEFAULT_ENV from .env (or 'test').
+ * If envName is omitted, uses DEFAULT_ENV (or 'test').
  * If the environment is not found, baseUrl is null and availableEnvs lists alternatives.
  */
 export function resolveEnv(envName) {
+  // Try settings.json first
+  const dsEnvs = readDeepstormEnvironments();
+  if (dsEnvs) {
+    const { envMap, defaultEnv } = deepstormEnvsToEnvMap(dsEnvs);
+    const name = envName || defaultEnv;
+    const availableEnvs = listEnvs(envMap);
+    const baseUrlKey = `BASE_URL_${name.toUpperCase()}`;
+    const baseUrl = envMap[baseUrlKey] || null;
+    return { env: name, baseUrl, availableEnvs };
+  }
+
+  // Fallback to .env
   const envMap = readDotEnv();
   const name = envName || getDefaultEnv(envMap);
   const availableEnvs = listEnvs(envMap);

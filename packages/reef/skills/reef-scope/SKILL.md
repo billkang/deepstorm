@@ -71,19 +71,25 @@ bash packages/reef/hooks/reef-scope-split.sh
 
 ## 配置文件
 
-安装后生成 `.deepstorm/scope-config.json`：
+安装后配置写入 `.deepstorm/settings.json` 的 `reef.scope` 字段：
 
 ```json
 {
-  "enabled": true,
-  "ciEnabled": true,
-  "domains": []
+  "reef": {
+    "scope": {
+      "enabled": true,
+      "ciEnabled": true,
+      "domains": []
+    }
+  }
 }
 ```
 
 - `enabled`: 本地 commit 门禁开关
 - `ciEnabled`: CI 门禁开关（独立控制）
 - `domains`: 项目业务领域列表（空 = AI 自由分类，非空 = AI 对齐到这些领域）
+
+> **注意：** 旧版 `.deepstorm/scope-config.json` 已不再使用。如果存在该文件，运行 `deepstorm scope setup` 会自动迁移到 `settings.json`。
 
 ## 使用流程
 
