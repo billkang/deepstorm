@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.9.0] - 2026-07-17
+
+### Features
+
+- 将 `.sweep-init`、`.env baseURL`、`scope-config.json` 三个数据源统一收口到 `.deepstorm/settings.json`，统一 DeepStorm 配置管理路径；sweep-init 新增路径选择步骤（独立项目 / e2e/ / 自定义）；sweep-plan/sweep-run 改读 settings.json 的 `e2eProjectPath`；env-manager 配置源迁移（settings.json 优先，.env 回退）；reef 分支范围配置同步迁移 (`111fdb7`)
+
 ## [0.8.0] - 2026-07-16
 
 ### Features
