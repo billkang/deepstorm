@@ -31,9 +31,15 @@ git diff "$FORK_POINT"..HEAD --diff-filter=M --name-only
 
 **规则**：不凭空写新文件。先读一个真实存在的同类文件，理解模式后再动手。
 
-### 2. 查阅规范
+### 2. 🔴 加载编码规范（硬性门禁）
 
-加载 `reef:reef-style-frontend` 技能，阅读 `quick-reference.md` 和必要示例。
+> **必须先通过 Skill tool 加载 `reef:reef-style-frontend`，阅读 `quick-reference.md` 了解核心编码规范，并根据当前变更类型阅读对应的维度规范文件（框架规范、UI 组件库规范、CSS 方案、TypeScript 配置、测试框架等）。完成后方可进入后续代码编写步骤。未加载 code-style 技能不得编写代码，否则视为违反工作流纪律。**
+
+加载完成后，AI MUST 输出以下声明：
+
+```
+✅ [CODE-STYLE] 已加载前端编码规范（quick-reference + 必要维度规范），所有新增/修改代码将遵循项目编码规范。
+```
 
 涉及库/框架 API 用法时，使用 context7 获取最新文档：`resolve-library-id` → `query-docs`。
 
@@ -79,6 +85,6 @@ git diff "$FORK_POINT"..HEAD --diff-filter=M --name-only
 {{reef.frontend.framework.formatCmd}} lint && {{reef.frontend.framework.formatCmd}} typecheck && {{reef.frontend.framework.formatCmd}} test
 ```
 
-### {{#if reef.frontend.framework.sourcePath}}6{{else}}5{{/if}}. 提交前自检
+### {{#if reef.frontend.framework.sourcePath}}6{{else}}5{{/if}}. 🔴 提交前自检（后置检查）
 
-加载 `reef:reef-style-frontend` 技能，逐项检查所有规范要求。**未通过不得提交。**
+重新加载 `reef:reef-style-frontend` 技能，逐项对照所有规范要求检查本变更中的每处代码修改。**检查未通过不得提交。**
