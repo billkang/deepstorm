@@ -99,30 +99,81 @@ describe('Env Manager — parseDotEnv', () => {
 });
 
 describe('Env Manager — getDefaultEnv', () => {
-  it('should return DEFAULT_ENV when set', () => {
-    const result = getDefaultEnv({ DEFAULT_ENV: 'staging' });
-    assert.equal(result, 'staging');
+  let origCwd;
+
+  before(() => {
+    origCwd = process.cwd();
   });
 
-  it('should fall back to "test" when DEFAULT_ENV is missing', () => {
-    const result = getDefaultEnv({});
-    assert.equal(result, 'test');
+  after(() => {
+    process.chdir(origCwd);
   });
 
-  it('should fall back to "test" when envMap is empty', () => {
-    const result = getDefaultEnv({});
-    assert.equal(result, 'test');
+  it('should return default from settings.json when configured', () => {
+    const tmpDir = mkdtempSync(join(tmpdir(), 'env-manager-test-'));
+    mkdirSync(join(tmpDir, '.deepstorm'), { recursive: true });
+    writeFileSync(join(tmpDir, '.deepstorm/settings.json'), JSON.stringify({
+      sweep: { environments: { default: 'staging' } },
+    }));
+    process.chdir(tmpDir);
+
+    assert.equal(getDefaultEnv(), 'staging');
+  });
+
+  it('should fall back to "test" when settings.json has no default', () => {
+    const tmpDir = mkdtempSync(join(tmpdir(), 'env-manager-test-'));
+    mkdirSync(join(tmpDir, '.deepstorm'), { recursive: true });
+    writeFileSync(join(tmpDir, '.deepstorm/settings.json'), JSON.stringify({
+      sweep: { environments: { test: { baseUrl: 'http://localhost' } } },
+    }));
+    process.chdir(tmpDir);
+
+    assert.equal(getDefaultEnv(), 'test');
+  });
+
+  it('should fall back to "test" when settings.json has no environments', () => {
+    const tmpDir = mkdtempSync(join(tmpdir(), 'env-manager-test-'));
+    mkdirSync(join(tmpDir, '.deepstorm'), { recursive: true });
+    writeFileSync(join(tmpDir, '.deepstorm/settings.json'), JSON.stringify({}));
+    process.chdir(tmpDir);
+
+    assert.equal(getDefaultEnv(), 'test');
+  });
+
+  it('should fall back to "test" when .deepstorm/settings.json is missing', () => {
+    const tmpDir = mkdtempSync(join(tmpdir(), 'env-manager-test-'));
+    process.chdir(tmpDir);
+
+    assert.equal(getDefaultEnv(), 'test');
   });
 });
 
 describe('Env Manager — listEnvs', () => {
-  it('should detect BASE_URL_* patterns', () => {
-    const envMap = {
-      BASE_URL_TEST: 'https://test.example.com',
-      BASE_URL_STAGING: 'https://staging.example.com',
-      BASE_URL_PROD: 'https://prod.example.com',
-    };
-    const result = listEnvs(envMap);
+  let origCwd;
+
+  before(() => {
+    origCwd = process.cwd();
+  });
+
+  after(() => {
+    process.chdir(origCwd);
+  });
+
+  it('should list environments from settings.json', () => {
+    const tmpDir = mkdtempSync(join(tmpdir(), 'env-manager-test-'));
+    mkdirSync(join(tmpDir, '.deepstorm'), { recursive: true });
+    writeFileSync(join(tmpDir, '.deepstorm/settings.json'), JSON.stringify({
+      sweep: {
+        environments: {
+          test: { baseUrl: 'https://test.example.com' },
+          staging: { baseUrl: 'https://staging.example.com' },
+          prod: { baseUrl: 'https://prod.example.com' },
+        },
+      },
+    }));
+    process.chdir(tmpDir);
+
+    const result = listEnvs();
     assert.equal(result.length, 3);
     assert.equal(result[0].name, 'test');
     assert.equal(result[0].url, 'https://test.example.com');
@@ -132,42 +183,56 @@ describe('Env Manager — listEnvs', () => {
     assert.equal(result[2].url, 'https://prod.example.com');
   });
 
-  it('should ignore keys that are not BASE_URL_*', () => {
-    const envMap = {
-      BASE_URL_TEST: 'https://test.example.com',
-      DEFAULT_ENV: 'test',
-      SOME_OTHER_KEY: 'value',
-    };
-    const result = listEnvs(envMap);
+  it('should exclude the default key from environments', () => {
+    const tmpDir = mkdtempSync(join(tmpdir(), 'env-manager-test-'));
+    mkdirSync(join(tmpDir, '.deepstorm'), { recursive: true });
+    writeFileSync(join(tmpDir, '.deepstorm/settings.json'), JSON.stringify({
+      sweep: {
+        environments: {
+          test: { baseUrl: 'https://test.example.com' },
+          default: 'test',
+        },
+      },
+    }));
+    process.chdir(tmpDir);
+
+    const result = listEnvs();
     assert.equal(result.length, 1);
     assert.equal(result[0].name, 'test');
   });
 
-  it('should return empty array when no BASE_URL_* keys exist', () => {
-    const result = listEnvs({ FOO: 'bar' });
+  it('should return empty array when no environments configured', () => {
+    const tmpDir = mkdtempSync(join(tmpdir(), 'env-manager-test-'));
+    mkdirSync(join(tmpDir, '.deepstorm'), { recursive: true });
+    writeFileSync(join(tmpDir, '.deepstorm/settings.json'), JSON.stringify({}));
+    process.chdir(tmpDir);
+
+    const result = listEnvs();
     assert.deepEqual(result, []);
   });
 
-  it('should return empty array for empty envMap', () => {
-    const result = listEnvs({});
-    assert.deepEqual(result, []);
-  });
+  it('should return empty array when settings.json is missing', () => {
+    const tmpDir = mkdtempSync(join(tmpdir(), 'env-manager-test-'));
+    process.chdir(tmpDir);
 
-  it('should handle case-sensitive environment names', () => {
-    const envMap = {
-      BASE_URL_TEST: 'https://test.example.com',
-      BASE_URL_UAT: 'https://uat.example.com',
-    };
-    const result = listEnvs(envMap);
-    assert.equal(result.length, 2);
-    // Names should be lowercased
-    assert.equal(result[1].name, 'uat');
+    const result = listEnvs();
+    assert.deepEqual(result, []);
   });
 
   it('should include key field in output', () => {
-    const envMap = { BASE_URL_TEST: 'https://test.example.com' };
-    const result = listEnvs(envMap);
-    assert.equal(result[0].key, 'BASE_URL_TEST');
+    const tmpDir = mkdtempSync(join(tmpdir(), 'env-manager-test-'));
+    mkdirSync(join(tmpDir, '.deepstorm'), { recursive: true });
+    writeFileSync(join(tmpDir, '.deepstorm/settings.json'), JSON.stringify({
+      sweep: {
+        environments: {
+          uat: { baseUrl: 'https://uat.example.com' },
+        },
+      },
+    }));
+    process.chdir(tmpDir);
+
+    const result = listEnvs();
+    assert.equal(result[0].key, 'BASE_URL_UAT');
   });
 });
 
@@ -236,13 +301,18 @@ describe('Env Manager — resolveEnv', () => {
     process.chdir(origCwd);
   });
 
-  it('should resolve a known environment from .env', () => {
+  it('should resolve a known environment from settings.json', () => {
     const tmpDir = mkdtempSync(join(tmpdir(), 'env-manager-test-'));
-    writeFileSync(join(tmpDir, '.env'), [
-      'BASE_URL_TEST=https://test.example.com',
-      'BASE_URL_STAGING=https://staging.example.com',
-      'DEFAULT_ENV=test',
-    ].join('\n'));
+    mkdirSync(join(tmpDir, '.deepstorm'), { recursive: true });
+    writeFileSync(join(tmpDir, '.deepstorm/settings.json'), JSON.stringify({
+      sweep: {
+        environments: {
+          test: { baseUrl: 'https://test.example.com' },
+          staging: { baseUrl: 'https://staging.example.com' },
+          default: 'test',
+        },
+      },
+    }));
     process.chdir(tmpDir);
 
     const result = resolveEnv('staging');
@@ -253,10 +323,15 @@ describe('Env Manager — resolveEnv', () => {
 
   it('should use default env when envName is omitted', () => {
     const tmpDir = mkdtempSync(join(tmpdir(), 'env-manager-test-'));
-    writeFileSync(join(tmpDir, '.env'), [
-      'BASE_URL_TEST=https://test.example.com',
-      'DEFAULT_ENV=test',
-    ].join('\n'));
+    mkdirSync(join(tmpDir, '.deepstorm'), { recursive: true });
+    writeFileSync(join(tmpDir, '.deepstorm/settings.json'), JSON.stringify({
+      sweep: {
+        environments: {
+          test: { baseUrl: 'https://test.example.com' },
+          default: 'test',
+        },
+      },
+    }));
     process.chdir(tmpDir);
 
     const result = resolveEnv();
@@ -264,11 +339,16 @@ describe('Env Manager — resolveEnv', () => {
     assert.equal(result.baseUrl, 'https://test.example.com');
   });
 
-  it('should fall back to "test" when DEFAULT_ENV is not set', () => {
+  it('should fall back to "test" when default is not set', () => {
     const tmpDir = mkdtempSync(join(tmpdir(), 'env-manager-test-'));
-    writeFileSync(join(tmpDir, '.env'), [
-      'BASE_URL_TEST=https://test.example.com',
-    ].join('\n'));
+    mkdirSync(join(tmpDir, '.deepstorm'), { recursive: true });
+    writeFileSync(join(tmpDir, '.deepstorm/settings.json'), JSON.stringify({
+      sweep: {
+        environments: {
+          test: { baseUrl: 'https://test.example.com' },
+        },
+      },
+    }));
     process.chdir(tmpDir);
 
     const result = resolveEnv();
@@ -278,9 +358,15 @@ describe('Env Manager — resolveEnv', () => {
 
   it('should return null baseUrl for unknown environment', () => {
     const tmpDir = mkdtempSync(join(tmpdir(), 'env-manager-test-'));
-    writeFileSync(join(tmpDir, '.env'), [
-      'BASE_URL_TEST=https://test.example.com',
-    ].join('\n'));
+    mkdirSync(join(tmpDir, '.deepstorm'), { recursive: true });
+    writeFileSync(join(tmpDir, '.deepstorm/settings.json'), JSON.stringify({
+      sweep: {
+        environments: {
+          test: { baseUrl: 'https://test.example.com' },
+          default: 'test',
+        },
+      },
+    }));
     process.chdir(tmpDir);
 
     const result = resolveEnv('nonexistent');
@@ -289,7 +375,7 @@ describe('Env Manager — resolveEnv', () => {
     assert.equal(result.availableEnvs.length, 1);
   });
 
-  it('should return env=test and baseUrl=null when .env does not exist', () => {
+  it('should return env=test and baseUrl=null when settings.json is missing', () => {
     const tmpDir = mkdtempSync(join(tmpdir(), 'env-manager-test-'));
     process.chdir(tmpDir);
 

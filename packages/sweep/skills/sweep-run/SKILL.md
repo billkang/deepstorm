@@ -102,21 +102,10 @@ fi
   fi
   ```
 
-#### 1.2 配置不存在 → 向后兼容检查
+#### 1.2 配置不存在 → 报错退出
 
 - **WHEN** `E2E_PATH` 为空
-- **THEN** 检查旧 `.sweep-init` 文件是否存在（从当前目录和 DEEPSTORM_DIR 向上查找）：
-  ```bash
-  if [ -f ".sweep-init" ]; then
-    echo "ℹ️ 检测到旧版 .sweep-init 标记。建议运行 /sweep-init 刷新配置。"
-    # 继续执行（兼容旧项目）
-  elif [ -n "$DEEPSTORM_DIR" ] && [ -f "$DEEPSTORM_DIR/.sweep-init" ]; then
-    echo "ℹ️ 检测到旧版 .sweep-init 标记（项目根: $DEEPSTORM_DIR）。建议运行 /sweep-init 刷新配置。"
-  else
-    echo "❌ 未检测到 E2E 项目。请先运行 /sweep-init 初始化。"
-    exit 1
-  fi
-  ```
+- **THEN** 提示"❌ 未检测到 E2E 项目。请先运行 /sweep-init 初始化。"并退出
 
 ---
 
@@ -217,9 +206,9 @@ node scripts/env-manager.mjs --env staging
 ]}
 ```
 
-- `--env staging` → 从 `settings.json` 的 `sweep.environments.staging` 读取（回退到 `.env`）
-- `--env test` → 从 `settings.json` 的 `sweep.environments.test` 读取（回退到 `.env`）
-- 不传参 → 使用 `settings.json` 的 `sweep.environments.default`（回退到 `.env` 的 `DEFAULT_ENV`），未设置则默认 `test`
+- `--env staging` → 从 `settings.json` 的 `sweep.environments.staging` 读取
+- `--env test` → 从 `settings.json` 的 `sweep.environments.test` 读取
+- 不传参 → 使用 `settings.json` 的 `sweep.environments.default`，未设置则默认 `test`
 
 #### 4.2 设置环境变量
 
@@ -234,7 +223,7 @@ BASE_URL=$(node scripts/env-manager.mjs --env test | node -pe "JSON.parse(requir
 
 #### 4.3 环境不存在处理
 
-如果 `baseUrl` 为 `null`（指定的环境在 `.env` 中找不到对应配置）：
+如果 `baseUrl` 为 `null`（指定的环境在 settings.json 中找不到对应配置）：
 
 - 提示"未找到 [{env}] 环境的 baseURL 配置"
 - 列出 `availableEnvs` 中已有的环境

@@ -12,7 +12,6 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || echo "$PWD")"
 
 SCOPE_CONFIG_DIR="${PROJECT_ROOT}/.deepstorm"
-SCOPE_CONFIG="${SCOPE_CONFIG_DIR}/scope-config.json"
 GIT_HOOK_DIR="${PROJECT_ROOT}/.git/hooks"
 PRE_COMMIT_HOOK="${GIT_HOOK_DIR}/pre-commit"
 
@@ -22,19 +21,11 @@ install() {
   echo "🔧 [Scope] 正在安装分支范围检查..."
   echo ""
 
-  # 1. 创建/迁移配置文件到 settings.json
+  # 1. 创建配置文件到 settings.json
   echo "[1/3] 创建配置文件..."
 
-  # 检查旧 scope-config.json 是否存在，存在则迁移
-  if [ -f "$SCOPE_CONFIG" ]; then
-    echo "  ℹ️  检测到旧版 scope-config.json，正在迁移到 settings.json..."
-    OLD_SCOPE=$(cat "$SCOPE_CONFIG")
-    # 删除旧文件
-    rm "$SCOPE_CONFIG"
-    echo "  ✅ 旧 scope-config.json 已迁移并删除"
-  else
-    OLD_SCOPE='{"enabled": true, "ciEnabled": true, "domains": []}'
-  fi
+  # 默认 scope 配置（旧 scope-config.json 迁移由 deepstorm update 统一处理）
+  OLD_SCOPE='{"enabled": true, "ciEnabled": true, "domains": []}'
 
   # 写入/合并到 settings.json
   SETTINGS_FILE="${SCOPE_CONFIG_DIR}/settings.json"

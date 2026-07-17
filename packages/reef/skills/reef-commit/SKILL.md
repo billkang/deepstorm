@@ -137,7 +137,7 @@ if [ -f "$SCOPE_HOOK" ]; then
   bash "$SCOPE_HOOK" || {
     echo ""
     echo "提示：如需继续提交，请使用 'reef-scope-split.sh' 拆分分支"
-    echo "或临时禁用 scope 检查（不推荐）：deepstorm/scope-config.json → enabled: false"
+    echo "或临时禁用 scope 检查（不推荐）：settings.json → reef.scope.enabled: false"
     exit 1
   }
 fi
