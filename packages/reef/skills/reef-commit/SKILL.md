@@ -41,75 +41,32 @@ git status --short
 
 ### 2. 分支名与任务相关性检查
 
-在审查待提交文件之前，先检查当前分支是否与待提交的任务相关。如果当前在 `main`/`master` 分支上则**必须**创建新分支；如果分支名与任务内容明显不匹配（如命名随意、与 OpenSpec 任务不符），建议创建新分支。
+通过 `branch-check.mjs` 检查当前分支是否合法：
 
 ```bash
-BRANCH=$(git branch --show-current)
-echo "当前分支: $BRANCH"
-
-# 检测是否需要创建新分支
-MUST_NEW_BRANCH=false
-
-# 条件一：在 main 或 master 上必须创建新分支
-if [ "$BRANCH" = "main" ] || [ "$BRANCH" = "master" ]; then
-  echo "⚠️ 当前在 $BRANCH 分支上，不允许直接提交，必须创建新分支"
-  MUST_NEW_BRANCH=true
-fi
-
-# 条件二：检查分支名是否包含 temp、wip、test、tmp、dev 等临时名称
-TEMP_PATTERN='^(temp|wip|test|tmp|dev)(/.*)?$'
-if echo "$BRANCH" | grep -qE "$TEMP_PATTERN"; then
-  echo "⚠️ 当前分支名 ($BRANCH) 看起来是临时分支，建议创建有意义的新分支"
-fi
-
-# 收集 OpenSpec 任务上下文
-for dir in openspec/changes/*/; do
-  if [ -f "$dir/proposal.md" ]; then
-    TASK_NAME=$(basename "$dir")
-    echo "发现 OpenSpec 任务: $TASK_NAME"
-  fi
-done
+node packages/reef/skills/reef-commit/scripts/branch-check.mjs
 ```
 
-**判断规则（LLM 自行推理执行）：**
+输出 JSON：
+```json
+{"isValid":true,"warning":false,"action":"continue"}
+```
 
-1. **如果 MUST_NEW_BRANCH=true**（当前在 main/master）：
-   - 直接进入步骤 3「创建新分支」，无需询问用户
-2. **如果分支名明显不相关**（如 `temp-xxx`、`test-foo`、或随意命名与当前变更毫无关联）：
-   - 向用户说明：「当前分支 $BRANCH 与待提交的变更内容似乎不匹配，是否创建一个新分支？」
-   - 用户同意 → 进入步骤 3「创建新分支」
-   - 用户不同意 → 继续当前分支
-3. **如果分支名合理**（如与 OpenSpec 任务同名，或包含功能描述的 kebab-case）：
-   - 直接继续
+**判断规则：**
+- `isValid: false, action: "create-branch"`（当前在 main/master）→ **直接进入步骤 3**
+- `warning: true, action: "suggest-rename"`（分支名像临时分支）→ 询问用户是否改名
+- `matchedTask` 有值 → 说明已匹配到 OpenSpec 任务
+- 其他 → 直接继续
 
 ### 3. 创建新分支
 
-当需要创建新分支时，按以下逻辑确定分支名：
-
-**分支名生成规则（优先级从高到低）：**
-1. **OpenSpec 任务名**：如果检测到 `openspec/changes/<task>/proposal.md`，使用 `<task>` 作为分支名
+按以下逻辑确定分支名（优先级从高到低）：
+1. **OpenSpec 任务名**：由 `branch-check.mjs` 输出的 `matchedTask` 确定
 2. **用户输入**：询问用户想要的分支名
-3. **AI 推导**：根据变更内容总结生成 kebab-case 分支名（例如 `feat/add-user-auth`、`fix/login-timeout`）
+3. **AI 推导**：根据变更内容总结生成 kebab-case 分支名
 
 ```bash
-# 暂存当前未提交变更
-STASHED=false
-if [ -n "$(git status --porcelain)" ]; then
-  git stash push -m "reef-commit-auto-stash"
-  STASHED=true
-fi
-
-# 创建并切换到新分支（基于 main）
-git checkout main
-git pull origin main 2>/dev/null || true
-git checkout -b <new-branch-name>
-
-# 恢复暂存的变更
-if [ "$STASHED" = true ]; then
-  git stash pop
-fi
-
-echo "✅ 已切换到新分支: <new-branch-name>"
+bash packages/reef/skills/reef-commit/scripts/stash-and-switch.sh <new-branch-name>
 ```
 
 > **注意**：创建新分支后，后续步骤（审查文件、范围检查、测试等）在新分支上继续执行。
@@ -129,9 +86,6 @@ git diff --stat
 检查当前分支是否涉及多个业务领域。如果跨领域，给出拆分建议并中止提交。
 
 ```bash
-BRANCH=$(git branch --show-current)
-FORK_POINT=$(git merge-base main HEAD 2>/dev/null || echo "")
-echo "检查分支范围（基准: main）..."
 SCOPE_HOOK="packages/reef/hooks/reef-scope-gate.sh"
 if [ -f "$SCOPE_HOOK" ]; then
   bash "$SCOPE_HOOK" || {
@@ -146,63 +100,36 @@ fi
 ### 6. 运行单元测试
 
 ```bash
-git status --short
+bash packages/reef/skills/reef-commit/scripts/run-tests.sh --json
 ```
 
-如有变更则全量运行测试：
-
-```bash
-./gradlew test
-(cd src/main/web && pnpm test -- --run)
-```
-
-- 测试全部通过 → 继续
-- 任一测试失败 → 提示用户修复后再提交
+- 全部通过（`allPassed: true`）→ 继续
+- 任一测试失败（`allPassed: false`）→ 提示用户修复后再提交
 
 ### 6.5 OpenSpec 验证与归档检查
 
 > 提交前检查关联的 OpenSpec change 是否已完成验证和归档。如果 `openspec/` 目录不存在或无活跃 change 则跳过本步骤。
 
-**判断流程（LLM 自行推理执行）：**
+**判断流程：**
 
 1. **查找关联的 OpenSpec change：**
    ```bash
-   BRANCH=$(git branch --show-current)
-   echo "当前分支: $BRANCH"
-
-   for dir in openspec/changes/*/; do
-     CHANGE_NAME=$(basename "$dir")
-     if [ -f "$dir/.openspec.yaml" ] && [ "$CHANGE_NAME" != "archive" ]; then
-       echo "发现活跃 OpenSpec change: $CHANGE_NAME"
-       cat "$dir/.openspec.yaml"
-     fi
-   done
+   node packages/reef/skills/reef-commit/scripts/check-openspec-status.mjs \
+     --branch "$(git branch --show-current)"
    ```
 
-2. **匹配规则：** 扫描 `openspec/changes/*/` 下活跃 change（不包含 `archive/`），与当前分支名比对；无匹配则跳过；多匹配则让用户选择。
-
-3. **检查归档状态：** 读取 `.openspec.yaml` 中 `status` 字段。`archived` → 跳过后续检查；否则继续。
-
-4. **运行验证：** 确认 `tasks.md` 全部 checkbox 已完成 → 通过 Skill 工具自动调用 `/opsx:verify`。有 CRITICAL 问题则中止；仅 WARNING/SUGGESTION 则通过。
-
+2. **匹配规则：** 脚本输出中 `name` 匹配当前分支名，`tasksAllDone` 检查任务完成状态。
+3. **检查归档状态：** 无输出（`noMatch: true`）→ 跳过。`hasTasksMd: true` + `tasksAllDone: true` → 已全部完成 → 调用 `/opsx:verify` 和 `/opsx:archive`。
+4. **运行验证：** 确认后通过 Skill 工具自动调用 `/opsx:verify`。有 CRITICAL 问题则中止；仅 WARNING/SUGGESTION 则通过。
 5. **运行归档：** 验证通过后 → 通过 Skill 工具自动调用 `/opsx:archive`。执行失败则提示用户手动处理。
-
-6. **确认已就绪：** 校验状态并向用户报告。
-
-> **提示：** verify/archive 执行后产生额外文件变更的，后续步骤会重新检测并纳入提交。
 
 ### 7. 收集上下文
 
 ```bash
-BRANCH=$(git branch --show-current)
-FORK_POINT=$(git merge-base main HEAD 2>/dev/null)
-echo "Branch: $BRANCH"; git diff "$FORK_POINT"..HEAD --stat
-ls -d openspec/changes/*/ 2>/dev/null | grep -v archive
-[ -f "openspec/changes/$BRANCH/proposal.md" ] && head -5 "openspec/changes/$BRANCH/proposal.md"
-# 从 proposal/commit 提取 Issue 引用
-grep -iE '(issue|jira|lc-|proj-)' "openspec/changes/$BRANCH/proposal.md" 2>/dev/null | head -3
-git log "$FORK_POINT"..HEAD --format="%B" 2>/dev/null | grep -ioP '[A-Z]+-\d+' | head -1
+node packages/reef/skills/reef-commit/scripts/collect-git-context.mjs
 ```
+
+输出 JSON 包含 `branch`、`diffStat`、`commitLog`、`openspecChanges` 等字段。提取 `openspecChanges` 中 `matched: true` 项的 `proposal.md` 标题作为提交信息素材。
 
 ### 8. 生成提交信息
 

@@ -30,15 +30,10 @@ CHANGE_DIR="openspec/changes/$BRANCH"
 先检查未提交变更。如有则提示「请先 commit 再创建 PR」，中止流程。
 
 ```bash
-BRANCH=$(git branch --show-current)
-FORK_POINT=$(git merge-base main HEAD 2>/dev/null)
-echo "Branch: $BRANCH"; git status -sb
-echo "Commits:"; git log "$FORK_POINT"..HEAD --oneline
-echo "Changes:"; git diff "$FORK_POINT"..HEAD --stat
-ls -d openspec/changes/$BRANCH/*.md 2>/dev/null
+node packages/reef/skills/reef-pr/scripts/create-pr.mjs --collect
 ```
 
-如有 OpenSpec change，读取 `proposal.md` 和 `tasks.md` 作为描述素材。
+输出 JSON 包含 `branch`、`hasUncommitted`、`diffStat`、`commitLog`、`proposalTitle`。如有 OpenSpec change，`proposalTitle` 会包含 proposal 标题。
 
 ### 2. 构建 PR 信息
 
@@ -71,26 +66,19 @@ OpenSpec: openspec/changes/{branch-name}/
 
 ### 4. 推送并创建 PR
 
-先检查是否已有打开的 PR：
+先检查是否已有打开的 PR，用 `create-pr.mjs` 统一处理：
 
 ```bash
-EXISTING_PR=$(gh pr view --json url 2>/dev/null)
-```
-
-如有则询问「已有 PR，是否更新描述？」，用户确认后用 `gh pr update` 更新；否则正常创建：
-
-```bash
-# 首次推送当前分支
-git push -u origin $(git branch --show-current)
-
-# 创建 PR（如有 reviewer/label/draft 则追加对应参数）
-gh pr create \
+# --title 和 --body 从步骤 2 构建的 PR 信息中取
+node packages/reef/skills/reef-pr/scripts/create-pr.mjs --create \
   --title "<标题>" \
   --body "<正文>" \
   [--reviewer "<用户>"] \
   [--label "<标签>"] \
   [--draft]
 ```
+
+如有已有 PR，脚本输出 `{"exists":true}` 并在 stderr 输出提示，此时可用 `gh pr update` 更新。
 
 ### 5. 输出结果
 
