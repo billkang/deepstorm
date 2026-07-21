@@ -10,25 +10,17 @@ deepstorm:
 
 ## 上下文约定
 
-当前 change 名 = 当前分支名（由 jira-start 阶段三建立）：
+使用 `find-change-dir.mjs` 自动发现当前 change：
 
 ```bash
-# 自动发现当前 change
-CHANGE=$(git branch --show-current)
-CHANGE_DIR="openspec/changes/$CHANGE"
+node packages/reef/skills/reef-harden/scripts/find-change-dir.mjs
+```
 
-# 如分支名与 change 目录不匹配，遍历所有 change 取最近一个
-if [ ! -d "$CHANGE_DIR" ]; then
-  CHANGE=$(ls -t openspec/changes/ 2>/dev/null | head -1)
-  CHANGE_DIR="openspec/changes/$CHANGE"
-fi
+输出 JSON。`noMatch: true` 时需让用户选择；有 `suggestion` 时使用推荐 change。
 
-# 如仍无结果，列出所有 change 让用户选择
-if [ ! -d "$CHANGE_DIR" ]; then
-  echo "未找到 openspec change，可用的目录:"
-  ls openspec/changes/
-  echo "请指定 change 名"
-fi
+如需并列出 SDD 文档路径：
+```bash
+node packages/reef/skills/reef-harden/scripts/find-change-dir.mjs --files
 ```
 
 ## 快速开始
@@ -45,8 +37,8 @@ fi
 ### Step 1: 加载文档
 
 ```bash
-# 列出当前 change 下所有 SDD 文档
-find "$CHANGE_DIR" -name "*.md" -maxdepth 2 | sort
+CHANGE_JSON=$(node packages/reef/skills/reef-harden/scripts/find-change-dir.mjs)
+# CHANGE_JSON 中包含 path 和 files[]，files 为所有 SDD 文档路径
 ```
 
 读取所有这些文档。目录结构通常为：

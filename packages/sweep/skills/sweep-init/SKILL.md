@@ -103,107 +103,21 @@ E2E_PATH=$(cat .deepstorm/settings.json 2>/dev/null | grep -o '"e2eProjectPath"[
 
 ---
 
-### 步骤 2：创建项目目录结构
+### 步骤 2+3：创建项目目录与配置文件
 
-在 `{TARGET_DIR}` 下创建 E2E 测试项目的目录骨架。
-
-#### 目录结构（当 TARGET_DIR 为 `"."` 时）
-
-```
-.
-├── flows/                       # 测试意图文档目录
-│   ├── topology.yaml            # 功能模块拓扑定义（待用户编辑）
-│   └── reports/                 # 执行报告持久化目录
-├── scripts/
-│   └── flow-selector.mjs        # 层级选择工具（预置）
-├── .env                         # 环境变量（gitignored，即模板）
-├── package.json                 # 依赖声明
-└── tsconfig.json                # TypeScript 配置
-```
-
-> 如果 TARGET_DIR 为 `"e2e"`，以上所有文件在 `e2e/` 下生成。如果框架为 `playwright`，还会额外生成 `playwright.config.ts`。
-
-#### 执行
+使用 `init-project.mjs` 一键创建目录结构并生成所有配置文件：
 
 ```bash
-# 计算目标目录：TARGET_DIR 为 "." 时用当前目录，否则用 TARGET_DIR
-if [ "$TARGET_DIR" != "." ]; then
-  mkdir -p "$TARGET_DIR"/flows "$TARGET_DIR"/flows/reports "$TARGET_DIR"/scripts
-  echo "📂 将在 $TARGET_DIR/ 目录下生成 E2E 测试项目"
-else
-  mkdir -p flows flows/reports scripts
-fi
+node packages/sweep/skills/sweep-init/scripts/init-project.mjs \
+  --dir "$TARGET_DIR" \
+  --framework "$(node scripts/env-manager.mjs --framework | node -pe "JSON.parse(require('fs').readFileSync('/dev/stdin','utf8')).framework || ''")"
 ```
 
----
-
-### 步骤 3：生成项目配置文件（框架感知）
-
-根据步骤 0 读取的框架配置，在 `{TARGET_DIR}` 下生成对应的配置文件。
-
-> 所有文件写入路径以 `{TARGET_DIR}` 为前缀。当 `TARGET_DIR` 为 `"."` 时，路径不变。
-
-#### 3.1 package.json
-
-写入基础 `package.json`。如果框架为 `playwright`，包含 Playwright 依赖：
-
-```json
-{
-  "name": "sweep-e2e",
-  "version": "1.0.0",
-  "private": true,
-  "type": "module",
-  "scripts": {
-    "test": "playwright test",
-    "report": "playwright show-report"
-  },
-  "devDependencies": {
-    "@playwright/test": "^1.50.0",
-    "@inquirer/checkbox": "^4.0.0",
-    "@types/node": "^22.0.0"
-  }
-}
-```
-
-> 当 E2E 框架未知或未配置时，`package.json` 中仅包含 `@inquirer/checkbox` 和 `@types/node` 依赖，**不包含** `@playwright/test`。
-
-#### 3.2 框架配置文件
-
-**当框架为 `playwright` 时**，写入 `{TARGET_DIR}/playwright.config.ts`，包含多环境 baseURL 设置：
-
-```ts
-import { defineConfig } from '@playwright/test';
-
-export default defineConfig({
-  use: {
-    baseURL: process.env.BASE_URL || 'http://localhost:3000',
-  },
-  timeout: 30000,
-  retries: 0,
-  reporter: [['line'], ['html', { outputFolder: 'flows/reports' }]],
-  projects: [
-    { name: 'chromium', use: { browserName: 'chromium' } },
-  ],
-});
-```
-
-**当框架未知或未配置时**，跳过框架配置文件的生成，输出提示："框架未配置，请运行 deepstorm setup 并选择 E2E 框架。"
-
-#### 3.3 tsconfig.json
-
-写入 TypeScript 配置（框架无关）：
-
-```json
-{
-  "compilerOptions": {
-    "target": "ES2022",
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    "strict": true,
-    "esModuleInterop": true
-  }
-}
-```
+脚本会自动：
+- 创建 `flows/`、`flows/reports/`、`scripts/` 目录
+- 生成 `package.json`（含框架对应依赖）、`tsconfig.json`、`playwright.config.ts`（仅 playwright）
+- 不覆盖已有的 `topology.yaml`
+- 执行 `npm install`
 
 ---
 
@@ -312,38 +226,11 @@ cat .mcp.json 2>/dev/null | grep -c "deepstorm-playwright"
 
 #### 8.1 写入 e2eProjectPath 到 settings.json
 
-将 `sweep.e2eProjectPath` 写入 `.deepstorm/settings.json`。**不再创建 `.sweep-init` 标记文件。**
-
 ```bash
-# 值由步骤 0A 确定：
-#   独立项目 → "."
-#   混放项目 → 用户选择的路径（如 "e2e"）
+node scripts/env-manager.mjs --set-e2e-path "$TARGET_DIR"
 ```
 
-写入后的 settings.json 结构示例：
-
-```json
-{
-  "sweep": {
-    "e2eFramework": "playwright",
-    "e2eProjectPath": "e2e",
-    "environments": { ... }
-  }
-}
-```
-
-#### 8.2 安装依赖
-
-```bash
-# 在目标目录中执行 npm install
-if [ "$TARGET_DIR" != "." ]; then
-  cd "$TARGET_DIR" && npm install
-else
-  npm install
-fi
-```
-
-#### 8.3 输出完成信息
+#### 8.2 输出完成信息
 
 ```
 ✅ Sweep E2E 测试项目初始化完成！

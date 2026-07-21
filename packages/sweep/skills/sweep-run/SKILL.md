@@ -58,52 +58,28 @@ node scripts/env-manager.mjs --framework
 
 ### 步骤 1：检查初始化状态与路径导航
 
-从 `.deepstorm/settings.json` 读取 `sweep.e2eProjectPath`，确定 E2E 测试项目的位置，如非根目录则自动切换。支持从子目录向上查找以兼容用户在 E2E 项目子目录中执行的情况。
+从 `.deepstorm/settings.json` 读取 `sweep.e2eProjectPath`，确定 E2E 测试项目的位置。
 
 ```bash
-# 向上查找 .deepstorm/settings.json
-DEEPSTORM_DIR=""
-CUR="$PWD"
-while [ "$CUR" != "/" ]; do
-  if [ -f "$CUR/.deepstorm/settings.json" ]; then
-    DEEPSTORM_DIR="$CUR"
-    break
-  fi
-  CUR=$(dirname "$CUR")
-done
-
-if [ -n "$DEEPSTORM_DIR" ]; then
-  E2E_PATH=$(grep -o '"e2eProjectPath"[^,]*' "$DEEPSTORM_DIR/.deepstorm/settings.json" | head -1 | cut -d'"' -f4)
-else
-  E2E_PATH=""
-fi
+node scripts/env-manager.mjs --project-root
+# 输出: {"found":true,"path":"/abs/path/to/project"}
 ```
 
 #### 1.1 配置存在 → 路径导航
 
-- **WHEN** `E2E_PATH` 不为空
-- **THEN** 判断路径值。注意 `E2E_PATH` 是基于 `DEEPSTORM_DIR`（settings.json 所在目录）的相对路径，若当前在子目录则需拼接：
+- **WHEN** `--project-root` 输出 `found: true`
+- **THEN** 读取 `sweep.e2eProjectPath`：
   ```bash
-  if [ "$E2E_PATH" != "." ]; then
-    # 若从子目录找到的 settings.json，E2E_PATH 相对于 DEEPSTORM_DIR
-    TARGET_DIR="$E2E_PATH"
-    if [ -n "$DEEPSTORM_DIR" ] && [ "$DEEPSTORM_DIR" != "$PWD" ]; then
-      TARGET_DIR="$DEEPSTORM_DIR/$E2E_PATH"
-    fi
-    if [ -d "$TARGET_DIR" ]; then
-      echo "📂 切换到 E2E 项目目录: $E2E_PATH"
-      cd "$TARGET_DIR"
-    else
-      echo "❌ E2E 项目目录不存在: $E2E_PATH，请重新运行 /sweep-init"
-      exit 1
-    fi
-  fi
+  E2E_PATH=$(grep -o '"e2eProjectPath"[^,]*' \
+    "$(node scripts/env-manager.mjs --project-root | \
+      node -pe "JSON.parse(require('fs').readFileSync('/dev/stdin','utf8')).path")/.deepstorm/settings.json" \
+    | head -1 | cut -d'"' -f4)
   ```
 
 #### 1.2 配置不存在 → 报错退出
 
-- **WHEN** `E2E_PATH` 为空
-- **THEN** 提示"❌ 未检测到 E2E 项目。请先运行 /sweep-init 初始化。"并退出
+- **WHEN** `--project-root` 输出 `found: false`
+- **THEN** 提示"❌ 未检测到深风项目。请先运行 deepstorm setup。"并退出
 
 ---
 

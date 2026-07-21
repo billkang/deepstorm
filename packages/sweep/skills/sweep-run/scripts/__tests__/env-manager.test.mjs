@@ -1,6 +1,6 @@
 import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, writeFileSync, mkdirSync } from 'node:fs';
+import { mkdtempSync, writeFileSync, mkdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 
@@ -12,6 +12,9 @@ import {
   resolveEnv,
   readFramework,
   checkMcpAvailable,
+  readE2eProjectPath,
+  resolveProjectRoot,
+  writeDeepstormConfig,
 } from '../env-manager.mjs';
 
 // ── Pure function tests (no file I/O) ──────────────────────────────
@@ -544,5 +547,126 @@ describe('Env Manager — checkMcpAvailable', () => {
 
     const result = checkMcpAvailable();
     assert.equal(result.available, true);
+  });
+});
+
+describe('Env Manager — readE2eProjectPath', () => {
+  let origCwd;
+
+  before(() => { origCwd = process.cwd(); });
+  after(() => { process.chdir(origCwd); });
+
+  it('should read e2eProjectPath from settings.json', () => {
+    const tmpDir = mkdtempSync(join(tmpdir(), 'env-manager-test-'));
+    mkdirSync(join(tmpDir, '.deepstorm'), { recursive: true });
+    writeFileSync(join(tmpDir, '.deepstorm/settings.json'), JSON.stringify({
+      sweep: { e2eProjectPath: 'e2e' },
+    }));
+    process.chdir(tmpDir);
+    assert.equal(readE2eProjectPath(), 'e2e');
+  });
+
+  it('should return null when e2eProjectPath is not set', () => {
+    const tmpDir = mkdtempSync(join(tmpdir(), 'env-manager-test-'));
+    mkdirSync(join(tmpDir, '.deepstorm'), { recursive: true });
+    writeFileSync(join(tmpDir, '.deepstorm/settings.json'), JSON.stringify({}));
+    process.chdir(tmpDir);
+    assert.equal(readE2eProjectPath(), null);
+  });
+
+  it('should return null when settings.json is missing', () => {
+    const tmpDir = mkdtempSync(join(tmpdir(), 'env-manager-test-'));
+    process.chdir(tmpDir);
+    assert.equal(readE2eProjectPath(), null);
+  });
+
+  it('should handle malformed JSON gracefully', () => {
+    const tmpDir = mkdtempSync(join(tmpdir(), 'env-manager-test-'));
+    mkdirSync(join(tmpDir, '.deepstorm'), { recursive: true });
+    writeFileSync(join(tmpDir, '.deepstorm/settings.json'), 'not-json');
+    process.chdir(tmpDir);
+    assert.equal(readE2eProjectPath(), null);
+  });
+});
+
+describe('Env Manager — resolveProjectRoot', () => {
+  it('should find root from subdirectory', () => {
+    const tmpDir = mkdtempSync(join(tmpdir(), 'env-manager-test-'));
+    mkdirSync(join(tmpDir, '.deepstorm'), { recursive: true });
+    writeFileSync(join(tmpDir, '.deepstorm/settings.json'), '{}');
+    const subDir = join(tmpDir, 'a', 'b', 'c');
+    mkdirSync(subDir, { recursive: true });
+    assert.equal(resolveProjectRoot(subDir), tmpDir);
+  });
+
+  it('should return null when no settings.json found', () => {
+    const tmpDir = mkdtempSync(join(tmpdir(), 'env-manager-test-'));
+    const subDir = join(tmpDir, 'deep', 'nested');
+    mkdirSync(subDir, { recursive: true });
+    assert.equal(resolveProjectRoot(subDir), null);
+  });
+
+  it('should return the startDir itself when it contains settings.json', () => {
+    const tmpDir = mkdtempSync(join(tmpdir(), 'env-manager-test-'));
+    mkdirSync(join(tmpDir, '.deepstorm'), { recursive: true });
+    writeFileSync(join(tmpDir, '.deepstorm/settings.json'), '{}');
+    assert.equal(resolveProjectRoot(tmpDir), tmpDir);
+  });
+});
+
+describe('Env Manager — writeDeepstormConfig', () => {
+  let origCwd;
+
+  before(() => { origCwd = process.cwd(); });
+  after(() => { process.chdir(origCwd); });
+
+  it('should write dot-separated key to settings.json', () => {
+    const tmpDir = mkdtempSync(join(tmpdir(), 'env-manager-test-'));
+    mkdirSync(join(tmpDir, '.deepstorm'), { recursive: true });
+    writeFileSync(join(tmpDir, '.deepstorm/settings.json'), '{}\n');
+    process.chdir(tmpDir);
+
+    const ok = writeDeepstormConfig('sweep.e2eProjectPath', 'e2e');
+    assert.equal(ok, true);
+
+    const content = JSON.parse(readFileSync(
+      join(tmpDir, '.deepstorm/settings.json'), 'utf8'
+    ));
+    assert.equal(content.sweep.e2eProjectPath, 'e2e');
+  });
+
+  it('should create intermediate objects for nested keys', () => {
+    const tmpDir = mkdtempSync(join(tmpdir(), 'env-manager-test-'));
+    mkdirSync(join(tmpDir, '.deepstorm'), { recursive: true });
+    writeFileSync(join(tmpDir, '.deepstorm/settings.json'), '{}\n');
+    process.chdir(tmpDir);
+
+    writeDeepstormConfig('sweep.environments.test.baseUrl', 'https://test.example.com');
+    const content = JSON.parse(readFileSync(
+      join(tmpDir, '.deepstorm/settings.json'), 'utf8'
+    ));
+    assert.equal(content.sweep.environments.test.baseUrl, 'https://test.example.com');
+  });
+
+  it('should return false when settings.json is missing', () => {
+    const tmpDir = mkdtempSync(join(tmpdir(), 'env-manager-test-'));
+    process.chdir(tmpDir);
+    assert.equal(writeDeepstormConfig('sweep.x', 1), false);
+  });
+
+  it('should not corrupt existing config when writing', () => {
+    const tmpDir = mkdtempSync(join(tmpdir(), 'env-manager-test-'));
+    mkdirSync(join(tmpDir, '.deepstorm'), { recursive: true });
+    writeFileSync(join(tmpDir, '.deepstorm/settings.json'), JSON.stringify({
+      existingKey: 'keep-me',
+    }));
+    process.chdir(tmpDir);
+
+    writeDeepstormConfig('sweep.e2eProjectPath', 'e2e');
+    const content = JSON.parse(readFileSync(
+      join(tmpDir, '.deepstorm/settings.json'), 'utf8'
+    ));
+    assert.equal(content.existingKey, 'keep-me');
+    assert.equal(content.sweep.e2eProjectPath, 'e2e');
   });
 });

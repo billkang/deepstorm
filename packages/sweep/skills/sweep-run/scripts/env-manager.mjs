@@ -20,8 +20,8 @@
  *   import { resolveEnv, listEnvs, readFramework, checkMcpAvailable } from './env-manager.mjs'
  */
 
-import { readFileSync, existsSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { resolve, dirname, sep } from 'node:path';
 
 // ── Path helpers (lazy, respect process.cwd() changes) ────────────
 
@@ -217,6 +217,55 @@ export function readFramework() {
 
 // ── MCP availability ──────────────────────────────────────────────
 
+// ── Project root discovery ──────────────────────────────────────────
+
+/**
+ * Walk up from startDir to find .deepstorm/settings.json
+ *
+ * @param {string} [startDir] - defaults to process.cwd()
+ * @returns {string|null} resolved dir containing settings.json, or null
+ */
+export function resolveProjectRoot(startDir) {
+  let dir = startDir ? resolve(startDir) : process.cwd();
+  while (true) {
+    if (existsSync(resolve(dir, '.deepstorm', 'settings.json'))) {
+      return dir;
+    }
+    const parent = dirname(dir);
+    if (parent === dir) return null;
+    dir = parent;
+  }
+}
+
+/**
+ * Write or update a key in .deepstorm/settings.json.
+ *
+ * @param {string} keyPath dot-separated path, e.g. "sweep.e2eProjectPath"
+ * @param {*} value
+ * @returns {boolean}
+ */
+export function writeDeepstormConfig(keyPath, value) {
+  const filePath = resolve(process.cwd(), '.deepstorm', 'settings.json');
+  if (!existsSync(filePath)) return false;
+  try {
+    const content = readFileSync(filePath, 'utf-8');
+    const config = JSON.parse(content);
+    const keys = keyPath.split('.');
+    let obj = config;
+    for (let i = 0; i < keys.length - 1; i++) {
+      if (!obj[keys[i]] || typeof obj[keys[i]] !== 'object') {
+        obj[keys[i]] = {};
+      }
+      obj = obj[keys[i]];
+    }
+    obj[keys[keys.length - 1]] = value;
+    writeFileSync(filePath, JSON.stringify(config, null, 2) + '\n');
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Check if the required MCP service is configured in .mcp.json.
  *
@@ -260,6 +309,26 @@ if (process.argv[1] === import.meta.filename) {
     const mcpName = args.find(a => a.startsWith('--mcp='))?.split('=')[1] || 'deepstorm-playwright';
     const result = checkMcpAvailable(mcpName);
     console.log(JSON.stringify(result));
+    process.exit(0);
+  }
+
+  if (args.includes('--project-root')) {
+    const startIdx = args.indexOf('--project-root');
+    const startDir = startIdx + 1 < args.length ? args[startIdx + 1] : undefined;
+    const result = resolveProjectRoot(startDir);
+    if (result) {
+      console.log(JSON.stringify({ found: true, path: result }));
+    } else {
+      console.log(JSON.stringify({ found: false }));
+    }
+    process.exit(0);
+  }
+
+  if (args.includes('--set-e2e-path')) {
+    const idx = args.indexOf('--set-e2e-path');
+    const path = idx + 1 < args.length ? args[idx + 1] : '.';
+    const ok = writeDeepstormConfig('sweep.e2eProjectPath', path);
+    console.log(JSON.stringify({ ok, path }));
     process.exit(0);
   }
 
