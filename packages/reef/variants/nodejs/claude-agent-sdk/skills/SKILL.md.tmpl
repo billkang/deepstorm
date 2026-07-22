@@ -1,0 +1,152 @@
+---
+name: reef-claude-agent-sdk
+description: Use when developing AI Agent 功能，包括 Agent 初始化、Tool 定义、MCP Server 集成
+---
+
+# Claude Agent SDK 开发指南
+
+## 概述
+
+本技能指导如何在 NestJS 项目中使用 **Claude Agent SDK** 开发 AI Agent 功能。
+
+> **前置条件：**
+> - 项目已安装 `@anthropic-ai/sdk`
+> - `.env` 中配置了 `ANTHROPIC_API_KEY`
+> - 项目已包含 `AgentModule` 和 `AgentService`
+>
+> **关键约束：**
+> - API Key 必须通过 `ConfigService` 读取，禁止 `process.env` 直读
+> - Agent 调用必须在 Service 层封装，不在 Controller 中直接调用 SDK
+> - Tool 必须有完整的类型定义和错误处理
+
+## 快速开始
+
+### 1. 使用 AgentService
+
+```typescript
+import { Injectable } from '@nestjs/common';
+import { AgentService } from '../agent/agent.service';
+
+@Injectable()
+export class MyService {
+  constructor(private readonly agentService: AgentService) {}
+
+  async askAssistant(question: string) {
+    return this.agentService.ask(question);
+  }
+}
+```
+
+### 2. 定义自定义 Tool
+
+```typescript
+import { Injectable, Logger } from '@nestjs/common';
+import { PrismaService } from '../../prisma/prisma.service';
+
+interface ToolInput {
+  userId: number;
+}
+
+@Injectable()
+export class GetUserTool {
+  private readonly logger = new Logger(GetUserTool.name);
+
+  constructor(private readonly prisma: PrismaService) {}
+
+  name = 'get_user_info';
+  description = '根据用户 ID 获取用户信息';
+  input_schema = {
+    type: 'object',
+    properties: {
+      userId: { type: 'number', description: '用户 ID' },
+    },
+    required: ['userId'],
+  };
+
+  async execute(input: ToolInput) {
+    try {
+      this.logger.debug(`查询用户: ${input.userId}`);
+      const user = await this.prisma.user.findUnique({
+        where: { id: input.userId },
+        select: { id: true, name: true, email: true },
+      });
+      return { success: true, data: user };
+    } catch (error) {
+      this.logger.error(`查询用户失败: ${error}`);
+      return { success: false, error: '查询用户信息失败' };
+    }
+  }
+}
+```
+
+### 3. 注册 Tool 到模块
+
+```typescript
+import { Module } from '@nestjs/common';
+import { GetUserTool } from './tools/get-user.tool';
+
+@Module({
+  providers: [GetUserTool],
+  exports: [GetUserTool],
+})
+export class ToolsModule {}
+```
+
+## Tool 定义规范
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `name` | `string` | 是 | 工具唯一标识，小写字母 + 下划线 |
+| `description` | `string` | 是 | 工具描述，帮助模型理解何时使用 |
+| `input_schema` | `object` | 是 | 输入参数的 JSON Schema |
+| `execute` | `function` | 是 | 工具执行逻辑，返回 Promise |
+
+### 最佳实践
+
+- `input_schema` 使用 Zod schema 或 TypeScript 类型定义输入，确保类型安全
+- `execute` 方法必须包含 try-catch，返回 `{ success, data }` 或 `{ success, error }`
+- Tool 注入 PrismaService 进行数据库查询时，禁止在 Tool 中直接修改数据库
+- 多个 Tool 使用 `multi: true` Provider 令牌批量注册
+
+## MCP Server 集成
+
+项目支持通过 MCP Server 扩展 Agent 能力。MCP Server 配置在 `.mcp.json` 中管理。
+
+### MCP Client 配置示例
+
+```json
+{
+  "mcpServers": {
+    "deepstorm-github": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "env": {
+        "GITHUB_TOKEN": "${GITHUB_TOKEN}"
+      }
+    }
+  }
+}
+```
+
+### 在 Agent 中使用 MCP
+
+```typescript
+// 通过 Agent SDK 的 MCP 工具支持注册外部工具
+// MCP Server 的 Tool 会自动与 Agent SDK 集成
+```
+
+## 常见错误排查
+
+| 错误 | 原因 | 解决 |
+|------|------|------|
+| `401 Unauthorized` | API Key 无效或缺失 | 检查 `.env` 中 `ANTHROPIC_API_KEY` |
+| `Rate limit exceeded` | 请求频率过高 | 增加请求间隔或升级 API 套餐 |
+| `Tool execution failed` | Tool 内抛出了未捕获异常 | 检查 Tool execute 的 try-catch |
+| `Model not found` | 模型名称无效 | 检查 `model` 参数拼写 |
+
+## 安全注意事项
+
+- API Key 永远不要提交到 Git（已在 `.gitignore` 中排除 `.env`）
+- Agent 返回的内容在展示给用户前应进行安全过滤
+- 暴露给 Agent 的 Tool 应有权限检查，防止越权数据访问
+- 记录 Agent 调用日志（用户提问、Tool 调用、模型回答）便于审计

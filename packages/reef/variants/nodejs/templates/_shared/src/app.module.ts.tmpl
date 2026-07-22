@@ -1,0 +1,31 @@
+import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
+{{#if hasPrisma}}
+import { PrismaModule } from './prisma/prisma.module';
+{{/if}}
+{{#if hasAgentSdk}}
+import { AgentModule } from './agent/agent.module';
+{{/if}}
+
+/**
+ * 应用根模块
+ * 导入全局配置和功能模块
+ */
+@Module({
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
+    {{#if hasPrisma}}
+    PrismaModule,
+    {{/if}}
+    {{#if hasAgentSdk}}
+    AgentModule,
+    {{/if}}
+  ],
+  controllers: [AppController],
+  providers: [AppService],
+})
+export class AppModule {}

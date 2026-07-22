@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.9.3] - 2026-07-21
+
+### Code Refactoring
+
+- 从 reef（commit/harden/pr）和 sweep（init/run）的 SKILL.md 中抽取内联脚本到独立 `.mjs` 文件，每个脚本附带独立单元测试，SKILL.md 对应章节缩减为脚本调用说明 (`4d810a6`)
+
 ## [0.9.2] - 2026-07-17
 
 ### Bug Fixes

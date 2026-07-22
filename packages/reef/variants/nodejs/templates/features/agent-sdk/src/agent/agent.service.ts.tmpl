@@ -1,0 +1,48 @@
+import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+
+// Claude Agent SDK — https://docs.anthropic.com/en/docs/claude-on-your-computer-sdk
+// import { createAgent } from '@anthropic-ai/sdk';
+
+/**
+ * Claude Agent 服务
+ *
+ * 封装 Claude Agent SDK，提供与 Claude 交互的能力。
+ * 使用前需要在 .env 中配置 ANTHROPIC_API_KEY。
+ *
+ * @example
+ * ```typescript
+ * // 在 Controller 中使用
+ * const response = await this.agentService.ask('What is the capital of France?');
+ * ```
+ */
+@Injectable()
+export class AgentService {
+  private readonly logger = new Logger(AgentService.name);
+
+  constructor(private readonly configService: ConfigService) {
+    const apiKey = this.configService.get<string>('ANTHROPIC_API_KEY');
+    if (!apiKey) {
+      this.logger.warn('ANTHROPIC_API_KEY is not configured');
+    }
+  }
+
+  /**
+   * 向 Agent 发送问题并获取回答
+   *
+   * @param question 用户提出的问题
+   * @returns Agent 的回答文本
+   */
+  async ask(question: string): Promise<string> {
+    // const agent = createAgent({
+    //   apiKey: this.configService.get<string>('ANTHROPIC_API_KEY'),
+    //   model: process.env.AGENT_MODEL || 'claude-sonnet-5',
+    // });
+    //
+    // const response = await agent.run(question);
+    // return response.text;
+
+    this.logger.debug(`Agent ask: "${question}"`);
+    return 'Agent response placeholder — configure ANTHROPIC_API_KEY to enable';
+  }
+}
