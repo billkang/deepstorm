@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.10.2] - 2026-07-22
+
+### Bug Fixes
+
+- 修复 Angular+NestJS 全栈项目的 monorepo 目录结构：新增 `isMonorepo` 判断逻辑，Angular+NestJS 组合时自动生成 `server/` + `client/` + pnpm-workspace.yaml 骨架，Angular 源码路径使用 `src/`（非旧版 `src/main/web/`）(`1f8f7ed`)
+
 ## [0.10.1] - 2026-07-22
 
 ### Bug Fixes
