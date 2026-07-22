@@ -35,19 +35,19 @@
 ## 构建命令
 
 ```bash
-# 依赖安装
+# 依赖安装（在项目根目录执行）
 pnpm install
 
-# Prisma 客户端生成
-npx prisma generate
+# Prisma 客户端生成（在 server/ 目录执行）
+cd server && npx prisma generate
 
 # 代码检查
-npx eslint src/ --ext .ts
-npx prettier --check src/
+cd server && npx eslint src/ --ext .ts
+cd server && npx prettier --check src/
 
 # 测试
-npx jest
+cd server && npx jest
 
 # 构建
-npx nest build
+cd server && npx nest build
 ```

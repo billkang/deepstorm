@@ -27,7 +27,7 @@ color: blue
 - DTO 缺少 `class-validator` 验证装饰器
 
 ### 🟡 必须（Request Changes）
-- ESLint / Prettier 检查通过（`npx eslint src/`）
+- ESLint / Prettier 检查通过（`cd server && npx eslint src/` 或 `pnpm --filter server lint`）
 - 日志级别正确（业务异常 `warn`、catch 异常 `error`、调试用 `debug`）
 - 新代码 / 修改代码有对应测试（Jest）
 - `catch` 块正确处理异常（不吞没，或用 `this.logger.error()` + 返回 fallback）
@@ -60,7 +60,7 @@ color: blue
 3. **阅读 CLAUDE.md** — 提取 prompt 中提供的 CLAUDE.md 文件内容，列出与 Node.js 后端直接相关的规范条款（命名规范、代码组织、API 设计原则等）
 4. **阅读代码注释** — 提取 prompt 中提供的代码注释标注上下文，查找变更波及范围内的 `FIXME`/`HACK`/`WARNING`/`SECURITY`/`@audit`/`TODO`
 5. 获取变更 diff：
-   - 后端 TypeScript 代码：`git diff "<fork_point>"..HEAD -- 'src/'`
+   - 后端 TypeScript 代码：`git diff "<fork_point>"..HEAD -- 'server/src/'`
    - 如调用方要求审查其他文件（Prisma Schema、构建配置、.claude/ 配置等）：`git diff "<fork_point>"..HEAD --name-only` 查看完整列表，按需阅读关键文件
 6. 对每个变更文件阅读关键行，同时检查 git history：
    - 对核心逻辑区域执行 `git log --oneline -15 -- <file>` 查看近期 commit 历史，标记反复修改的区域（>=3 次）

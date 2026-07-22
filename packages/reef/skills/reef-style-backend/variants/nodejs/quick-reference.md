@@ -79,30 +79,31 @@ export class ToolsModule {}
 ## 项目目录结构
 
 ```
-src/
+server/src/
 ├── main.ts                   # 入口文件
 ├── app.module.ts             # 根模块
 ├── app.controller.ts         # 根 Controller（健康检查）
 ├── prisma/
 │   ├── prisma.module.ts      # Prisma 全局模块
 │   └── prisma.service.ts     # Prisma Client 封装
-├── modules/
-│   └── {module}/
-│       ├── {module}.module.ts
-│       ├── {module}.controller.ts
-│       ├── {module}.service.ts
-│       ├── dto/
-│       │   ├── create-{entity}.dto.ts
-│       │   └── update-{entity}.dto.ts
-│       └── entities/
-│           └── {entity}.entity.ts   # Prisma 生成类型的二次封装（可选）
 ├── common/
-│   ├── filters/              # 全局异常过滤器
-│   ├── pipes/                # 全局管道
-│   ├── interceptors/         # 全局拦截器
-│   └── guards/               # 全局守卫
-└── config/
-    └── configuration.ts      # 配置模块
+│   ├── guards/               # 认证/授权守卫
+│   ├── interceptors/         # 请求拦截器
+│   ├── filters/              # 异常过滤器
+│   ├── pipes/                # 管道校验
+│   └── decorators/           # 自定义装饰器
+├── config/
+│   └── app.config.ts         # 应用配置
+└── modules/
+    └── {module}/
+        ├── {module}.module.ts
+        ├── {module}.controller.ts
+        ├── {module}.service.ts
+        ├── dto/
+        │   ├── create-{entity}.dto.ts
+        │   └── update-{entity}.dto.ts
+        └── entities/
+            └── {entity}.entity.ts   # Prisma 生成类型的二次封装（可选）
 ```
 
 ## 常见坑
