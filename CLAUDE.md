@@ -14,7 +14,7 @@ DeepStorm 是一套 AI 协同工具集，覆盖产品→开发→测试→运维
 ## 关键约定
 
 - **套件组织**：各套件的 skills/agents/mcp/hooks 分布在 `packages/*/` 下，`pnpm build` 时由构建脚本聚合到 `dist/`
-- **后端语言**：reef 支持 **Java (Spring Boot)** 和 **Python (FastAPI)** 两套后端变体，通过 `variants/{lang}/` 目录隔离，`wizard.json` 中的 `isPython` 标志控制模板渲染行为
+- **后端语言**：reef 支持 **Java (Spring Boot)**、**Python (FastAPI)** 和 **Node.js (NestJS)** 三套后端变体，通过 `variants/{lang}/` 目录隔离，`wizard.json` 中的 `isPython`/`isNodejs` 标志控制模板渲染行为
 - **纯 skill 套件**（tide）：所有逻辑写在 SKILL.md 中，无需编译
 - **CLI 安装**：用户通过 `npx @deepstorm/cli setup` 一键完成安装和配置
 - **API Keys**：通过 `.env` 文件配置，不会提交到 Git

@@ -168,7 +168,7 @@ npx @deepstorm/cli init
 
 交互式向导选择技术栈，一键生成项目骨架。支持：
 - **前端：** Angular（可选 PrimeNG / Tailwind）
-- **后端：** Java Spring Boot + Gradle（可选 Hibernate / Liquibase / Spring AI）
+- **后端：** Java Spring Boot + Gradle（可选 Hibernate / Liquibase / Spring AI）、Python FastAPI（可选 SQLAlchemy / Alembic / LangChain）、Node.js NestJS（可选 Prisma / Claude Agent SDK）
 
 也可通过命令行参数跳过交互：
 
