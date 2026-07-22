@@ -580,14 +580,22 @@ export async function runInit(baseDir: string, opts: InitOptions): Promise<void>
   const hasBackend = hasJavaBackend || hasNodeBackend
 
   try {
-    if (hasFrontend) {
-      renderAngularTemplate(projectDir, ctx)
-    }
-    if (hasJavaBackend) {
-      renderJavaTemplate(projectDir, ctx)
-    }
-    if (hasNodeBackend) {
-      renderNestJSTemplate(projectDir, ctx, opts)
+    const isMonorepo = hasFrontend && hasNodeBackend
+    if (isMonorepo) {
+      // Angular + NestJS 全栈 = monorepo：server/ + client/
+      renderAngularTemplate(path.join(projectDir, 'client'), ctx, true)
+      renderNestJSTemplate(path.join(projectDir, 'server'), ctx, opts)
+      renderMonorepoRoot(projectDir, ctx)
+    } else {
+      if (hasFrontend) {
+        renderAngularTemplate(projectDir, ctx)
+      }
+      if (hasJavaBackend) {
+        renderJavaTemplate(projectDir, ctx)
+      }
+      if (hasNodeBackend) {
+        renderNestJSTemplate(projectDir, ctx, opts)
+      }
     }
     renderCommonFiles(projectDir, ctx, opts)
 
@@ -596,9 +604,15 @@ export async function runInit(baseDir: string, opts: InitOptions): Promise<void>
     if (!inPlace) {
       console.log(`  cd ${opts.projectName}`)
     }
-    if (opts.frontend) console.log(`  pnpm install        # 安装前端依赖`)
-    if (hasJavaBackend) console.log(`  ./gradlew build      # 构建后端`)
-    if (hasNodeBackend) console.log(`  pnpm install         # 安装依赖`)
+    if (isMonorepo) {
+      console.log(`  cd client && pnpm install  # 安装前端依赖`)
+      console.log(`  cd server && pnpm install  # 安装后端依赖`)
+      console.log(`  pnpm dev                  # 启动前后端开发服务器`)
+    } else {
+      if (opts.frontend) console.log(`  pnpm install        # 安装前端依赖`)
+      if (hasJavaBackend) console.log(`  ./gradlew build      # 构建后端`)
+      if (hasNodeBackend) console.log(`  pnpm install         # 安装依赖`)
+    }
     console.log()
     printProjectTree(projectDir, hasFrontend, hasJavaBackend, hasNodeBackend)
 
@@ -619,9 +633,10 @@ export async function runInit(baseDir: string, opts: InitOptions): Promise<void>
 // Angular 模板渲染
 // ──────────────────────────────────────
 
-function renderAngularTemplate(projectDir: string, ctx: TemplateContext): void {
+function renderAngularTemplate(projectDir: string, ctx: TemplateContext, subPkg = false): void {
   const hasPrimeng = ctx.uiLib === 'primeng'
   const hasTailwind = ctx.cssFramework === 'tailwind'
+  const webRoot = subPkg ? 'src' : 'src/main/web'
 
   // angular.json
   writeTemplate(projectDir, 'angular.json', JSON.stringify({
@@ -632,19 +647,19 @@ function renderAngularTemplate(projectDir: string, ctx: TemplateContext): void {
       [ctx.packageName]: {
         projectType: 'application',
         root: '',
-        sourceRoot: 'src/main/web',
+        sourceRoot: webRoot,
         prefix: 'app',
         architect: {
           build: {
             builder: '@angular-devkit/build-angular:application',
             options: {
               outputPath: 'build',
-              index: 'src/main/web/index.html',
-              browser: 'src/main/web/main.ts',
+              index: `${webRoot}/index.html`,
+              browser: `${webRoot}/main.ts`,
               polyfills: ['zone.js'],
               tsConfig: 'tsconfig.app.json',
               assets: [{ glob: '**/*', input: 'public' }],
-              styles: getAngularStyles(hasPrimeng),
+              styles: getAngularStyles(hasPrimeng, webRoot),
               scripts: [],
             },
             configurations: {
@@ -661,7 +676,7 @@ function renderAngularTemplate(projectDir: string, ctx: TemplateContext): void {
           },
           test: {
             builder: '@angular-devkit/build-angular:karma',
-            options: { polyfills: ['zone.js', 'zone.js/testing'], tsConfig: 'tsconfig.spec.json', assets: [{ glob: '**/*', input: 'public' }], styles: getAngularStyles(hasPrimeng), scripts: [] },
+            options: { polyfills: ['zone.js', 'zone.js/testing'], tsConfig: 'tsconfig.spec.json', assets: [{ glob: '**/*', input: 'public' }], styles: getAngularStyles(hasPrimeng, webRoot), scripts: [] },
           },
         },
       },
@@ -703,7 +718,7 @@ function renderAngularTemplate(projectDir: string, ctx: TemplateContext): void {
   writeTemplate(projectDir, 'tsconfig.app.json', JSON.stringify({
     extends: './tsconfig.json',
     compilerOptions: { outDir: './out-tsc/app', types: [] },
-    files: ['src/main/web/main.ts'],
+    files: [`${webRoot}/main.ts`],
     include: ['src/**/*.d.ts'],
   }, null, 2))
 
@@ -782,10 +797,10 @@ export default [
   // public/ (assets referenced in angular.json)
   ensureDir(path.join(projectDir, 'public'))
 
-  // src/main/web/
-  ensureDir(path.join(projectDir, 'src/main/web/app'))
+  // Angular source directory
+  ensureDir(path.join(projectDir, webRoot, 'app'))
 
-  writeTemplate(projectDir, 'src/main/web/index.html', `<!doctype html>
+  writeTemplate(projectDir, `${webRoot}/index.html`, `<!doctype html>
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8">
@@ -800,7 +815,7 @@ export default [
 </html>
 `)
 
-  writeTemplate(projectDir, 'src/main/web/main.ts', `import { bootstrapApplication } from '@angular/platform-browser';
+  writeTemplate(projectDir, `${webRoot}/main.ts`, `import { bootstrapApplication } from '@angular/platform-browser';
 import { appConfig } from './app/app.config';
 import { App } from './app/app';
 
@@ -811,10 +826,10 @@ bootstrapApplication(App, appConfig).catch((err) => console.error(err));
     ? `@import "tailwindcss";\n\n/* 全局样式 */\n`
     : `/* 全局样式 */\n`
 
-  writeTemplate(projectDir, 'src/main/web/styles.css', stylesContent)
+  writeTemplate(projectDir, `${webRoot}/styles.css`, stylesContent)
 
   // app/
-  writeTemplate(projectDir, 'src/main/web/app/app.ts', `import { Component } from '@angular/core';
+  writeTemplate(projectDir, `${webRoot}/app/app.ts`, `import { Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 
 @Component({
@@ -826,7 +841,7 @@ import { RouterOutlet } from '@angular/router';
 export class App {}
 `)
 
-  writeTemplate(projectDir, 'src/main/web/app/app.config.ts', `import { ApplicationConfig, provideZoneChangeDetection } from '@angular/core';
+  writeTemplate(projectDir, `${webRoot}/app/app.config.ts`, `import { ApplicationConfig, provideZoneChangeDetection } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { routes } from './app.routes';
 
@@ -838,7 +853,7 @@ export const appConfig: ApplicationConfig = {
 };
 `)
 
-  writeTemplate(projectDir, 'src/main/web/app/app.routes.ts', `import { Routes } from '@angular/router';
+  writeTemplate(projectDir, `${webRoot}/app/app.routes.ts`, `import { Routes } from '@angular/router';
 
 export const routes: Routes = [];
 `)
@@ -851,13 +866,40 @@ export const routes: Routes = [];
   }
 }
 
-function getAngularStyles(hasPrimeng: boolean): string[] {
+function getAngularStyles(hasPrimeng: boolean, webRoot: string): string[] {
   const styles: string[] = []
   if (hasPrimeng) {
     styles.push('@primeng/themes/aura/aura.css')
   }
-  styles.push('src/main/web/styles.css')
+  styles.push(`${webRoot}/styles.css`)
   return styles
+}
+
+// ──────────────────────────────────────
+// Monorepo 根配置（用于 Angular + NestJS 全栈项目）
+// ──────────────────────────────────────
+
+function renderMonorepoRoot(projectDir: string, ctx: TemplateContext): void {
+  // 根 package.json — 使用 pnpm workspace 委托子包
+  writeTemplate(projectDir, 'package.json', JSON.stringify({
+    name: ctx.packageName,
+    version: '0.1.0',
+    private: true,
+    description: '',
+    scripts: {
+      dev: 'pnpm --filter server dev & pnpm --filter client dev',
+      build: 'pnpm --filter server build',
+      lint: 'pnpm --filter server lint',
+      format: 'pnpm --filter server format',
+      test: 'pnpm --filter server test',
+    },
+  }, null, 2))
+
+  // pnpm-workspace.yaml
+  writeTemplate(projectDir, 'pnpm-workspace.yaml', `packages:
+  - "server"
+  - "client"
+`)
 }
 
 // ──────────────────────────────────────
@@ -1643,14 +1685,22 @@ function generateReadme(ctx: TemplateContext, opts?: InitOptions): string {
   }
   lines.push('')
   lines.push('## 快速开始', '')
-  if (ctx.frontend) {
+  if (ctx.frontend && hasNodeBackend) {
+    lines.push('```bash')
+    lines.push('# 安装所有依赖')
+    lines.push('pnpm install')
+    lines.push('')
+    lines.push('# 启动前后端开发服务器')
+    lines.push('pnpm dev')
+    lines.push('```', '')
+  } else if (ctx.frontend) {
     lines.push('### 前端', '')
     lines.push('```bash')
     lines.push('pnpm install')
     lines.push('pnpm start')
     lines.push('```', '')
   }
-  if (hasNodeBackend) {
+  if (hasNodeBackend && !ctx.frontend) {
     lines.push('### 后端', '')
     lines.push('```bash')
     lines.push('pnpm install')
@@ -1666,10 +1716,16 @@ function generateReadme(ctx: TemplateContext, opts?: InitOptions): string {
   lines.push('## 项目结构', '')
   lines.push('```')
   if (ctx.frontend && hasNodeBackend) {
-    lines.push('├── src/                    # NestJS + Angular')
-    lines.push('├── angular.json           # Angular 配置')
-    lines.push('├── nest-cli.json          # NestJS 配置')
-    lines.push('├── tsconfig.json')
+    lines.push('├── server/                 # NestJS 后端')
+    lines.push('│   ├── src/')
+    lines.push('│   ├── nest-cli.json')
+    lines.push('│   └── package.json')
+    lines.push('├── client/                 # Angular 前端')
+    lines.push('│   ├── src/')
+    lines.push('│   ├── public/')
+    lines.push('│   ├── angular.json')
+    lines.push('│   └── package.json')
+    lines.push('├── pnpm-workspace.yaml')
     lines.push('└── package.json')
   } else if (ctx.frontend && ctx.backend) {
     lines.push('├── src/main/web/          # Angular 前端')
@@ -1744,19 +1800,33 @@ function printProjectTree(projectDir: string, hasFrontend: boolean, hasJavaBacke
     console.log('  ├── angular.json')
     console.log('  └── package.json')
   } else if (hasFrontend && hasNodeBackend) {
-    console.log('  ├── src/')
-    console.log('  │   ├── app.controller.ts')
-    console.log('  │   ├── app.module.ts')
-    console.log('  │   ├── app.service.ts')
-    console.log('  │   ├── main.ts')
-    console.log('  │   ├── prisma/          # Prisma ORM')
-    console.log('  │   └── agent/           # Claude Agent SDK')
-    console.log('  ├── prisma/')
-    console.log('  │   └── schema.prisma')
-    console.log('  ├── nest-cli.json')
-    console.log('  ├── tsconfig.json')
-    console.log('  ├── angular.json')
-    console.log('  └── package.json')
+    console.log('  ├── server/                 # NestJS 后端')
+    console.log('  │   ├── src/')
+    console.log('  │   │   ├── app.controller.ts')
+    console.log('  │   │   ├── app.module.ts')
+    console.log('  │   │   ├── app.service.ts')
+    console.log('  │   │   ├── main.ts')
+    console.log('  │   │   ├── prisma/       # Prisma ORM')
+    console.log('  │   │   └── agent/        # Claude Agent SDK')
+    console.log('  │   ├── prisma/')
+    console.log('  │   │   └── schema.prisma')
+    console.log('  │   ├── nest-cli.json')
+    console.log('  │   ├── tsconfig.json')
+    console.log('  │   └── package.json')
+    console.log('  ├── client/                 # Angular 前端')
+    console.log('  │   ├── src/')
+    console.log('  │   │   ├── index.html')
+    console.log('  │   │   ├── main.ts')
+    console.log('  │   │   ├── styles.css')
+    console.log('  │   │   └── app/')
+    console.log('  │   ├── public/')
+    console.log('  │   ├── angular.json')
+    console.log('  │   ├── tsconfig.json')
+    console.log('  │   └── package.json')
+    console.log('  ├── pnpm-workspace.yaml')
+    console.log('  ├── package.json')
+    console.log('  ├── .env')
+    console.log('  └── .gitignore')
   } else if (hasFrontend) {
     console.log('  ├── src/main/web/         # Angular 前端')
     console.log('  ├── angular.json')

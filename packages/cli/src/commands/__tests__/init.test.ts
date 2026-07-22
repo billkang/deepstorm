@@ -133,6 +133,30 @@ describe('runInit', () => {
     expect(dirExists(path.join(root, 'src/main/java'))).toBe(false)
   })
 
+  it('应当为仅 NestJS 项目创建正确的结构（平铺，无 server/ 子目录）', async () => {
+    await runInit(testDir, {
+      projectName: 'nestjs-only',
+      backend: 'nodejs',
+      nodejsOrm: 'prisma',
+    })
+
+    const root = path.join(testDir, 'nestjs-only')
+    // NestJS 文件应在根目录（平铺）
+    expect(fileExists(path.join(root, 'package.json'))).toBe(true)
+    expect(fileExists(path.join(root, 'nest-cli.json'))).toBe(true)
+    expect(fileExists(path.join(root, 'tsconfig.json'))).toBe(true)
+    expect(fileExists(path.join(root, 'src/main.ts'))).toBe(true)
+    expect(fileExists(path.join(root, 'src/app.module.ts'))).toBe(true)
+    // Prisma 应在根目录
+    expect(fileExists(path.join(root, 'prisma/schema.prisma'))).toBe(true)
+    expect(fileExists(path.join(root, 'src/prisma/prisma.service.ts'))).toBe(true)
+
+    // 不应有 monorepo 结构
+    expect(dirExists(path.join(root, 'server'))).toBe(false)
+    expect(dirExists(path.join(root, 'client'))).toBe(false)
+    expect(fileExists(path.join(root, 'pnpm-workspace.yaml'))).toBe(false)
+  })
+
   it('应当为仅 Java 项目创建正确的结构（无 Angular 文件）', async () => {
     await runInit(testDir, {
       projectName: 'be-only',
@@ -346,6 +370,63 @@ describe('runInit', () => {
 
     // 不存在的文件应正常创建
     expect(fileExists(path.join(testDir, 'package.json'))).toBe(true)
+  })
+
+  it('应当为 Angular + NestJS 全栈项目生成 monorepo 结构（server/ + client/）', async () => {
+    await runInit(testDir, {
+      projectName: 'fullstack-monorepo',
+      frontend: 'angular',
+      backend: 'nodejs',
+      nodejsOrm: 'prisma',
+      nodejsAi: 'claude-agent-sdk',
+      uiLib: 'primeng',
+      cssFramework: 'tailwind',
+    })
+
+    const root = path.join(testDir, 'fullstack-monorepo')
+
+    // 根级 monorepo 配置
+    expect(fileExists(path.join(root, 'package.json'))).toBe(true)
+    expect(fileExists(path.join(root, 'pnpm-workspace.yaml'))).toBe(true)
+
+    // pnpm-workspace.yaml 应包含 server 和 client
+    const wsContent = fs.readFileSync(path.join(root, 'pnpm-workspace.yaml'), 'utf-8')
+    expect(wsContent).toContain('server')
+    expect(wsContent).toContain('client')
+
+    // 根 package.json 应是 monorepo（使用 pnpm --filter）
+    const rootPkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf-8'))
+    expect(rootPkg.scripts.dev).toContain('pnpm --filter')
+
+    // server/ — NestJS 后端
+    const serverDir = path.join(root, 'server')
+    expect(fileExists(path.join(serverDir, 'package.json'))).toBe(true)
+    expect(fileExists(path.join(serverDir, 'nest-cli.json'))).toBe(true)
+    expect(fileExists(path.join(serverDir, 'tsconfig.json'))).toBe(true)
+    expect(fileExists(path.join(serverDir, 'src/main.ts'))).toBe(true)
+    expect(fileExists(path.join(serverDir, 'src/app.module.ts'))).toBe(true)
+    // Prisma + Agent SDK 应在 server/ 下
+    expect(fileExists(path.join(serverDir, 'prisma/schema.prisma'))).toBe(true)
+    expect(fileExists(path.join(serverDir, 'src/prisma/prisma.service.ts'))).toBe(true)
+    expect(fileExists(path.join(serverDir, 'src/agent/agent.module.ts'))).toBe(true)
+
+    // client/ — Angular 前端
+    const clientDir = path.join(root, 'client')
+    expect(fileExists(path.join(clientDir, 'package.json'))).toBe(true)
+    expect(fileExists(path.join(clientDir, 'angular.json'))).toBe(true)
+    expect(fileExists(path.join(clientDir, 'tsconfig.json'))).toBe(true)
+    expect(fileExists(path.join(clientDir, 'tsconfig.app.json'))).toBe(true)
+    expect(fileExists(path.join(clientDir, 'src/index.html'))).toBe(true)
+    expect(fileExists(path.join(clientDir, 'src/main.ts'))).toBe(true)
+    expect(fileExists(path.join(clientDir, 'src/styles.css'))).toBe(true)
+    expect(fileExists(path.join(clientDir, 'src/app/app.ts'))).toBe(true)
+    // Client 应有 proxy.conf.json 用于代理到 NestJS
+    expect(fileExists(path.join(clientDir, 'proxy.conf.json'))).toBe(true)
+
+    // 公共文件应在根目录
+    expect(fileExists(path.join(root, '.gitignore'))).toBe(true)
+    expect(fileExists(path.join(root, '.env'))).toBe(true)
+    expect(fileExists(path.join(root, 'README.md'))).toBe(true)
   })
 
   it('生成的 Angular + Java 项目结构应与 chatbi 风格一致', async () => {
