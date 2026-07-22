@@ -52,7 +52,7 @@
                 "buildTool": "pnpm:*",
                 "formatCmd": "pnpm",
                 "fileExt": "*.component.ts / *.service.ts / *.ts",
-                "sourcePath": "src/main/web/",
+                "sourcePath": "client/src/",
                 "styleRef": "→ 参考 [Angular 前端速查](quick-reference.md)"
               },
               "affectedTemplates": [
@@ -351,7 +351,7 @@
             "buildTool": "pnpm:*",
             "formatCmd": "npx eslint",
             "fileExt": "*.ts",
-            "sourcePath": "src/ test/",
+            "sourcePath": "server/src/ server/test/",
             "styleRef": "→ 参考 [Node.js NestJS 后端速查](quick-reference.md)"
           },
           "availableAiFrameworks": ["claude-agent-sdk"],

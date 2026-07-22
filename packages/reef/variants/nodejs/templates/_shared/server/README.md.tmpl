@@ -1,0 +1,65 @@
+# {{projectName}}
+
+## 项目简介
+
+基于 **NestJS + TypeScript**{{#if hasPrisma}} + **Prisma**{{/if}}{{#if hasAgentSdk}} + **Claude Agent SDK**{{/if}} 的后端项目。
+
+采用 pnpm workspace monorepo 结构：
+- **`server/`** — NestJS 后端服务
+- **`client/`** — 前端应用（通过 `ng new client` 创建）
+
+## 快速开始
+
+```bash
+# 安装依赖
+pnpm install
+
+{{#if hasPrisma}}
+# 初始化数据库
+npx prisma generate
+npx prisma db push
+
+{{/if}}
+# 启动开发服务器
+pnpm --filter server start:dev
+```
+
+## 项目结构
+
+```
+server/
+├── src/
+│   ├── main.ts                   # 入口文件
+│   ├── app.module.ts             # 根模块
+│   ├── app.controller.ts         # 健康检查 Controller
+│   ├── app.service.ts            # 全局 Service
+│   ├── common/                   # 共享能力
+│   │   ├── guards/               # 认证/授权守卫
+│   │   ├── interceptors/         # 请求拦截器
+│   │   ├── filters/              # 异常过滤器
+│   │   ├── pipes/                # 管道校验
+│   │   └── decorators/           # 自定义装饰器
+│   ├── config/                   # 配置模块
+│   │   └── app.config.ts         # 应用配置
+│   └── modules/                  # 业务模块
+{{#if hasPrisma}}
+├── prisma/
+│   └── schema.prisma             # 数据模型定义
+{{/if}}
+├── test/                         # E2E 测试
+├── nest-cli.json
+├── tsconfig.json
+├── tsconfig.build.json
+└── package.json
+```
+
+## 常用命令
+
+| 命令 | 说明 |
+|------|------|
+| `pnpm dev` | 同时启动前后端开发服务器 |
+| `pnpm --filter server start:dev` | 仅启动后端（热重载） |
+| `pnpm --filter server build` | 构建生产版本 |
+| `pnpm --filter server test` | 运行单元测试 |
+| `pnpm --filter server lint` | 代码检查 |
+| `pnpm --filter server format` | 代码格式化 |
