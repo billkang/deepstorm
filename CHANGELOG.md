@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.10.1] - 2026-07-22
+
+### Bug Fixes
+
+- 修复 @nestjs/swagger 依赖版本从 ^9.0.0 至 ^11.0.0（NestJS v11 不兼容问题）(`4c9f6f5`)
+
+### Features
+
+- NestJS 模板结构重构为 monorepo 脚手架：后端代码统一迁入 `server/` 子目录，新增 common/ 骨架目录（guards/interceptors/filters/pipes/decorators），新增根级 pnpm workspace 配置 (`4c9f6f5`)
+
+### Documentation
+
+- 归档 nestjs-monorepo-scaffold 和 reef-nodejs-variant 变更，同步 delta specs 至 openspec/specs/ 主目录 (`4c9f6f5`)
+
 ## [0.10.0] - 2026-07-22
 
 ### Features
