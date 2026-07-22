@@ -147,6 +147,7 @@ AI 将 git 提交分类汇总为结构化 CHANGELOG 条目：
 - 追加到 `CHANGELOG.md` 已有内容**前面**
 - 如果 `CHANGELOG.md` 不存在则新建
 - breaking changes 在文件最顶部突出显示
+- **只更新根 `CHANGELOG.md`**，子包变更日志已删除，全部由根文件管理（之前独立维护的 `packages/*/CHANGELOG.md` 因严重脱节且套件不独立发布，已统一废弃）
 
 ### Step 4.5: 文档完整性检查
 

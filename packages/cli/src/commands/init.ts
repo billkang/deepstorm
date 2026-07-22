@@ -26,6 +26,10 @@ export interface InitOptions {
   migration?: string
   /** AI 框架：spring-ai / none */
   ai?: string
+  /** Node.js ORM：prisma / none */
+  nodejsOrm?: string
+  /** Node.js AI 框架：claude-agent-sdk / none */
+  nodejsAi?: string
   /** 输出目录（不含 projectName） */
   output?: string
 }
@@ -49,6 +53,10 @@ export function parseInitArgs(raw: Record<string, unknown>): Partial<InitOptions
   // 支持 kebab-case CLI 参数：--ui-lib、--css-framework
   if (raw['ui-lib'] && typeof raw['ui-lib'] === 'string') opts.uiLib = raw['ui-lib']
   if (raw['css'] && typeof raw['css'] === 'string') opts.cssFramework = raw['css']
+  if (raw.nodejsOrm && typeof raw.nodejsOrm === 'string') opts.nodejsOrm = raw.nodejsOrm
+  if (raw['nodejs-orm'] && typeof raw['nodejs-orm'] === 'string') opts.nodejsOrm = raw['nodejs-orm']
+  if (raw.nodejsAi && typeof raw.nodejsAi === 'string') opts.nodejsAi = raw.nodejsAi
+  if (raw['nodejs-ai'] && typeof raw['nodejs-ai'] === 'string') opts.nodejsAi = raw['nodejs-ai']
   return opts
 }
 
@@ -178,10 +186,15 @@ export function initClaudeMd(targetDir: string, opts: InitOptions): void {
     if (opts.cssFramework) techLines.push(`- **CSS 方案**：${opts.cssFramework}`)
   }
   if (opts.backend) {
-    techLines.push(`- **后端**：${opts.backend}`)
-    if (opts.orm) techLines.push(`- **ORM**：${opts.orm}`)
-    if (opts.migration) techLines.push(`- **数据库迁移**：${opts.migration}`)
-    if (opts.ai) techLines.push(`- **AI 框架**：${opts.ai}`)
+    techLines.push(`- **后端**：${opts.backend === 'nodejs' ? 'Node.js (NestJS)' : opts.backend}`)
+    if (opts.backend === 'nodejs') {
+      if (opts.nodejsOrm) techLines.push(`- **ORM**：${opts.nodejsOrm}`)
+      if (opts.nodejsAi) techLines.push(`- **AI 框架**：${opts.nodejsAi}`)
+    } else {
+      if (opts.orm) techLines.push(`- **ORM**：${opts.orm}`)
+      if (opts.migration) techLines.push(`- **数据库迁移**：${opts.migration}`)
+      if (opts.ai) techLines.push(`- **AI 框架**：${opts.ai}`)
+    }
   }
   if (techLines.length > 0) {
     lines.push('## 技术栈', '')
@@ -215,9 +228,14 @@ export function writeInitTechStack(baseDir: string, opts: InitOptions): void {
   if (opts.backend) {
     config['reef.techs'] = opts.frontend ? 'frontend,backend' : 'backend'
     config['reef.backend.language'] = opts.backend
-    if (opts.orm) config['reef.backend.java.orm'] = opts.orm
-    if (opts.migration) config['reef.backend.java.dbMigration'] = opts.migration
-    if (opts.ai) config['reef.backend.java.ai'] = opts.ai
+    if (opts.backend === 'nodejs') {
+      if (opts.nodejsOrm) config['reef.backend.nodejs.orm'] = opts.nodejsOrm
+      if (opts.nodejsAi) config['reef.backend.nodejs.ai'] = opts.nodejsAi
+    } else {
+      if (opts.orm) config['reef.backend.java.orm'] = opts.orm
+      if (opts.migration) config['reef.backend.java.dbMigration'] = opts.migration
+      if (opts.ai) config['reef.backend.java.ai'] = opts.ai
+    }
   }
 
   if (Object.keys(config).length === 0) return
@@ -260,13 +278,15 @@ export function registerInitCommand(program: Command, registry?: Registry): void
     .description('初始化项目脚手架 — 选择技术栈，生成项目骨架')
     .option('--name <name>', '项目名称')
     .option('--frontend <framework>', '前端框架（angular）')
-    .option('--backend <language>', '后端语言（java）')
+    .option('--backend <language>', '后端语言（java / nodejs）')
     .option('--output <dir>', '输出目录（默认为当前目录）')
     .option('--ui-lib <lib>', 'UI 库（primeng）')
     .option('--css <framework>', 'CSS 框架（tailwind）')
     .option('--orm <orm>', 'ORM 框架（hibernate）')
     .option('--migration <tool>', '数据库迁移工具（liquibase）')
     .option('--ai <framework>', 'AI 框架（spring-ai）')
+    .option('--nodejs-orm <orm>', 'Node.js ORM（prisma）')
+    .option('--nodejs-ai <framework>', 'Node.js AI 框架（claude-agent-sdk）')
     .action(async (options) => {
       const args = parseInitArgs(options)
       const targetDir = options.output || process.cwd()
@@ -437,6 +457,7 @@ export async function runInteractiveMode(targetDir: string): Promise<InitOptions
     message: '选择后端框架：',
     options: [
       { value: 'java', label: 'Java (Spring Boot)' },
+      { value: 'nodejs', label: 'Node.js (NestJS)' },
       { value: 'none', label: '不需要后端' },
     ],
   })
@@ -480,6 +501,30 @@ export async function runInteractiveMode(targetDir: string): Promise<InitOptions
     aiChoice = aiResult
   }
 
+  let nodejsOrm: string | undefined
+  let nodejsAi: string | undefined
+  if (backendChoice === 'nodejs') {
+    const ormResult = await select({
+      message: '选择 ORM 框架：',
+      options: [
+        { value: 'prisma', label: 'Prisma' },
+        { value: 'none', label: '无' },
+      ],
+    })
+    if (isCancel(ormResult)) { outro('已取消'); return }
+    nodejsOrm = ormResult
+
+    const aiResult = await select({
+      message: '选择 AI 框架：',
+      options: [
+        { value: 'claude-agent-sdk', label: 'Claude Agent SDK' },
+        { value: 'none', label: '无' },
+      ],
+    })
+    if (isCancel(aiResult)) { outro('已取消'); return }
+    nodejsAi = aiResult
+  }
+
   if ((!frontendChoice || frontendChoice === 'none') && (!backendChoice || backendChoice === 'none')) {
     console.error('❌ 至少需要选择前端或后端之一')
     outro('初始化失败')
@@ -495,6 +540,8 @@ export async function runInteractiveMode(targetDir: string): Promise<InitOptions
     orm: orm && orm !== 'none' ? orm : undefined,
     migration: migration && migration !== 'none' ? migration : undefined,
     ai: aiChoice && aiChoice !== 'none' ? aiChoice : undefined,
+    nodejsOrm: nodejsOrm && nodejsOrm !== 'none' ? nodejsOrm : undefined,
+    nodejsAi: nodejsAi && nodejsAi !== 'none' ? nodejsAi : undefined,
   }
 
   await runInit(targetDir, opts)
@@ -528,16 +575,21 @@ export async function runInit(baseDir: string, opts: InitOptions): Promise<void>
 
   const ctx = buildContext(opts)
   const hasFrontend = opts.frontend === 'angular'
-  const hasBackend = opts.backend === 'java'
+  const hasJavaBackend = opts.backend === 'java'
+  const hasNodeBackend = opts.backend === 'nodejs'
+  const hasBackend = hasJavaBackend || hasNodeBackend
 
   try {
     if (hasFrontend) {
       renderAngularTemplate(projectDir, ctx)
     }
-    if (hasBackend) {
+    if (hasJavaBackend) {
       renderJavaTemplate(projectDir, ctx)
     }
-    renderCommonFiles(projectDir, ctx)
+    if (hasNodeBackend) {
+      renderNestJSTemplate(projectDir, ctx, opts)
+    }
+    renderCommonFiles(projectDir, ctx, opts)
 
     console.log(`\n✔ 项目已创建: ${projectDir}`)
     console.log('\n下一步:')
@@ -545,9 +597,10 @@ export async function runInit(baseDir: string, opts: InitOptions): Promise<void>
       console.log(`  cd ${opts.projectName}`)
     }
     if (opts.frontend) console.log(`  pnpm install        # 安装前端依赖`)
-    if (opts.backend) console.log(`  ./gradlew build      # 构建后端`)
+    if (hasJavaBackend) console.log(`  ./gradlew build      # 构建后端`)
+    if (hasNodeBackend) console.log(`  pnpm install         # 安装依赖`)
     console.log()
-    printProjectTree(projectDir, hasFrontend, hasBackend)
+    printProjectTree(projectDir, hasFrontend, hasJavaBackend, hasNodeBackend)
 
     // 原地初始化模式末尾兜底生成 claude.md
     if (inPlace) {
@@ -1127,10 +1180,407 @@ set CLASSPATH=%APP_HOME%/gradle/wrapper/gradle-wrapper.jar
 }
 
 // ──────────────────────────────────────
+// Node.js (NestJS) 模板渲染
+// ──────────────────────────────────────
+
+function renderNestJSTemplate(projectDir: string, ctx: TemplateContext, opts: InitOptions): void {
+  const hasPrisma = opts.nodejsOrm === 'prisma'
+  const hasAgentSdk = opts.nodejsAi === 'claude-agent-sdk'
+
+  // package.json
+  const pkgDeps: Record<string, string> = {
+    '@nestjs/common': '^11.0.0',
+    '@nestjs/core': '^11.0.0',
+    '@nestjs/platform-express': '^11.0.0',
+    '@nestjs/config': '^4.0.0',
+    '@nestjs/swagger': '^9.0.0',
+    'class-validator': '^0.14.0',
+    'class-transformer': '^0.5.0',
+    'reflect-metadata': '^0.2.0',
+    rxjs: '^7.8.0',
+  }
+  const devDeps: Record<string, string> = {
+    '@nestjs/cli': '^11.0.0',
+    '@nestjs/schematics': '^11.0.0',
+    '@nestjs/testing': '^11.0.0',
+    '@types/express': '^5.0.0',
+    '@types/jest': '^29.5.0',
+    '@types/node': '^22.0.0',
+    '@typescript-eslint/eslint-plugin': '^8.0.0',
+    '@typescript-eslint/parser': '^8.0.0',
+    eslint: '^9.0.0',
+    'eslint-config-prettier': '^10.0.0',
+    'eslint-plugin-prettier': '^5.0.0',
+    jest: '^29.7.0',
+    prettier: '^3.4.0',
+    'source-map-support': '^0.5.0',
+    'ts-jest': '^29.0.0',
+    'ts-loader': '^9.5.0',
+    'ts-node': '^10.9.0',
+    'tsconfig-paths': '^4.2.0',
+    typescript: '^5.7.0',
+  }
+
+  if (hasPrisma) {
+    pkgDeps['@prisma/client'] = '^6.0.0'
+    devDeps.prisma = '^6.0.0'
+  }
+  if (hasAgentSdk) {
+    pkgDeps['@anthropic-ai/sdk'] = '^0.40.0'
+  }
+
+  writeTemplate(projectDir, 'package.json', JSON.stringify({
+    name: ctx.packageName,
+    version: '0.1.0',
+    description: '',
+    private: true,
+    scripts: {
+      build: 'nest build',
+      format: 'prettier --write "src/**/*.ts"',
+      start: 'nest start',
+      'start:dev': 'nest start --watch',
+      'start:prod': 'node dist/main',
+      lint: 'eslint "{src,test}/**/*.ts" --fix',
+      test: 'jest',
+      'test:watch': 'jest --watch',
+      'test:cov': 'jest --coverage',
+      'test:e2e': 'jest --config ./test/jest-e2e.json',
+    },
+    dependencies: pkgDeps,
+    devDependencies: devDeps,
+    jest: {
+      moduleFileExtensions: ['js', 'json', 'ts'],
+      rootDir: 'src',
+      testRegex: '.*\\.spec\\.ts$',
+      transform: { '^.+\\.(t|j)s$': 'ts-jest' },
+      collectCoverageFrom: ['**/*.(t|j)s'],
+      coverageDirectory: '../coverage',
+      testEnvironment: 'node',
+    },
+  }, null, 2))
+
+  // tsconfig.json
+  writeTemplate(projectDir, 'tsconfig.json', JSON.stringify({
+    compilerOptions: {
+      module: 'commonjs',
+      declaration: true,
+      removeComments: true,
+      emitDecoratorMetadata: true,
+      experimentalDecorators: true,
+      allowSyntheticDefaultImports: true,
+      target: 'ES2023',
+      sourceMap: true,
+      outDir: './dist',
+      baseUrl: './',
+      incremental: true,
+      skipLibCheck: true,
+      strict: true,
+      strictNullChecks: true,
+      noImplicitAny: true,
+      strictBindCallApply: true,
+      forceConsistentCasingInFileNames: true,
+      noFallthroughCasesInSwitch: true,
+      esModuleInterop: true,
+      resolveJsonModule: true,
+    },
+  }, null, 2))
+
+  // nest-cli.json
+  writeTemplate(projectDir, 'nest-cli.json', JSON.stringify({
+    $schema: 'https://json.schemastore.org/nest-cli',
+    collection: '@nestjs/schematics',
+    sourceRoot: 'src',
+    compilerOptions: { deleteOutDir: true },
+  }, null, 2))
+
+  // .prettierrc
+  writeTemplate(projectDir, '.prettierrc', JSON.stringify({
+    singleQuote: true,
+    trailingComma: 'all',
+    tabWidth: 2,
+    semi: true,
+    printWidth: 120,
+  }, null, 2))
+
+  // src/ 目录
+  ensureDir(path.join(projectDir, 'src'))
+
+  // src/main.ts
+  writeTemplate(projectDir, 'src/main.ts', [
+    "import { NestFactory } from '@nestjs/core';",
+    "import { ValidationPipe, Logger } from '@nestjs/common';",
+    "import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';",
+    "import { AppModule } from './app.module';",
+    '',
+    'async function bootstrap() {',
+    '  const app = await NestFactory.create(AppModule);',
+    "  const logger = new Logger('Bootstrap');",
+    '',
+    "  app.setGlobalPrefix('api/v1');",
+    '',
+    '  app.useGlobalPipes(',
+    '    new ValidationPipe({',
+    '      whitelist: true,',
+    '      forbidNonWhitelisted: true,',
+    '      transform: true,',
+    '    }),',
+    '  );',
+    '',
+    '  const config = new DocumentBuilder()',
+    `    .setTitle('${ctx.projectName}')`,
+    "    .setDescription('API documentation')",
+    "    .setVersion('1.0')",
+    '    .addBearerAuth()',
+    '    .build();',
+    '  const document = SwaggerModule.createDocument(app, config);',
+    "  SwaggerModule.setup('api/docs', app, document);",
+    '',
+    '  app.enableCors({',
+    "    origin: process.env.CORS_ORIGIN || '*',",
+    "    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',",
+    '    credentials: true,',
+    '  });',
+    '',
+    '  const port = process.env.PORT || 3000;',
+    '  await app.listen(port);',
+    '  logger.log(`Application running on http://localhost:${port}`);',
+    '  logger.log(`Swagger docs at http://localhost:${port}/api/docs`);',
+    '}',
+    'bootstrap();',
+    '',
+  ].join('\n'))
+
+  // src/app.module.ts
+  const appModuleContent: string[] = [
+    "import { Module } from '@nestjs/common';",
+    "import { ConfigModule } from '@nestjs/config';",
+    "import { AppController } from './app.controller';",
+    "import { AppService } from './app.service';",
+  ]
+  const appModuleImports: string[] = [
+    '    ConfigModule.forRoot({',
+    '      isGlobal: true,',
+    '    }),',
+  ]
+  if (hasPrisma) {
+    appModuleContent.push("import { PrismaModule } from './prisma/prisma.module';")
+    appModuleImports.push('    PrismaModule,')
+  }
+  if (hasAgentSdk) {
+    appModuleContent.push("import { AgentModule } from './agent/agent.module';")
+    appModuleImports.push('    AgentModule,')
+  }
+  appModuleContent.push('')
+  appModuleContent.push('/**')
+  appModuleContent.push(' * 应用根模块')
+  appModuleContent.push(' */')
+  appModuleContent.push('@Module({')
+  appModuleContent.push('  imports: [')
+  appModuleContent.push(appModuleImports.join('\n'))
+  appModuleContent.push('  ],')
+  appModuleContent.push('  controllers: [AppController],')
+  appModuleContent.push('  providers: [AppService],')
+  appModuleContent.push('})')
+  appModuleContent.push('export class AppModule {}')
+  writeTemplate(projectDir, 'src/app.module.ts', appModuleContent.join('\n'))
+
+  // src/app.controller.ts
+  writeTemplate(projectDir, 'src/app.controller.ts', [
+    "import { Controller, Get } from '@nestjs/common';",
+    "import { ApiTags, ApiOperation } from '@nestjs/swagger';",
+    "import { AppService } from './app.service';",
+    '',
+    "@ApiTags('Health')",
+    '@Controller()',
+    'export class AppController {',
+    '  constructor(private readonly appService: AppService) {}',
+    '',
+    '  @Get()',
+    "  @ApiOperation({ summary: '健康检查' })",
+    '  getHello(): string {',
+    '    return this.appService.getHello();',
+    '  }',
+    '}',
+    '',
+  ].join('\n'))
+
+  // src/app.service.ts
+  writeTemplate(projectDir, 'src/app.service.ts', [
+    "import { Injectable } from '@nestjs/common';",
+    '',
+    '@Injectable()',
+    'export class AppService {',
+    '  getHello(): string {',
+    `    return 'Hello from ${ctx.projectName}!';`,
+    '  }',
+    '}',
+    '',
+  ].join('\n'))
+
+  // Prisma 文件
+  if (hasPrisma) {
+    ensureDir(path.join(projectDir, 'prisma'))
+    writeTemplate(projectDir, 'prisma/schema.prisma', [
+      'generator client {',
+      '  provider = "prisma-client-js"',
+      '}',
+      '',
+      'datasource db {',
+      '  provider = "postgresql"',
+      '  url      = env("DATABASE_URL")',
+      '}',
+      '',
+      '/// 用户',
+      'model User {',
+      '  id        Int      @id @default(autoincrement())',
+      '  name      String',
+      '  email     String   @unique',
+      '  active    Boolean  @default(true)',
+      '  createdAt DateTime @default(now())',
+      '  updatedAt DateTime @updatedAt',
+      '',
+      '  @@map("users")',
+      '}',
+      '',
+    ].join('\n'))
+
+    ensureDir(path.join(projectDir, 'src/prisma'))
+    writeTemplate(projectDir, 'src/prisma/prisma.module.ts', [
+      "import { Global, Module } from '@nestjs/common';",
+      "import { PrismaService } from './prisma.service';",
+      '',
+      '@Global()',
+      '@Module({',
+      '  providers: [PrismaService],',
+      '  exports: [PrismaService],',
+      '})',
+      'export class PrismaModule {}',
+      '',
+    ].join('\n'))
+
+    writeTemplate(projectDir, 'src/prisma/prisma.service.ts', [
+      "import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';",
+      "import { PrismaClient } from '@prisma/client';",
+      '',
+      '@Injectable()',
+      'export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {',
+      "  private readonly logger = new Logger(PrismaService.name);",
+      '',
+      '  async onModuleInit() {',
+      '    await this.$connect();',
+      "    this.logger.log('Database connected');",
+      '  }',
+      '',
+      '  async onModuleDestroy() {',
+      '    await this.$disconnect();',
+      "    this.logger.log('Database disconnected');",
+      '  }',
+      '}',
+      '',
+    ].join('\n'))
+  }
+
+  // Agent SDK 文件
+  if (hasAgentSdk) {
+    ensureDir(path.join(projectDir, 'src/agent/tools'))
+    writeTemplate(projectDir, 'src/agent/agent.module.ts', [
+      "import { Module } from '@nestjs/common';",
+      "import { AgentService } from './agent.service';",
+      '',
+      '@Module({',
+      '  providers: [AgentService],',
+      '  exports: [AgentService],',
+      '})',
+      'export class AgentModule {}',
+      '',
+    ].join('\n'))
+
+    writeTemplate(projectDir, 'src/agent/agent.service.ts', [
+      "import { Injectable, Logger } from '@nestjs/common';",
+      "import { ConfigService } from '@nestjs/config';",
+      '',
+      '/**',
+      ' * Claude Agent 服务',
+      ' *',
+      ' * 封装 Claude Agent SDK，提供 Agent 交互能力。',
+      ' * 使用前需在 .env 中配置 ANTHROPIC_API_KEY。',
+      ' */',
+      '@Injectable()',
+      'export class AgentService {',
+      '  private readonly logger = new Logger(AgentService.name);',
+      '',
+      '  constructor(private readonly configService: ConfigService) {',
+      "    const apiKey = this.configService.get<string>('ANTHROPIC_API_KEY');",
+      '    if (!apiKey) {',
+      "      this.logger.warn('ANTHROPIC_API_KEY is not configured');",
+      '    }',
+      '  }',
+      '',
+      '  async ask(question: string): Promise<string> {',
+      "    this.logger.debug(`Agent ask: \"${question}\"`);",
+      "    return 'Agent response placeholder -- configure ANTHROPIC_API_KEY to enable';",
+      '  }',
+      '}',
+      '',
+    ].join('\n'))
+
+    writeTemplate(projectDir, 'src/agent/tools/example.tool.ts', [
+      "import { Injectable, Logger } from '@nestjs/common';",
+      '',
+      'export interface ToolDefinition {',
+      '  name: string;',
+      '  description: string;',
+      '  input_schema: Record<string, unknown>;',
+      '  execute: (input: Record<string, unknown>) => Promise<unknown>;',
+      '}',
+      '',
+      '@Injectable()',
+      'export class ExampleTool implements ToolDefinition {',
+      '  private readonly logger = new Logger(ExampleTool.name);',
+      '',
+      "  name = 'get_current_time';",
+      "  description = '获取当前日期和时间';",
+      "  input_schema = {",
+      "    type: 'object',",
+      '    properties: {',
+      '      timezone: {',
+      "        type: 'string',",
+      "        description: '时区（可选，默认 UTC）',",
+      "        enum: ['UTC', 'Asia/Shanghai', 'America/New_York'],",
+      '      },',
+      '    },',
+      '  };',
+      '',
+      '  async execute(input: Record<string, unknown>): Promise<unknown> {',
+      '    try {',
+      '      this.logger.debug(`Tool execute: get_current_time with input: ${JSON.stringify(input)}`);',
+      '      const now = new Date();',
+      '      return {',
+      '        success: true,',
+      '        data: {',
+      '          iso: now.toISOString(),',
+      '          timestamp: now.getTime(),',
+      '        },',
+      '      };',
+      '    } catch (error) {',
+      '      this.logger.error(`Tool execution failed: ${error}`);',
+      '      return {',
+      '        success: false,',
+      "        error: error instanceof Error ? error.message : 'Unknown error',",
+      '      };',
+      '    }',
+      '  }',
+      '}',
+      '',
+    ].join('\n'))
+  }
+}
+
+// ──────────────────────────────────────
 // 公共文件
 // ──────────────────────────────────────
 
-function renderCommonFiles(projectDir: string, ctx: TemplateContext): void {
+function renderCommonFiles(projectDir: string, ctx: TemplateContext, opts?: InitOptions): void {
   writeTemplate(projectDir, '.gitignore', `node_modules/
 .gradle/
 build/
@@ -1146,7 +1596,21 @@ __pycache__/
 *.iml
 `)
 
-  writeEnvFile(projectDir, `# 数据库配置
+  const hasNodeBackend = opts?.backend === 'nodejs'
+  if (hasNodeBackend) {
+    writeEnvFile(projectDir, `# 数据库配置
+DATABASE_URL=postgresql://user:password@localhost:5432/${ctx.packageName}
+
+# Claude Agent SDK
+ANTHROPIC_API_KEY=sk-ant-xxxxxxxxxxxxx
+AGENT_MODEL=claude-sonnet-5
+
+# Server
+PORT=3000
+CORS_ORIGIN=http://localhost:4200
+`)
+  } else {
+    writeEnvFile(projectDir, `# 数据库配置
 DB_URL=jdbc:postgresql://localhost:5432/${ctx.packageName}
 DB_USERNAME=postgres
 DB_PASSWORD=change-me
@@ -1154,17 +1618,29 @@ DB_PASSWORD=change-me
 # API Keys
 OPENAI_API_KEY=sk-your-key-here
 `)
+  }
 
-  const readme = generateReadme(ctx)
+  const readme = generateReadme(ctx, opts)
   writeTemplate(projectDir, 'README.md', readme)
 }
 
-function generateReadme(ctx: TemplateContext): string {
+function generateReadme(ctx: TemplateContext, opts?: InitOptions): string {
+  const hasNodeBackend = opts?.backend === 'nodejs'
+  const hasPrisma = opts?.nodejsOrm === 'prisma'
+  const hasAgentSdk = opts?.nodejsAi === 'claude-agent-sdk'
+
   const lines: string[] = []
   lines.push(`# ${ctx.projectName}`, '')
   lines.push('## 技术栈', '')
   if (ctx.frontend) lines.push('- **前端：** Angular + TypeScript')
-  if (ctx.backend) lines.push('- **后端：** Java 21 + Spring Boot 3.x + Gradle')
+  if (hasNodeBackend) {
+    const nodeDeps: string[] = ['NestJS + TypeScript']
+    if (hasPrisma) nodeDeps.push('Prisma')
+    if (hasAgentSdk) nodeDeps.push('Claude Agent SDK')
+    lines.push(`- **后端：** ${nodeDeps.join(' + ')}`)
+  } else if (ctx.backend) {
+    lines.push('- **后端：** Java 21 + Spring Boot 3.x + Gradle')
+  }
   lines.push('')
   lines.push('## 快速开始', '')
   if (ctx.frontend) {
@@ -1174,7 +1650,13 @@ function generateReadme(ctx: TemplateContext): string {
     lines.push('pnpm start')
     lines.push('```', '')
   }
-  if (ctx.backend) {
+  if (hasNodeBackend) {
+    lines.push('### 后端', '')
+    lines.push('```bash')
+    lines.push('pnpm install')
+    lines.push('pnpm start:dev')
+    lines.push('```', '')
+  } else if (ctx.backend) {
     lines.push('### 后端', '')
     lines.push('```bash')
     lines.push('./gradlew build')
@@ -1183,7 +1665,13 @@ function generateReadme(ctx: TemplateContext): string {
   }
   lines.push('## 项目结构', '')
   lines.push('```')
-  if (ctx.frontend && ctx.backend) {
+  if (ctx.frontend && hasNodeBackend) {
+    lines.push('├── src/                    # NestJS + Angular')
+    lines.push('├── angular.json           # Angular 配置')
+    lines.push('├── nest-cli.json          # NestJS 配置')
+    lines.push('├── tsconfig.json')
+    lines.push('└── package.json')
+  } else if (ctx.frontend && ctx.backend) {
     lines.push('├── src/main/web/          # Angular 前端')
     lines.push('├── src/main/java/         # Java 后端')
     lines.push('├── src/main/resources/    # 配置')
@@ -1192,6 +1680,11 @@ function generateReadme(ctx: TemplateContext): string {
   } else if (ctx.frontend) {
     lines.push('├── src/main/web/          # Angular 前端')
     lines.push('└── angular.json           # Angular 配置')
+  } else if (hasNodeBackend) {
+    lines.push('├── src/                    # NestJS 后端')
+    lines.push('├── nest-cli.json          # NestJS 配置')
+    lines.push('├── tsconfig.json')
+    lines.push('└── package.json')
   } else if (ctx.backend) {
     lines.push('├── src/main/java/         # Java 后端')
     lines.push('└── build.gradle.kts       # Gradle 构建')
@@ -1235,10 +1728,10 @@ function writeEnvFile(baseDir: string, content: string): void {
   }
 }
 
-function printProjectTree(projectDir: string, hasFrontend: boolean, hasBackend: boolean): void {
+function printProjectTree(projectDir: string, hasFrontend: boolean, hasJavaBackend: boolean, hasNodeBackend = false): void {
   console.log('目录结构:')
   console.log(`  ${path.basename(projectDir)}/`)
-  if (hasFrontend && hasBackend) {
+  if (hasFrontend && hasJavaBackend) {
     console.log('  ├── src/')
     console.log('  │   ├── main/')
     console.log('  │   │   ├── web/          # Angular 前端')
@@ -1250,11 +1743,25 @@ function printProjectTree(projectDir: string, hasFrontend: boolean, hasBackend: 
     console.log('  ├── build.gradle.kts')
     console.log('  ├── angular.json')
     console.log('  └── package.json')
+  } else if (hasFrontend && hasNodeBackend) {
+    console.log('  ├── src/')
+    console.log('  │   ├── app.controller.ts')
+    console.log('  │   ├── app.module.ts')
+    console.log('  │   ├── app.service.ts')
+    console.log('  │   ├── main.ts')
+    console.log('  │   ├── prisma/          # Prisma ORM')
+    console.log('  │   └── agent/           # Claude Agent SDK')
+    console.log('  ├── prisma/')
+    console.log('  │   └── schema.prisma')
+    console.log('  ├── nest-cli.json')
+    console.log('  ├── tsconfig.json')
+    console.log('  ├── angular.json')
+    console.log('  └── package.json')
   } else if (hasFrontend) {
     console.log('  ├── src/main/web/         # Angular 前端')
     console.log('  ├── angular.json')
     console.log('  └── package.json')
-  } else if (hasBackend) {
+  } else if (hasJavaBackend) {
     console.log('  ├── src/')
     console.log('  │   ├── main/java/')
     console.log('  │   ├── main/resources/')
@@ -1262,5 +1769,18 @@ function printProjectTree(projectDir: string, hasFrontend: boolean, hasBackend: 
     console.log('  │   └── test/resources/')
     console.log('  ├── build.gradle.kts')
     console.log('  └── settings.gradle.kts')
+  } else if (hasNodeBackend) {
+    console.log('  ├── src/')
+    console.log('  │   ├── app.controller.ts')
+    console.log('  │   ├── app.module.ts')
+    console.log('  │   ├── app.service.ts')
+    console.log('  │   ├── main.ts')
+    console.log('  │   ├── prisma/          # Prisma ORM')
+    console.log('  │   └── agent/           # Claude Agent SDK')
+    console.log('  ├── prisma/')
+    console.log('  │   └── schema.prisma')
+    console.log('  ├── nest-cli.json')
+    console.log('  ├── tsconfig.json')
+    console.log('  └── package.json')
   }
 }

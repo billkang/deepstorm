@@ -303,6 +303,7 @@
             "sourcePath": "src/main/java/ src/test/java/",
             "styleRef": "→ 参考 [Java 后端速查](quick-reference.md)"
           },
+          "availableAiFrameworks": ["spring-ai"],
           "affectedTemplates": [
             "skills/reef-style-backend/SKILL.md.tmpl",
             "agents/reef-review-backend.md.tmpl",
@@ -328,6 +329,7 @@
             "styleRef": "→ 参考 [Python FastAPI 后瑞速查](quick-reference.md)",
             "isPython": "true"
           },
+          "availableAiFrameworks": [],
           "affectedTemplates": [
             "skills/reef-style-backend/SKILL.md.tmpl",
             "agents/reef-review-backend.md.tmpl",
@@ -339,6 +341,31 @@
             "python/dependency-management",
             "python/exception-handling",
             "python/security-redlines"
+          ]
+        },
+        {
+          "value": "nodejs",
+          "label": "Node.js / NestJS",
+          "template": {
+            "label": "NestJS + TypeScript + Prisma",
+            "buildTool": "pnpm:*",
+            "formatCmd": "npx eslint",
+            "fileExt": "*.ts",
+            "sourcePath": "src/ test/",
+            "styleRef": "→ 参考 [Node.js NestJS 后端速查](quick-reference.md)"
+          },
+          "availableAiFrameworks": ["claude-agent-sdk"],
+          "affectedTemplates": [
+            "skills/reef-style-backend/SKILL.md.tmpl",
+            "agents/reef-review-backend.md.tmpl",
+            "skills/reef-review/SKILL.md.tmpl",
+            "skills/reef-gen-backend/SKILL.md.tmpl"
+          ],
+          "fragments": [
+            "nodejs/api-spec",
+            "nodejs/dependency-management",
+            "nodejs/exception-handling",
+            "nodejs/security-redlines"
           ]
         },
         {
@@ -724,6 +751,143 @@
               ],
               "fragments": [
                 "python/ruff-mypy-toolchain"
+              ]
+            },
+            {
+              "value": "none",
+              "label": "不使用",
+              "template": {},
+              "affectedTemplates": [
+                "skills/reef-style-backend/SKILL.md.tmpl"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "reef.backend.nodejs.details",
+      "label": "Node.js 框架选型",
+      "description": "选择需要使用的 Node.js 框架和技术",
+      "type": "group",
+      "dependsOn": {
+        "key": "reef.backend.language",
+        "value": "nodejs"
+      },
+      "questions": [
+        {
+          "key": "reef.backend.nodejs.framework",
+          "label": "Web 框架",
+          "type": "select",
+          "options": [
+            {
+              "value": "nestjs",
+              "label": "NestJS",
+              "template": {
+                "styleRef": "→ 参考 [NestJS 后端速查](quick-reference.md)"
+              },
+              "affectedTemplates": [
+                "skills/reef-style-backend/SKILL.md.tmpl"
+              ],
+              "fragments": [
+                "nodejs/framework/nestjs"
+              ]
+            },
+            {
+              "value": "none",
+              "label": "不使用",
+              "template": {},
+              "affectedTemplates": [
+                "skills/reef-style-backend/SKILL.md.tmpl"
+              ]
+            }
+          ]
+        },
+        {
+          "key": "reef.backend.nodejs.orm",
+          "label": "ORM",
+          "type": "select",
+          "options": [
+            {
+              "value": "prisma",
+              "label": "Prisma",
+              "template": {
+                "styleRef": "→ 参考 [Prisma 规范](prisma.md)"
+              },
+              "affectedTemplates": [
+                "skills/reef-style-backend/SKILL.md.tmpl"
+              ],
+              "fragments": [
+                "nodejs/orm/prisma"
+              ]
+            },
+            {
+              "value": "none",
+              "label": "不使用",
+              "template": {},
+              "affectedTemplates": [
+                "skills/reef-style-backend/SKILL.md.tmpl"
+              ]
+            }
+          ]
+        },
+        {
+          "key": "reef.backend.nodejs.ai",
+          "label": "AI 集成",
+          "type": "select",
+          "options": [
+            {
+              "value": "claude-agent-sdk",
+              "label": "Claude Agent SDK",
+              "template": {
+                "styleRef": "→ 参考 [Claude Agent SDK 规范](claude-agent-sdk.md)"
+              },
+              "affectedTemplates": [
+                "skills/reef-style-backend/SKILL.md.tmpl"
+              ],
+              "fragments": [
+                "nodejs/ai/claude-agent-sdk"
+              ]
+            },
+            {
+              "value": "none",
+              "label": "不使用",
+              "template": {},
+              "affectedTemplates": [
+                "skills/reef-style-backend/SKILL.md.tmpl"
+              ]
+            }
+          ]
+        },
+        {
+          "key": "reef.backend.nodejs.test",
+          "label": "单元测试",
+          "type": "select",
+          "options": [
+            {
+              "value": "jest",
+              "label": "Jest",
+              "template": {
+                "styleRef": "→ 参考 [Jest 规范](jest-testing.md)"
+              },
+              "affectedTemplates": [
+                "skills/reef-style-backend/SKILL.md.tmpl"
+              ],
+              "fragments": [
+                "nodejs/test/jest"
+              ]
+            },
+            {
+              "value": "vitest",
+              "label": "Vitest",
+              "template": {
+                "styleRef": "→ 参考 [Vitest 规范](vitest-testing.md)"
+              },
+              "affectedTemplates": [
+                "skills/reef-style-backend/SKILL.md.tmpl"
+              ],
+              "fragments": [
+                "nodejs/test/vitest"
               ]
             },
             {

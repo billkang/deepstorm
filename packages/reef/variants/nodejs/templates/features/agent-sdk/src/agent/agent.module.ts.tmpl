@@ -1,0 +1,15 @@
+import { Module } from '@nestjs/common';
+import { AgentService } from './agent.service';
+
+/**
+ * Claude Agent SDK 模块
+ *
+ * 提供与 Claude Agent SDK 的集成能力，包括：
+ * - Agent 服务（AgentService）：封装与 Anthropic API 的交互
+ * - 可扩展的 Tool 注册机制
+ */
+@Module({
+  providers: [AgentService],
+  exports: [AgentService],
+})
+export class AgentModule {}

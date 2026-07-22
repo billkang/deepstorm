@@ -1,0 +1,54 @@
+# {{projectName}}
+
+## 项目简介
+
+基于 NestJS + TypeScript{{#if hasPrisma}} + Prisma{{/if}}{{#if hasAgentSdk}} + Claude Agent SDK{{/if}} 的后端项目。
+
+## 快速开始
+
+```bash
+# 安装依赖
+pnpm install
+
+{{#if hasPrisma}}
+# 初始化数据库
+npx prisma generate
+npx prisma db push
+
+{{/if}}
+# 启动开发服务器
+pnpm start:dev
+```
+
+## 项目结构
+
+```
+src/
+├── main.ts                   # 入口文件
+├── app.module.ts             # 根模块
+├── app.controller.ts         # 健康检查 Controller
+├── app.service.ts            # 全局 Service
+{{#if hasPrisma}}
+├── prisma/
+│   ├── prisma.module.ts
+│   └── prisma.service.ts
+{{/if}}
+{{#if hasAgentSdk}}
+├── agent/
+│   ├── agent.module.ts
+│   ├── agent.service.ts
+│   └── tools/
+│       └── example.tool.ts
+{{/if}}
+└── modules/                  # 业务模块
+```
+
+## 常用命令
+
+| 命令 | 说明 |
+|------|------|
+| `pnpm start:dev` | 启动开发服务器（热重载） |
+| `pnpm build` | 构建生产版本 |
+| `pnpm test` | 运行单元测试 |
+| `pnpm lint` | 代码检查 |
+| `pnpm format` | 代码格式化 |
